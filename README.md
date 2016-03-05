@@ -3,7 +3,39 @@
 Opinionated persistence with PostgreSQL.
 
 
-## Conventions
+[![Circle CI](https://circleci.com/gh/globality-corp/microcosm-postgres/tree/develop.svg?style=svg)](https://circleci.com/gh/globality-corp/microcosm-logging/tree/develop)
+
+
+## Usage
+
+This project includes example models and persistence stores. Assuming the testing
+database exists (see below), the following demonstrates basic usage:
+
+    from microcosm.api import create_object_graph
+    from microcosm_postgres.context import Context, transaction
+    from microcosm_postgres.example import Company
+
+    # create the object graph
+    graph = create_object_graph(name="example", testing=True)
+
+    # wire up the persistence layer to the (testing) database
+    [company_store] = graph.use("company_store")
+
+    # set up a session
+    with Context(graph) as context:
+
+        # drop and create database tables; *only* do this for testing
+        context.recreate_all()
+
+        with transaction():
+            # create a model
+            company = company_store.create(Company(name="Acme"))
+
+        # prints 1
+        print company_store.count()
+
+
+## Convention
 
 Basics:
 

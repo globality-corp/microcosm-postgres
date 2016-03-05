@@ -21,7 +21,7 @@ class Context(object):
 
     def open(self):
         Context.session = new_session(self.graph, self.expire_on_commit)
-        return Context.session
+        return self
 
     def close(self):
         Context.session.close()
