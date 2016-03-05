@@ -2,6 +2,10 @@ general:
   artifacts:
      - "dist"
      - "cover"
+database:
+  pre:
+     - createuser test
+     - createdb -O test test_test_db
 test:
   override:
      - tox
