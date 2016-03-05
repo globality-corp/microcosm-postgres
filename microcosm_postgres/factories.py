@@ -40,7 +40,7 @@ def configure_sqlalchemy_engine(graph):
     return create_engine(uri)
 
 
-def configure_sqlalchemy_session(graph):
+def configure_sqlalchemy_sessionmaker(graph):
     """
     Create the SQLAlchemy session class.
 
