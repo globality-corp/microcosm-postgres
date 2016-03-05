@@ -76,9 +76,3 @@ Note that production usage should always create the user with a password. For ex
 
 Automated test do not enforce that a password is set because many development environments
 (OSX, Circle CI) configure `pg_hba.conf` for trusted login from localhost.
-
-
-## TODO
-
- - Integrate CLI for basic operations
- - Integrate alembic migration support
