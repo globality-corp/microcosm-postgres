@@ -19,7 +19,7 @@ def test_configure_sqlalchemy_engine():
     Should create the `SQLAlchemy` engine
 
     """
-    graph = create_object_graph("test")
+    graph = create_object_graph(name="example", testing=True)
     assert_that(graph.postgres, is_(instance_of(Engine)))
 
 
@@ -28,5 +28,5 @@ def test_configure_sqlalchemy_sessionmaker():
     Should create the `SQLAlchemy` sessionmaker
 
     """
-    graph = create_object_graph("test")
+    graph = create_object_graph(name="example", testing=True)
     assert_that(graph.Session, is_(instance_of(sessionmaker)))

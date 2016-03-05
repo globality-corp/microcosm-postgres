@@ -28,9 +28,8 @@ To change the database password:
 
 Initial setup:
 
-    createuser test
-    createdb -O test test_db
-    createdb -O test test_test_db
+    echo "CREATE ROLE example WITH LOGIN ENCRYPTED PASSWORD 'secret';" | psql
+    createdb -O example example_test_db
 
 
 ## TODO
