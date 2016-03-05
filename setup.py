@@ -17,8 +17,10 @@ setup(
     keywords="microcosm",
     install_requires=[
         "microcosm>=0.3.0",
-        "sqlalchemy>=1.0.9",
-        "sqlalchemy-utils>=0.30.11",
+        "sqlalchemy>=1.0.12",
+        "SQLAlchemy-Utils>=0.31.6",
+        "psycopg2>=2.6.1",
+        "python_dateutil>=2.5.0"
     ],
     setup_requires=[
         "nose>=1.3.6",
@@ -27,6 +29,7 @@ setup(
     ],
     entry_points={
         "microcosm.factories": [
+            "Session = microcosm_postgres.factories:configure_sqlalchemy_sessionmaker",
         ],
     },
     tests_require=[
