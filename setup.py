@@ -17,7 +17,7 @@ setup(
     keywords="microcosm",
     install_requires=[
         "alembic>=0.8.4",
-        "microcosm>=0.3.0",
+        "microcosm>=0.4.0",
         "psycopg2>=2.6.1",
         "python_dateutil>=2.5.0",
         "sqlalchemy>=1.0.12",
