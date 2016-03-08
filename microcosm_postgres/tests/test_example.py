@@ -25,7 +25,7 @@ from microcosm_postgres.example import Company, Employee
 class TestCompany(object):
 
     def setup(self):
-        self.graph = create_object_graph(name="example", testing=True)
+        self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
         self.company_store = self.graph.company_store
         self.employee_store = self.graph.employee_store
 
@@ -131,7 +131,7 @@ class TestCompany(object):
 class TestEmployee(object):
 
     def setup(self):
-        self.graph = create_object_graph(name="example", testing=True)
+        self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
         self.company_store = self.graph.company_store
         self.employee_store = self.graph.employee_store
 

@@ -20,6 +20,7 @@ def create_all(graph):
 
     """
     Model.metadata.create_all(graph.postgres)
+    stamp_head(graph)
 
 
 def drop_all(graph):

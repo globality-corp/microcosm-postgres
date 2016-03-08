@@ -17,14 +17,16 @@ To use this entry enty point instead of the Alembic CLI:
     This directory does not need to be an importable Python module, but it should
     be included as part of your distribution so that migrations ship with the service.
 
- 3. Initialize your object graph (including your models) and ensure that it knows the
-    migrations directory path.
+ 3. Initialize your object graph (including your models):
 
-    For example:
-
+        from microcosm.api import create_object_graph
         from microcosm_postgres.example import Company, Employee  # noqa
+
         graph = create_object_graph(name="example", testing=True)
-        graph.migrations_dir = join(dirname(__file__), "migrations")
+
+    The migrations directory is loaded by default assuming that the `name` attribute
+    is a module name (though this behavior can be customized; see `microcosm.metadata:Metadata`)
+    or by wiring up a stirng as the "migrations_dir" component of the graph.
 
  4. Write an entry point that invokes the `main` function with the object graph:
 
@@ -176,6 +178,24 @@ def patch_script_directory(graph):
         rmtree(temporary_dir)
 
 
+def get_migrations_dir(graph):
+    """
+    Resolve the migrations directory path.
+
+    Either take the directory from a component of the object graph or by
+    using the metaata's path resolution facilities.
+
+    """
+    if hasattr(graph, "migrations_dir"):
+        migrations_dir = graph.migrations_dir
+    else:
+        migrations_dir = graph.metadata.get_path("migrations")
+
+    if not isdir(migrations_dir):
+        raise Exception("Migrations dir must exist: {}".format(migrations_dir))
+    return migrations_dir
+
+
 def main(graph, *args):
     """
     Entry point for invoking Alembic's `CommandLine`.
@@ -188,10 +208,7 @@ def main(graph, *args):
     :param migration_dir: the path to the migrations directory
 
     """
-    if not hasattr(graph, "migrations_dir"):
-        raise Exception("Migrations dir must be defined")
-    if not isdir(graph.migrations_dir):
-        raise Exception("Migrations dir must exist: {}".format(graph.migrations_dir))
+    migrations_dir = get_migrations_dir(graph)
 
     cli = CommandLine()
     options = cli.parser.parse_args(args if args else argv[1:])
@@ -199,5 +216,5 @@ def main(graph, *args):
         cli.parser.error("too few arguments")
 
     with patch_script_directory(graph) as temporary_dir:
-        config = make_alembic_config(temporary_dir, graph.migrations_dir)
+        config = make_alembic_config(temporary_dir, migrations_dir)
         cli.run_cmd(config, options)
