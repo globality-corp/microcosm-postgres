@@ -29,6 +29,7 @@ class Employee(EntityMixin, Model):
 
     first = Column(String(255), nullable=False)
     last = Column(String(255), nullable=False)
+    other = Column(String(255), nullable=True)
     company_id = Column(UUIDType, ForeignKey('company.id'), nullable=False)
 
 

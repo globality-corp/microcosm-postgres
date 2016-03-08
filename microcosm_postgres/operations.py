@@ -2,7 +2,16 @@
 Common database operations.
 
 """
+from microcosm_postgres.migrate import main
 from microcosm_postgres.models import Model
+
+
+def stamp_head(graph):
+    """
+    Stamp the database with the current head revision.
+
+    """
+    main(graph, "stamp", "head")
 
 
 def create_all(graph):
@@ -11,6 +20,7 @@ def create_all(graph):
 
     """
     Model.metadata.create_all(graph.postgres)
+    stamp_head(graph)
 
 
 def drop_all(graph):

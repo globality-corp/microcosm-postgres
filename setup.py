@@ -16,11 +16,12 @@ setup(
     zip_safe=False,
     keywords="microcosm",
     install_requires=[
+        "alembic>=0.8.4",
         "microcosm>=0.3.0",
+        "psycopg2>=2.6.1",
+        "python_dateutil>=2.5.0",
         "sqlalchemy>=1.0.12",
         "SQLAlchemy-Utils>=0.31.6",
-        "psycopg2>=2.6.1",
-        "python_dateutil>=2.5.0"
     ],
     setup_requires=[
         "nose>=1.3.6",
