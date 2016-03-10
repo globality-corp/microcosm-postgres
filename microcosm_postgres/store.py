@@ -90,7 +90,7 @@ class Store(object):
         """
         with self.flushing():
             instance = self.retrieve(identifier)
-            self.session.merge(instance, new_instance)
+            self.session.merge(new_instance)
         return instance
 
     def replace(self, identifier, new_instance):
