@@ -214,6 +214,8 @@ def main(graph, *args):
     options = cli.parser.parse_args(args if args else argv[1:])
     if not hasattr(options, "cmd"):
         cli.parser.error("too few arguments")
+    if options.cmd[0].__name__ == "init":
+        cli.parser.error("Alembic 'init' command should not be used in the microcosm!")
 
     with patch_script_directory(graph) as temporary_dir:
         config = make_alembic_config(temporary_dir, migrations_dir)
