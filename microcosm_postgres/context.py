@@ -35,6 +35,14 @@ class Context(object):
             drop_all(self.graph)
             create_all(self.graph)
 
+    @classmethod
+    def make(cls, graph, expire_on_commit=False):
+        """
+        Create an opened context.
+
+        """
+        return cls(graph, expire_on_commit).open()
+
     # context manager
 
     def __enter__(self):
@@ -58,13 +66,13 @@ def transaction():
         raise
 
 
-def with_transaction(func):
+def transactional(func):
     """
     Decorate a function call with a commit/rollback and pass the session as the first arg.
 
     """
     @wraps(func)
     def wrapper(*args, **kwargs):
-        with transaction() as session:
-            return func(session, *args, **kwargs)
+        with transaction():
+            return func(*args, **kwargs)
     return wrapper
