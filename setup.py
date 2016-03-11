@@ -30,7 +30,7 @@ setup(
     ],
     entry_points={
         "microcosm.factories": [
-            "Session = microcosm_postgres.factories:configure_sqlalchemy_sessionmaker",
+            "sessionmaker = microcosm_postgres.factories:configure_sqlalchemy_sessionmaker",
         ],
     },
     tests_require=[

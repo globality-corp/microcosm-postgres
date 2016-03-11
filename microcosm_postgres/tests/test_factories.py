@@ -29,4 +29,4 @@ def test_configure_sqlalchemy_sessionmaker():
 
     """
     graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
-    assert_that(graph.Session, is_(instance_of(sessionmaker)))
+    assert_that(graph.sessionmaker, is_(instance_of(sessionmaker)))
