@@ -12,7 +12,7 @@ from hamcrest import (
 )
 
 from microcosm.api import create_object_graph
-from microcosm_postgres.context import Context, transaction
+from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.errors import (
     DuplicateModelError,
     ModelIntegrityError,
@@ -29,7 +29,7 @@ class TestCompany(object):
         self.company_store = self.graph.company_store
         self.employee_store = self.graph.employee_store
 
-        self.context = Context(self.graph)
+        self.context = SessionContext(self.graph)
         self.context.recreate_all()
         self.context.open()
 
@@ -136,7 +136,7 @@ class TestEmployee(object):
         self.company_store = self.graph.company_store
         self.employee_store = self.graph.employee_store
 
-        self.context = Context(self.graph)
+        self.context = SessionContext(self.graph)
         self.context.recreate_all()
         self.context.open()
         with transaction():

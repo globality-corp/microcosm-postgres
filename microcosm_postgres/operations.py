@@ -31,6 +31,15 @@ def drop_all(graph):
     Model.metadata.drop_all(graph.postgres)
 
 
+def recreate_all(graph):
+    """
+    Drop and add back all database tables.
+
+    """
+    drop_all(graph)
+    create_all(graph)
+
+
 def new_session(graph, expire_on_commit=False):
     """
     Create a new session.

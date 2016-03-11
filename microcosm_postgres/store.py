@@ -20,7 +20,7 @@ from contextlib import contextmanager
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
-from microcosm_postgres.context import Context
+from microcosm_postgres.context import SessionContext
 from microcosm_postgres.errors import (
     DuplicateModelError,
     ModelIntegrityError,
@@ -41,7 +41,7 @@ class Store(object):
 
     @property
     def session(self):
-        return Context.session
+        return SessionContext.session
 
     def new_object_id(self):
         """

@@ -5,10 +5,10 @@ Session context management.
 from contextlib import contextmanager
 from functools import wraps
 
-from microcosm_postgres.operations import create_all, drop_all, new_session
+from microcosm_postgres.operations import new_session, recreate_all
 
 
-class Context(object):
+class SessionContext(object):
     """
     Save current session in well-known location and provide context management.
 
@@ -20,20 +20,20 @@ class Context(object):
         self.expire_on_commit = expire_on_commit
 
     def open(self):
-        Context.session = new_session(self.graph, self.expire_on_commit)
+        SessionContext.session = new_session(self.graph, self.expire_on_commit)
         return self
 
     def close(self):
-        Context.session.close()
-        Context.session = None
+        if SessionContext.session:
+            SessionContext.session.close()
+            SessionContext.session = None
 
     def recreate_all(self):
         """
         Recreate all database tables, but only in a testing context.
         """
         if self.graph.metadata.testing:
-            drop_all(self.graph)
-            create_all(self.graph)
+            recreate_all(self.graph)
 
     @classmethod
     def make(cls, graph, expire_on_commit=False):
@@ -59,10 +59,11 @@ def transaction():
 
     """
     try:
-        yield Context.session
-        Context.session.commit()
+        yield SessionContext.session
+        SessionContext.session.commit()
     except:
-        Context.session.rollback()
+        if SessionContext.session:
+            SessionContext.session.rollback()
         raise
 
 

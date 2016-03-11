@@ -2,8 +2,8 @@
 Simple Postgres health check.
 
 """
-from microcosm_postgres.context import Context
+from microcosm_postgres.context import SessionContext
 
 
 def check_health(graph):
-    Context.session.execute("SELECT 1;")
+    SessionContext.session.execute("SELECT 1;")
