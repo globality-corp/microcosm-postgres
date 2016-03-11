@@ -93,7 +93,8 @@ class TestCompany(object):
 
         with transaction():
             company.name = "new_name"
-            company.update()
+            updated_company = company.update()
+            assert_that(updated_company.name, is_(equal_to("new_name")))
 
         with transaction():
             retrieved_company = Company.retrieve(company.id)
@@ -223,7 +224,9 @@ class TestEmployee(object):
         with transaction():
             employee.first = "Jane"
             employee.last = "Doe"
-            employee.replace()
+            updated_employee = employee.replace()
+            assert_that(updated_employee.first, is_(equal_to("Jane")))
+            assert_that(updated_employee.last, is_(equal_to("Doe")))
 
         with transaction():
             retrieved_employee = Employee.retrieve(employee.id)
