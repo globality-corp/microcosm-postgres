@@ -27,6 +27,7 @@ from microcosm_postgres.errors import (
     ModelNotFoundError,
     ReferencedModelError
 )
+from microcosm_postgres.identifiers import new_object_id
 
 
 class Store(object):
@@ -41,6 +42,13 @@ class Store(object):
     @property
     def session(self):
         return Context.session
+
+    def new_object_id(self):
+        """
+        Injectable id generation to facilitate mocking.
+
+        """
+        return new_object_id()
 
     @contextmanager
     def flushing(self):
@@ -66,6 +74,8 @@ class Store(object):
 
         """
         with self.flushing():
+            if instance.id is None:
+                instance.id = self.new_object_id()
             self.session.add(instance)
         return instance
 
