@@ -44,21 +44,42 @@ class UTCDateTime(types.TypeDecorator):
             return value
 
 
-class EntityMixin(object):
+class PrimaryKeyMixin(object):
     """
-    A convention for persistent entities:
-
-     - Use a randomized UUID primary key.
-     - Track created and updated times in UTC
-     - Short cuts for CRUD operations via store indirection
+    Define a model with a randomized UUID primary key and tracking created/updated times.
 
     """
     id = Column(UUIDType(), primary_key=True, default=uuid4)
     created_at = Column(UTCDateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(UTCDateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
-    # Entity short cuts to current store; will fail if no store was configured
 
+class IdentityMixin(object):
+    """
+    Define model identity in terms of members.
+
+    This form of equality isn't always appropriate, but it's a good place to start,
+    especially for writing test assertions.
+
+    """
+    def __eq__(self, other):
+        return type(other) is type(self) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
+
+    def __hash__(self):
+        return hash(self.__dict__)
+
+
+class SmartMixin(object):
+    """
+    Define a model with short cuts for CRUD operations against its `Store`.
+
+    These short cuts still delegate responsibility for persistence to the store (which must be
+    instantiated first).
+
+    """
     def create(self):
         return self.__class__.store.create(self)
 
@@ -82,3 +103,11 @@ class EntityMixin(object):
     @classmethod
     def retrieve(cls, identifier):
         return cls.store.retrieve(identifier)
+
+
+class EntityMixin(PrimaryKeyMixin, IdentityMixin, SmartMixin):
+    """
+    Convention for persistent entities combining other mixins.
+
+    """
+    pass

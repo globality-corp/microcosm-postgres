@@ -12,7 +12,7 @@ This project includes example models and persistence stores. Assuming the testin
 database exists (see below), the following demonstrates basic usage:
 
     from microcosm.api import create_object_graph
-    from microcosm_postgres.context import Context, transaction
+    from microcosm_postgres.context import SessionContext, transaction
     from microcosm_postgres.example import Company
 
     # create the object graph
@@ -22,7 +22,7 @@ database exists (see below), the following demonstrates basic usage:
     [company_store] = graph.use("company_store")
 
     # set up a session
-    with Context(graph) as context:
+    with SessionContext(graph) as context:
 
         # drop and create database tables; *only* do this for testing
         context.recreate_all()

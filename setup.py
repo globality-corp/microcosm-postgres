@@ -2,7 +2,7 @@
 from setuptools import find_packages, setup
 
 project = "microcosm-postgres"
-version = "0.2.0"
+version = "0.3.0"
 
 setup(
     name=project,
@@ -30,7 +30,7 @@ setup(
     ],
     entry_points={
         "microcosm.factories": [
-            "Session = microcosm_postgres.factories:configure_sqlalchemy_sessionmaker",
+            "sessionmaker = microcosm_postgres.factories:configure_sqlalchemy_sessionmaker",
         ],
     },
     tests_require=[

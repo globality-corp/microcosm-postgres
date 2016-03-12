@@ -20,13 +20,14 @@ from contextlib import contextmanager
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
-from microcosm_postgres.context import Context
+from microcosm_postgres.context import SessionContext
 from microcosm_postgres.errors import (
     DuplicateModelError,
     ModelIntegrityError,
     ModelNotFoundError,
     ReferencedModelError
 )
+from microcosm_postgres.identifiers import new_object_id
 
 
 class Store(object):
@@ -40,7 +41,14 @@ class Store(object):
 
     @property
     def session(self):
-        return Context.session
+        return SessionContext.session
+
+    def new_object_id(self):
+        """
+        Injectable id generation to facilitate mocking.
+
+        """
+        return new_object_id()
 
     @contextmanager
     def flushing(self):
@@ -66,6 +74,8 @@ class Store(object):
 
         """
         with self.flushing():
+            if instance.id is None:
+                instance.id = self.new_object_id()
             self.session.add(instance)
         return instance
 
