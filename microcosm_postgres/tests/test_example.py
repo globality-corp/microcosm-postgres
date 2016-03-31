@@ -19,7 +19,7 @@ from microcosm_postgres.errors import (
     ModelNotFoundError,
     ReferencedModelError,
 )
-from microcosm_postgres.example import Company, Employee
+from microcosm_postgres.tests.example import Company, Employee
 
 
 class TestCompany(object):
@@ -284,3 +284,38 @@ class TestEmployee(object):
             [employee.id for employee in self.employee_store.search_by_company(company2.id)],
             contains_inanyorder(employee3.id)
         )
+
+    def test_search_filter_employees_by_company(self):
+        """
+        Should be able to filter searches using kwargs.
+
+        """
+        with transaction():
+            employee1 = Employee(
+                first="first",
+                last="last",
+                company_id=self.company.id,
+            ).create()
+            employee2 = Employee(
+                first="Jane",
+                last="Doe",
+                company_id=self.company.id,
+            ).create()
+            company2 = Company(name="other").create()
+            employee3 = Employee(
+                first="John",
+                last="Doe",
+                company_id=company2.id,
+            ).create()
+
+        assert_that(Employee.count(), is_(equal_to(3)))
+        assert_that(
+            [employee.id for employee in self.employee_store.search(company_id=self.company.id)],
+            contains_inanyorder(employee1.id, employee2.id)
+        )
+        assert_that(self.employee_store.count(company_id=self.company.id), is_(equal_to(2)))
+        assert_that(
+            [employee.id for employee in self.employee_store.search(company_id=company2.id)],
+            contains_inanyorder(employee3.id)
+        )
+        assert_that(self.employee_store.count(company_id=company2.id), is_(equal_to(1)))

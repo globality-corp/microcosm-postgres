@@ -41,6 +41,13 @@ class EmployeeStore(Store):
     def search_by_company(self, company_id):
         return self.search(Employee.company_id == company_id)
 
+    def _filter(self, query, **kwargs):
+        query = super(EmployeeStore, self)._filter(query, **kwargs)
+        company_id = kwargs.get("company_id")
+        if company_id is not None:
+            query = query.filter(Employee.company_id == company_id)
+        return query
+
 
 @binding("company_store")
 def configure_company_store(graph):

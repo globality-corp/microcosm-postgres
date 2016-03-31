@@ -122,12 +122,14 @@ class Store(object):
         """
         return self._delete(self.model_class.id == identifier)
 
-    def count(self, *criterion):
+    def count(self, *criterion, **kwargs):
         """
         Count the number of models matching some criterion.
 
         """
-        return self._query(*criterion).count()
+        query = self._query(*criterion)
+        query = self._filter(query, **kwargs)
+        return query.count()
 
     def search(self, *criterion, **kwargs):
         """
@@ -135,14 +137,26 @@ class Store(object):
 
         :param offset: pagination offset, if any
         :param limit: pagination limit, if any
+
         """
         query = self._query(*criterion)
+        query = self._filter(query, **kwargs)
+        return query.all()
+
+    def _filter(self, query, **kwargs):
+        """
+        Filter a query with user-supplied arguments.
+
+        :param offset: pagination offset, if any
+        :param limit: pagination limit, if any
+
+        """
         offset, limit = kwargs.get("offset"), kwargs.get("limit")
         if offset is not None:
             query = query.offset(offset)
         if limit is not None:
             query = query.limit(limit)
-        return query.all()
+        return query
 
     def _retrieve(self, *criterion):
         """
