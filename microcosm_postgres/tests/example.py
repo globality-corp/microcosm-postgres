@@ -42,11 +42,10 @@ class EmployeeStore(Store):
         return self.search(Employee.company_id == company_id)
 
     def _filter(self, query, **kwargs):
-        query = super(EmployeeStore, self)._filter(query, **kwargs)
         company_id = kwargs.get("company_id")
         if company_id is not None:
             query = query.filter(Employee.company_id == company_id)
-        return query
+        return super(EmployeeStore, self)._filter(query, **kwargs)
 
 
 @binding("company_store")

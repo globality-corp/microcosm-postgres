@@ -310,12 +310,12 @@ class TestEmployee(object):
 
         assert_that(Employee.count(), is_(equal_to(3)))
         assert_that(
-            [employee.id for employee in self.employee_store.search(company_id=self.company.id)],
+            [employee.id for employee in self.employee_store.search(company_id=self.company.id, offset=0, limit=10)],
             contains_inanyorder(employee1.id, employee2.id)
         )
-        assert_that(self.employee_store.count(company_id=self.company.id), is_(equal_to(2)))
+        assert_that(self.employee_store.count(company_id=self.company.id, offset=0, limit=10), is_(equal_to(2)))
         assert_that(
-            [employee.id for employee in self.employee_store.search(company_id=company2.id)],
+            [employee.id for employee in self.employee_store.search(company_id=company2.id, offset=0, limit=10)],
             contains_inanyorder(employee3.id)
         )
-        assert_that(self.employee_store.count(company_id=company2.id), is_(equal_to(1)))
+        assert_that(self.employee_store.count(company_id=company2.id, offset=0, limit=10), is_(equal_to(1)))
