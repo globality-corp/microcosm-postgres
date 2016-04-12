@@ -7,6 +7,8 @@ from hamcrest import (
     calling,
     contains_inanyorder,
     equal_to,
+    has_entry,
+    has_key,
     is_,
     raises,
 )
@@ -92,9 +94,31 @@ class TestCompany(object):
             company = Company(name="name").create()
 
         with transaction():
-            company.name = "new_name"
-            updated_company = company.update()
+            updated_company = Company(
+                id=company.id,
+                name="new_name",
+            ).update()
             assert_that(updated_company.name, is_(equal_to("new_name")))
+
+        with transaction():
+            retrieved_company = Company.retrieve(company.id)
+            assert_that(retrieved_company.name, is_(equal_to("new_name")))
+
+    def test_create_update_with_diff_company(self):
+        """
+        Should be able to update a company after creating it and get a diff.
+
+        """
+        with transaction():
+            company = Company(name="name").create()
+
+        with transaction():
+            _, diff = Company(
+                id=company.id,
+                name="new_name",
+            ).update_with_diff()
+            assert_that(diff, has_key("updated_at"))
+            assert_that(diff, has_entry("name", "new_name"))
 
         with transaction():
             retrieved_company = Company.retrieve(company.id)
@@ -186,13 +210,44 @@ class TestEmployee(object):
             ).create()
 
         with transaction():
-            employee.first = "Jane"
-            employee.last = "Doe"
-            employee.update()
+            updated_employee = Employee(
+                id=employee.id,
+                first="Jane",
+                last="Doe",
+            ).update()
+            assert_that(updated_employee.first, is_(equal_to("Jane")))
+            assert_that(updated_employee.last, is_(equal_to("Doe")))
+            assert_that(updated_employee.company_id, is_(equal_to(self.company.id)))
 
         with transaction():
             retrieved_employee = Employee.retrieve(employee.id)
             assert_that(retrieved_employee.first, is_(equal_to("Jane")))
+            assert_that(retrieved_employee.last, is_(equal_to("Doe")))
+            assert_that(Employee.count(), is_(equal_to(1)))
+
+    def test_update_with_diff_employee_that_exists(self):
+        """
+        Should be able to update an employee after creating it and get a diff.
+
+        """
+        with transaction():
+            employee = Employee(
+                first="first",
+                last="last",
+                company_id=self.company.id,
+            ).create()
+
+        with transaction():
+            _, diff = Employee(
+                id=employee.id,
+                last="Doe",
+            ).update_with_diff()
+            assert_that(diff, has_key("updated_at"))
+            assert_that(diff, has_entry("last", "Doe"))
+
+        with transaction():
+            retrieved_employee = Employee.retrieve(employee.id)
+            assert_that(retrieved_employee.first, is_(equal_to("first")))
             assert_that(retrieved_employee.last, is_(equal_to("Doe")))
             assert_that(Employee.count(), is_(equal_to(1)))
 
@@ -222,9 +277,11 @@ class TestEmployee(object):
             ).create()
 
         with transaction():
-            employee.first = "Jane"
-            employee.last = "Doe"
-            updated_employee = employee.replace()
+            updated_employee = Employee(
+                id=employee.id,
+                first="Jane",
+                last="Doe",
+            ).replace()
             assert_that(updated_employee.first, is_(equal_to("Jane")))
             assert_that(updated_employee.last, is_(equal_to("Doe")))
 

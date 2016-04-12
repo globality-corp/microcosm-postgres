@@ -16,11 +16,13 @@ CRUD conventions as much as possible.
 
 """
 from contextlib import contextmanager
+from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
 from microcosm_postgres.context import SessionContext
+from microcosm_postgres.diff import Version
 from microcosm_postgres.errors import (
     DuplicateModelError,
     ModelIntegrityError,
@@ -101,7 +103,23 @@ class Store(object):
         with self.flushing():
             instance = self.retrieve(identifier)
             self.session.merge(new_instance)
+            instance.updated_at = datetime.utcnow()
         return instance
+
+    def update_with_diff(self, identifier, new_instance):
+        """
+        Update an existing model with a new one.
+
+        :raises `ModelNotFoundError` if there is no existing model
+
+        """
+        with self.flushing():
+            instance = self.retrieve(identifier)
+            before = Version(instance)
+            self.session.merge(new_instance)
+            instance.updated_at = datetime.utcnow()
+            after = Version(instance)
+        return instance, before - after
 
     def replace(self, identifier, new_instance):
         """
@@ -109,6 +127,8 @@ class Store(object):
 
         """
         try:
+            # Note that `self.update()` ultimately calls merge, which will not enforce
+            # a strict replacement; absent fields will default to the current values.
             return self.update(identifier, new_instance)
         except ModelNotFoundError:
             return self.create(new_instance)
