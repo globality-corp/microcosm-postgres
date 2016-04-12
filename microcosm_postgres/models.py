@@ -8,12 +8,25 @@ from datetime import datetime
 from dateutil.tz import tzutc
 from uuid import uuid4
 
+from pytz import utc
 from sqlalchemy import Column, types
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import UUIDType
 
 
 Model = declarative_base()
+
+
+def utcnow():
+    """
+    Create a non-naive UTC datetime for the current time.
+
+    Needed when *updating* UTCDateTime values because result values are currently
+    converted to non-naive datetimes and SQLAlchemy cannot compare these values
+    with naive datetimes generated from `datetime.utcnow()`
+
+    """
+    return datetime.now(utc)
 
 
 class UTCDateTime(types.TypeDecorator):
@@ -50,8 +63,8 @@ class PrimaryKeyMixin(object):
 
     """
     id = Column(UUIDType(), primary_key=True, default=uuid4)
-    created_at = Column(UTCDateTime, default=datetime.utcnow, nullable=False)
-    updated_at = Column(UTCDateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at = Column(UTCDateTime, default=utcnow, nullable=False)
+    updated_at = Column(UTCDateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
 
 class IdentityMixin(object):
