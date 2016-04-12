@@ -2,9 +2,13 @@
 Compute ORM differences.
 
 """
+from collections import namedtuple
 from itertools import chain
 
 from sqlalchemy.orm import class_mapper, ColumnProperty
+
+
+Change = namedtuple("Change", ["before", "after"])
 
 
 class Version(dict):
@@ -33,7 +37,7 @@ class Delta(dict):
     """
     def __init__(self, left, right):
         super(Delta, self).__init__({
-            key: right.get(key)
+            key: Change(left.get(key), right.get(key))
             for key in set(chain(left.keys(), right.keys()))
             if left.get(key) != right.get(key)
         })

@@ -7,8 +7,6 @@ from hamcrest import (
     calling,
     contains_inanyorder,
     equal_to,
-    has_entry,
-    has_key,
     is_,
     raises,
 )
@@ -117,8 +115,9 @@ class TestCompany(object):
                 id=company.id,
                 name="new_name",
             ).update_with_diff()
-            assert_that(diff, has_key("updated_at"))
-            assert_that(diff, has_entry("name", "new_name"))
+            assert_that(diff.keys(), contains_inanyorder("name", "updated_at"))
+            assert_that(diff["name"].before, is_(equal_to("name")))
+            assert_that(diff["name"].after, is_(equal_to("new_name")))
 
         with transaction():
             retrieved_company = Company.retrieve(company.id)
@@ -242,8 +241,9 @@ class TestEmployee(object):
                 id=employee.id,
                 last="Doe",
             ).update_with_diff()
-            assert_that(diff, has_key("updated_at"))
-            assert_that(diff, has_entry("last", "Doe"))
+            assert_that(diff.keys(), contains_inanyorder("last", "updated_at"))
+            assert_that(diff["last"].before, is_(equal_to("last")))
+            assert_that(diff["last"].after, is_(equal_to("Doe")))
 
         with transaction():
             retrieved_employee = Employee.retrieve(employee.id)
