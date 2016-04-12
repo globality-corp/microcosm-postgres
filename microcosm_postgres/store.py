@@ -16,7 +16,6 @@ CRUD conventions as much as possible.
 
 """
 from contextlib import contextmanager
-from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
@@ -30,6 +29,7 @@ from microcosm_postgres.errors import (
     ReferencedModelError
 )
 from microcosm_postgres.identifiers import new_object_id
+from microcosm_postgres.models import utcnow
 
 
 class Store(object):
@@ -103,7 +103,7 @@ class Store(object):
         with self.flushing():
             instance = self.retrieve(identifier)
             self.session.merge(new_instance)
-            instance.updated_at = datetime.utcnow()
+            instance.updated_at = utcnow()
         return instance
 
     def update_with_diff(self, identifier, new_instance):
@@ -117,7 +117,7 @@ class Store(object):
             instance = self.retrieve(identifier)
             before = Version(instance)
             self.session.merge(new_instance)
-            instance.updated_at = datetime.utcnow()
+            instance.updated_at = utcnow()
             after = Version(instance)
         return instance, before - after
 
