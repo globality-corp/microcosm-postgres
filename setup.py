@@ -20,6 +20,7 @@ setup(
         "microcosm>=0.4.0",
         "psycopg2>=2.6.1",
         "python_dateutil>=2.5.0",
+        "pytz>=2016.3",
         "sqlalchemy>=1.0.12",
         "SQLAlchemy-Utils>=0.31.6",
     ],
