@@ -89,6 +89,9 @@ class SmartMixin(object):
     def update(self):
         return self.__class__.store.update(self.id, self)
 
+    def update_with_diff(self):
+        return self.__class__.store.update_with_diff(self.id, self)
+
     def replace(self):
         return self.__class__.store.replace(self.id, self)
 
