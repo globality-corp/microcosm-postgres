@@ -64,7 +64,7 @@ class PrimaryKeyMixin(object):
     """
     id = Column(UUIDType(), primary_key=True, default=uuid4)
     created_at = Column(UTCDateTime, default=utcnow, nullable=False)
-    updated_at = Column(UTCDateTime, default=utcnow, onupdate=datetime.utcnow, nullable=False)
+    updated_at = Column(UTCDateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
 
 class IdentityMixin(object):
