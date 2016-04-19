@@ -5,6 +5,7 @@ Persistence tests using examples.
 from hamcrest import (
     assert_that,
     calling,
+    contains,
     contains_inanyorder,
     equal_to,
     is_,
@@ -333,6 +334,10 @@ class TestEmployee(object):
             ).create()
 
         assert_that(Employee.count(), is_(equal_to(3)))
+        assert_that(
+            [employee.last for employee in self.employee_store.search_by_company(self.company.id)],
+            contains("Doe", "last"),
+        )
         assert_that(
             [employee.id for employee in self.employee_store.search_by_company(self.company.id)],
             contains_inanyorder(employee1.id, employee2.id)

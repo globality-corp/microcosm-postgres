@@ -41,6 +41,9 @@ class EmployeeStore(Store):
     def search_by_company(self, company_id):
         return self.search(Employee.company_id == company_id)
 
+    def _order_by(self, query):
+        return query.order_by(Employee.last.asc())
+
     def _filter(self, query, **kwargs):
         company_id = kwargs.get("company_id")
         if company_id is not None:

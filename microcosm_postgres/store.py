@@ -160,8 +160,18 @@ class Store(object):
 
         """
         query = self._query(*criterion)
+        query = self._order_by(query)
         query = self._filter(query, **kwargs)
         return query.all()
+
+    def _order_by(self, query):
+        """
+        Add an order by clause to a (search) query.
+
+        By default, is a noop.
+
+        """
+        return query
 
     def _filter(self, query, **kwargs):
         """
