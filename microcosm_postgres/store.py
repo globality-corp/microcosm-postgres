@@ -164,7 +164,7 @@ class Store(object):
         query = self._filter(query, **kwargs)
         return query.all()
 
-    def _order_by(self, query):
+    def _order_by(self, query, **kwargs):
         """
         Add an order by clause to a (search) query.
 
