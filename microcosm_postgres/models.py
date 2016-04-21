@@ -14,6 +14,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import UUIDType
 
 
+EPOCH = datetime(1970, 1, 1)
+
 Model = declarative_base()
 
 
@@ -65,6 +67,14 @@ class PrimaryKeyMixin(object):
     id = Column(UUIDType(), primary_key=True, default=uuid4)
     created_at = Column(UTCDateTime, default=utcnow, nullable=False)
     updated_at = Column(UTCDateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    @property
+    def created_timestamp(self):
+        return (self.created_at.replace(tzinfo=None) - EPOCH).total_seconds()
+
+    @property
+    def updated_timestamp(self):
+        return (self.updated_at.replace(tzinfo=None) - EPOCH).total_seconds()
 
 
 class IdentityMixin(object):
