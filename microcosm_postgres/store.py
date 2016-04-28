@@ -62,10 +62,11 @@ class Store(object):
             yield
             self.session.flush()
         except IntegrityError as error:
+            error_message = str(error)
             # There ought to be a cleaner way to capture this condition
-            if "duplicate" in error.message or "already exists" in error.message:
+            if "duplicate" in error_message or "already exists" in error_message:
                 raise DuplicateModelError(error)
-            elif "still referenced" in error.message:
+            elif "still referenced" in error_message:
                 raise ReferencedModelError(error)
             else:
                 raise ModelIntegrityError(error)

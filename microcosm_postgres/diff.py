@@ -38,6 +38,6 @@ class Delta(dict):
     def __init__(self, left, right):
         super(Delta, self).__init__({
             key: Change(left.get(key), right.get(key))
-            for key in set(chain(left.keys(), right.keys()))
+            for key in set(chain(list(left.keys()), list(right.keys())))
             if left.get(key) != right.get(key)
         })
