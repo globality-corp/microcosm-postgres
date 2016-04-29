@@ -116,7 +116,7 @@ class TestCompany(object):
                 id=company.id,
                 name="new_name",
             ).update_with_diff()
-            assert_that(diff.keys(), contains_inanyorder("name", "updated_at"))
+            assert_that(list(diff.keys()), contains_inanyorder("name", "updated_at"))
             assert_that(diff["name"].before, is_(equal_to("name")))
             assert_that(diff["name"].after, is_(equal_to("new_name")))
 
@@ -242,7 +242,7 @@ class TestEmployee(object):
                 id=employee.id,
                 last="Doe",
             ).update_with_diff()
-            assert_that(diff.keys(), contains_inanyorder("last", "updated_at"))
+            assert_that(list(diff.keys()), contains_inanyorder("last", "updated_at"))
             assert_that(diff["last"].before, is_(equal_to("last")))
             assert_that(diff["last"].after, is_(equal_to("Doe")))
 

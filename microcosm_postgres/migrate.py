@@ -44,6 +44,7 @@ from alembic import context
 from alembic.config import CommandLine, Config
 from alembic.script import ScriptDirectory
 
+from microcosm.errors import LockedGraphError, NotBoundError
 from microcosm_postgres.models import Model
 
 
@@ -186,9 +187,9 @@ def get_migrations_dir(graph):
     using the metaata's path resolution facilities.
 
     """
-    if hasattr(graph, "migrations_dir"):
+    try:
         migrations_dir = graph.migrations_dir
-    else:
+    except (LockedGraphError, NotBoundError):
         migrations_dir = graph.metadata.get_path("migrations")
 
     if not isdir(migrations_dir):
