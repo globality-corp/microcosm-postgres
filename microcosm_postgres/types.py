@@ -25,7 +25,7 @@ class EnumType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        return str(self.enum_class(value).name)
+        return unicode(self.enum_class(value).name)
 
     def process_result_value(self, value, dialect):
         if value is None:
