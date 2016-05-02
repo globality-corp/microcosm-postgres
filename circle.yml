@@ -2,14 +2,14 @@ general:
   artifacts:
      - "dist"
      - "cover"
-database:
-  pre:
-     - createuser example
-     - createdb -O example example_test_db
 dependencies:
   override:
     - pip install tox tox-pyenv
     - pyenv local 2.7.9 3.5.0  # Should correspond to pre-installed Python versions on CircleCI
+database:
+  pre:
+     - createuser example
+     - createdb -O example example_test_db
 test:
   override:
      - tox
