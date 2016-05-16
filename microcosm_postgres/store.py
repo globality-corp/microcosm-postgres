@@ -184,7 +184,7 @@ class Store(object):
         """
         offset, limit = kwargs.pop("offset", None), kwargs.pop("limit", None)
 
-        crit = [getattr(self.model_class, key)==value for key, value in kwargs.iteritems()]
+        crit = [getattr(self.model_class, key) == value for key, value in kwargs.iteritems()]
         if crit:
             query = query.filter(*crit)
 
