@@ -6,10 +6,11 @@ Every model must inherit from `Model` and should inherit from the `EntityMixin`.
 """
 from datetime import datetime
 from dateutil.tz import tzutc
+from time import time
 from uuid import uuid4
 
 from pytz import utc
-from sqlalchemy import Column, types
+from sqlalchemy import Column, Float, types
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import UUIDType
 
@@ -77,6 +78,24 @@ class PrimaryKeyMixin(object):
         return (self.updated_at.replace(tzinfo=None) - EPOCH).total_seconds()
 
 
+class UnixTimestampPrimaryKeyMixin(object):
+    """
+    Define a model with a randomized UUID primary key and tracking created/updated times.
+
+    """
+    id = Column(UUIDType(), primary_key=True, default=uuid4)
+    created_at = Column(Float, default=time, nullable=False)
+    updated_at = Column(Float, default=time, onupdate=time, nullable=False)
+
+    @property
+    def created_timestamp(self):
+        return self.created_at
+
+    @property
+    def updated_timestamp(self):
+        return self.updated_at
+
+
 class IdentityMixin(object):
     """
     Define model identity in terms of members.
@@ -132,6 +151,14 @@ class SmartMixin(object):
 
 
 class EntityMixin(PrimaryKeyMixin, IdentityMixin, SmartMixin):
+    """
+    Convention for persistent entities combining other mixins.
+
+    """
+    pass
+
+
+class UnixTimestampEntityMixin(UnixTimestampPrimaryKeyMixin, IdentityMixin, SmartMixin):
     """
     Convention for persistent entities combining other mixins.
 
