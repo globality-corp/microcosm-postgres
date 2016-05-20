@@ -29,7 +29,6 @@ from microcosm_postgres.errors import (
     ReferencedModelError
 )
 from microcosm_postgres.identifiers import new_object_id
-from microcosm_postgres.models import utcnow
 
 
 class Store(object):
