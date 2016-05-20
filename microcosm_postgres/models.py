@@ -69,6 +69,9 @@ class PrimaryKeyMixin(object):
     created_at = Column(UTCDateTime, default=utcnow, nullable=False)
     updated_at = Column(UTCDateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
+    def new_timestamp(self):
+        return utcnow()
+
     @property
     def created_timestamp(self):
         return (self.created_at.replace(tzinfo=None) - EPOCH).total_seconds()
@@ -86,6 +89,9 @@ class UnixTimestampPrimaryKeyMixin(object):
     id = Column(UUIDType(), primary_key=True, default=uuid4)
     created_at = Column(Float, default=time, nullable=False)
     updated_at = Column(Float, default=time, onupdate=time, nullable=False)
+
+    def new_timestamp(self):
+        return time()
 
     @property
     def created_timestamp(self):
