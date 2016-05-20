@@ -29,7 +29,6 @@ from microcosm_postgres.errors import (
     ReferencedModelError
 )
 from microcosm_postgres.identifiers import new_object_id
-from microcosm_postgres.models import utcnow
 
 
 class Store(object):
@@ -104,7 +103,7 @@ class Store(object):
         with self.flushing():
             instance = self.retrieve(identifier)
             self.session.merge(new_instance)
-            instance.updated_at = utcnow()
+            instance.updated_at = instance.new_timestamp()
         return instance
 
     def update_with_diff(self, identifier, new_instance):
@@ -118,7 +117,7 @@ class Store(object):
             instance = self.retrieve(identifier)
             before = Version(instance)
             self.session.merge(new_instance)
-            instance.updated_at = utcnow()
+            instance.updated_at = instance.new_timestamp()
             after = Version(instance)
         return instance, before - after
 
