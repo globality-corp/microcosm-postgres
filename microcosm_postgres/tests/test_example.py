@@ -20,7 +20,7 @@ from microcosm_postgres.errors import (
     ModelNotFoundError,
     ReferencedModelError,
 )
-from microcosm_postgres.tests.example import Company, Employee
+from microcosm_postgres.tests.example import Company, CompanyType, Employee
 
 
 class TestCompany(object):
@@ -43,10 +43,14 @@ class TestCompany(object):
 
         """
         with transaction():
-            company = Company(name="name").create()
+            company = Company(
+                name="name",
+                type=CompanyType.private,
+            ).create()
 
         retrieved_company = Company.retrieve(company.id)
         assert_that(retrieved_company.name, is_(equal_to("name")))
+        assert_that(retrieved_company.type, is_(equal_to(CompanyType.private)))
 
     def test_create_duplicate_company(self):
         """
