@@ -2,7 +2,7 @@
 from setuptools import find_packages, setup
 
 project = "microcosm-postgres"
-version = "0.13.0"
+version = "0.13.1"
 
 setup(
     name=project,
@@ -36,6 +36,7 @@ setup(
     },
     tests_require=[
         "coverage>=3.7.1",
+        "enum34>=1.1.6",
         "mock>=1.0.1",
         "PyHamcrest>=1.8.5",
     ],
