@@ -110,14 +110,25 @@ class IdentityMixin(object):
     especially for writing test assertions.
 
     """
+    def _members(self):
+        """
+        Return a dict of non-private members.
+
+        """
+        return {
+            key: value
+            for key, value in self.__dict__.items()
+            if not key.startswith("_")
+        }
+
     def __eq__(self, other):
-        return type(other) is type(self) and self.__dict__ == other.__dict__
+        return type(other) is type(self) and self._members() == other._members()
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __hash__(self):
-        return hash(self.__dict__)
+        return id(self) if self.id is None else hash(self.id)
 
 
 class SmartMixin(object):
