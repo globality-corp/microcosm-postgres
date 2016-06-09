@@ -2,6 +2,7 @@
 Custom types.
 
 """
+from enum import Enum
 from six import text_type
 
 from sqlalchemy.types import TypeDecorator, Unicode
@@ -27,7 +28,9 @@ class EnumType(TypeDecorator):
     def process_bind_param(self, value, dialect):
         if value is None:
             return None
-        return text_type(self.enum_class(value).name)
+        if isinstance(value, Enum):
+            return text_type(self.enum_class(value).name)
+        return text_type(self.enum_class[value].name)
 
     def process_result_value(self, value, dialect):
         if value is None:
