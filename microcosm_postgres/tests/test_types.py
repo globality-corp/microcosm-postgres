@@ -4,15 +4,12 @@ Test custom types.
 """
 from hamcrest import (
     assert_that,
-    calling,
     equal_to,
     is_,
     not_none,
-    raises,
 )
 from microcosm.api import create_object_graph
 from microcosm_postgres.context import SessionContext, transaction
-from microcosm_postgres.errors import ModelIntegrityError
 from microcosm_postgres.models import EntityMixin, Model
 from microcosm_postgres.store import Store
 from microcosm_postgres.types import Serial
