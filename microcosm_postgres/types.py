@@ -65,8 +65,7 @@ class Serial(UserDefinedType):
 
         """
         def process(value):
-            # As long as the column is declared non-null, this prevents explicit updates
-            return None
+            return value
         return process
 
     def result_processor(self, dialect, coltype):
