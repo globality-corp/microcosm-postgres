@@ -5,7 +5,7 @@ Custom types.
 from enum import Enum
 from six import text_type
 
-from sqlalchemy.types import TypeDecorator, Unicode
+from sqlalchemy.types import TypeDecorator, Unicode, UserDefinedType
 
 
 class EnumType(TypeDecorator):
@@ -36,3 +36,44 @@ class EnumType(TypeDecorator):
         if value is None:
             return None
         return self.enum_class[value]
+
+
+class Serial(UserDefinedType):
+    """
+    A postgres Serial type.
+
+    Intended for use with auto-incrementing immuatable columns that are NOT primary keys.
+
+    Use in conjuction with `server_default` to ensure that SQLAlchemy fetches the generated value.
+
+        mycolumn = Column(Serial, server_default=FetchedValue(), nullable=False)
+
+    """
+    def __init__(self, big=False):
+        self.big = big
+
+    def get_col_spec(self, **kwargs):
+        """
+        Column type is either SERIAL or BIGSERIAL.
+
+        """
+        return "BIGSERIAL" if self.big else "SERIAL"
+
+    def bind_processor(self, dialect):
+        """
+        Always bind null to coerce auto-generation.
+
+        """
+        def process(value):
+            # As long as the column is declared non-null, this prevents explicit updates
+            return None
+        return process
+
+    def result_processor(self, dialect, coltype):
+        """
+        Always return the generated value.
+
+        """
+        def process(value):
+            return value
+        return process
