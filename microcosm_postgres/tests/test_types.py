@@ -66,19 +66,37 @@ class TestSequential(object):
 
         assert_that(example.value, is_(equal_to(1)))
 
-    def test_update_sequence_not_allowed(self):
+    def test_retrieve_by_sequence_value(self):
         """
-        Updating a sequence is not allowed.
+        Retrieving existing values should return the previously generated sequence.
+
+        """
+        with transaction():
+            example = self.store.create(Sequential())
+
+        retrieved = self.store._query().filter(
+            Sequential.value == example.value,
+        ).one()
+        assert_that(retrieved.id, is_(equal_to(example.id)))
+
+    def test_update_sequence(self):
+        """
+        Updating a sequence is allowed (but not advised).
 
         """
         with transaction():
             example = self.store.create(Sequential())
 
         example.value = example.value + 1
-        assert_that(
-            calling(self.store.replace).with_args(example.id, example),
-            raises(ModelIntegrityError),
-        )
+
+        with transaction():
+            self.store.replace(example.id, example)
+
+        self.context.session.expunge(example)
+
+        example = self.store.retrieve(example.id)
+
+        assert_that(example.value, is_(equal_to(2)))
 
     def test_delete_does_not_reset_sequence(self):
         """
