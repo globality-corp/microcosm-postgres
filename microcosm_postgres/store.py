@@ -160,7 +160,7 @@ class Store(object):
 
         """
         query = self._query(*criterion)
-        query = self._order_by(query)
+        query = self._order_by(query, **kwargs)
         query = self._filter(query, **kwargs)
         return query.all()
 
