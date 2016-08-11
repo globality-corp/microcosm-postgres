@@ -51,6 +51,9 @@ class Store(object):
         """
         return new_object_id()
 
+    def expunge(self, instance):
+        return self.session.expunge(instance)
+
     @contextmanager
     def flushing(self):
         """
