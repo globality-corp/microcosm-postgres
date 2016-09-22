@@ -51,9 +51,6 @@ class Store(object):
         """
         return new_object_id()
 
-    def expunge(self, instance):
-        return self.session.expunge(instance)
-
     @contextmanager
     def flushing(self):
         """
@@ -105,7 +102,7 @@ class Store(object):
         """
         with self.flushing():
             instance = self.retrieve(identifier)
-            self.session.merge(new_instance)
+            self.merge(instance, new_instance)
             instance.updated_at = instance.new_timestamp()
         return instance
 
@@ -119,7 +116,7 @@ class Store(object):
         with self.flushing():
             instance = self.retrieve(identifier)
             before = Version(instance)
-            self.session.merge(new_instance)
+            self.merge(instance, new_instance)
             instance.updated_at = instance.new_timestamp()
             after = Version(instance)
         return instance, before - after
@@ -166,6 +163,12 @@ class Store(object):
         query = self._order_by(query, **kwargs)
         query = self._filter(query, **kwargs)
         return query.all()
+
+    def expunge(self, instance):
+        return self.session.expunge(instance)
+
+    def merge(self, instance, new_instance):
+        self.session.merge(new_instance)
 
     def _order_by(self, query, **kwargs):
         """
