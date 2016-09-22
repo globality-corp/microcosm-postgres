@@ -12,6 +12,7 @@ from microcosm.api import binding, defaults
 @defaults(
     host="localhost",
     port=5432,
+    database_name=None,
     # the default password; should be change in any non-trivial environment
     password="secret",
     # the size of the connection pool; 5 is the default
@@ -29,7 +30,10 @@ def configure_sqlalchemy_engine(graph):
 
     """
     # use different database name for testing
-    if graph.metadata.testing:
+    if graph.config.postgres.database_name is not None:
+        # we expect to use a database name driven by conventions, but allow configuration
+        database_name = graph.config.postgres.database_name
+    elif graph.metadata.testing:
         database_name = "{}_test_db".format(graph.metadata.name)
     else:
         database_name = "{}_db".format(graph.metadata.name)
