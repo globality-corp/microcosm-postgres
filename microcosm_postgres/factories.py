@@ -13,9 +13,11 @@ from microcosm.api import binding, defaults
     host="localhost",
     port=5432,
     database_name=None,
+    username=None,
     # the default password; should be change in any non-trivial environment
     password="secret",
     # the size of the connection pool; 5 is the default
+    driver="postgresql",
     pool_size=5,
     # the timeout waiting for a connection from the pool; 30 is the default and much too large
     pool_timeout=2,
@@ -38,11 +40,16 @@ def configure_sqlalchemy_engine(graph):
     else:
         database_name = "{}_db".format(graph.metadata.name)
 
-    # use the metadata name as the username
-    username = graph.metadata.name
+    if graph.config.postgres.username is not None:
+        username = graph.config.postgres.username
+    else:
+        # use the metadata name as the username
+        username = graph.metadata.name
+
     password = graph.config.postgres.password or ""
 
-    uri = "postgresql://{}:{}@{}:{}/{}".format(
+    uri = "{}://{}:{}@{}:{}/{}".format(
+        graph.config.postgres.driver,
         username,
         password,
         graph.config.postgres.host,
