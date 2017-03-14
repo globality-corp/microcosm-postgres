@@ -32,6 +32,10 @@ class DuplicateModelError(ModelIntegrityError):
         # conflict
         return 409
 
+    @property
+    def include_stack_trace(self):
+        return False
+
 
 class ReferencedModelError(ModelIntegrityError):
     """
@@ -43,6 +47,10 @@ class ReferencedModelError(ModelIntegrityError):
         # forbidden
         return 403
 
+    @property
+    def include_stack_trace(self):
+        return False
+
 
 class ModelNotFoundError(Exception):
     """
@@ -53,3 +61,7 @@ class ModelNotFoundError(Exception):
     def status_code(self):
         # not found
         return 404
+
+    @property
+    def include_stack_trace(self):
+        return False
