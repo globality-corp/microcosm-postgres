@@ -62,7 +62,7 @@ def configure_sqlalchemy_engine(graph):
         pool_size=graph.config.postgres.pool_size,
         pool_timeout=graph.config.postgres.pool_timeout,
         max_overflow=graph.config.postgres.max_overflow,
-        echo=graph.config.postgres.echo,
+        echo=bool(graph.config.postgres.echo),
     )
 
 
