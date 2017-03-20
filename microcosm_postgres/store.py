@@ -204,7 +204,12 @@ class Store(object):
         try:
             return self._query(*criterion).one()
         except NoResultFound as error:
-            raise ModelNotFoundError(error)
+            raise ModelNotFoundError(
+                "{} not found".format(
+                    self.model_class.__name__,
+                ),
+                error,
+            )
 
     def _delete(self, *criterion):
         """
