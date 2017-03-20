@@ -74,7 +74,10 @@ class TestCompany(object):
         with transaction():
             company.delete()
 
-        assert_that(calling(Company.retrieve).with_args(company.id), raises(ModelNotFoundError))
+        assert_that(
+            calling(Company.retrieve).with_args(company.id),
+            raises(ModelNotFoundError, pattern="Company not found"),
+        )
 
     def test_create_search_count_company(self):
         """
