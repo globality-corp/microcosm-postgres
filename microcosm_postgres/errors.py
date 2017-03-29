@@ -37,6 +37,21 @@ class DuplicateModelError(ModelIntegrityError):
         return False
 
 
+class MissingDependencyError(ModelIntegrityError):
+    """
+    An attempt to create a model didn't first create a depedency.
+
+    """
+    @property
+    def status_code(self):
+        # conflict
+        return 409
+
+    @property
+    def include_stack_trace(self):
+        return False
+
+
 class ReferencedModelError(ModelIntegrityError):
     """
     An attempt to delete a model didn't first delete references.

@@ -24,6 +24,7 @@ from microcosm_postgres.context import SessionContext
 from microcosm_postgres.diff import Version
 from microcosm_postgres.errors import (
     DuplicateModelError,
+    MissingDependencyError,
     ModelIntegrityError,
     ModelNotFoundError,
     ReferencedModelError
@@ -67,6 +68,8 @@ class Store(object):
                 raise DuplicateModelError(error)
             elif "still referenced" in error_message:
                 raise ReferencedModelError(error)
+            elif "is not present" in error_message:
+                raise MissingDependencyError(error)
             else:
                 raise ModelIntegrityError(error)
 
