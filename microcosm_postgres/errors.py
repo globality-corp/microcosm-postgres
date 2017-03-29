@@ -44,8 +44,8 @@ class MissingDependencyError(ModelIntegrityError):
     """
     @property
     def status_code(self):
-        # conflict
-        return 409
+        # not found
+        return 404
 
     @property
     def include_stack_trace(self):
