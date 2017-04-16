@@ -190,7 +190,12 @@ class Store(object):
         :param limit: pagination limit, if any
 
         """
-        offset, limit = kwargs.get("offset"), kwargs.get("limit")
+        offset, limit = kwargs.pop("offset", None), kwargs.pop("limit", None)
+
+        crit = [getattr(self.model_class, key) == value for key, value in kwargs.iteritems()]
+        if crit:
+            query = query.filter(*crit)
+
         if offset is not None:
             query = query.offset(offset)
         if limit is not None:
