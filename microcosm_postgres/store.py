@@ -225,6 +225,7 @@ class Store(object):
         """
         with self.flushing():
             count = self._query(*criterion).delete()
+            self.session.commit()
         if count == 0:
             raise ModelNotFoundError
         return True
