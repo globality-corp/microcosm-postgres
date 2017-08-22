@@ -53,14 +53,15 @@ class SessionContext(object):
 
 
 @contextmanager
-def transaction():
+def transaction(commit=True):
     """
     Wrap a context with a commit/rollback.
 
     """
     try:
         yield SessionContext.session
-        SessionContext.session.commit()
+        if commit:
+            SessionContext.session.commit()
     except:
         if SessionContext.session:
             SessionContext.session.rollback()
@@ -75,5 +76,20 @@ def transactional(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         with transaction():
+            return func(*args, **kwargs)
+    return wrapper
+
+
+def maybe_transactional(func):
+    """
+    Variant of `transactional` that will not commit if there's an argument `commit` with a falsey value.
+
+    Useful for dry-run style operations.
+
+    """
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        commit = kwargs.get("commit", True)
+        with transaction(commit=commit):
             return func(*args, **kwargs)
     return wrapper
