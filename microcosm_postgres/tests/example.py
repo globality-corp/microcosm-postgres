@@ -8,7 +8,6 @@ from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy_utils import UUIDType
 
 from microcosm.api import binding
-from microcosm_postgres.dag import Edge
 from microcosm_postgres.models import EntityMixin, Model
 from microcosm_postgres.store import Store
 from microcosm_postgres.types import EnumType
@@ -45,7 +44,7 @@ class Employee(EntityMixin, Model):
 
     @property
     def edges(self):
-        yield Edge(self.company_id, self.id)
+        yield (self.company_id, self.id)
 
 
 class CompanyStore(Store):

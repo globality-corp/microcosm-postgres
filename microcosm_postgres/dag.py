@@ -2,7 +2,7 @@
 Directed Acyclic Graph of model objects.
 
 """
-from collections import OrderedDict
+from collections import namedtuple, OrderedDict
 from inspect import getmro
 
 from inflection import underscore
@@ -11,19 +11,7 @@ from microcosm_postgres.cloning import clone, DEFAULT_IGNORE
 from microcosm_postgres.toposort import toposorted
 
 
-class Edge:
-    def __init__(self, from_id, to_id):
-        self.from_id = from_id
-        self.to_id = to_id
-
-    def _members(self):
-        return
-
-    def __eq__(self, other):
-        return {self.from_id, self.to_id} == {other.from_id, other.to_id}
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
+Edge = namedtuple("Edge", ["from_id", "to_id"])
 
 
 class DAG:
@@ -74,10 +62,10 @@ class DAG:
 
         """
         self.edges = [
-            edge
+            edge if isinstance(edge, Edge) else Edge(*edge)
             for node in self.nodes.values()
             for edge in getattr(node, "edges", [])
-            if edge.from_id in self.nodes and edge.to_id in self.nodes
+            if edge[0] in self.nodes and edge[1] in self.nodes
         ]
         return self
 
