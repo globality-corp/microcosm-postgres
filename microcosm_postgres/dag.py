@@ -84,7 +84,7 @@ class DAG:
             clone(node, self.substitutions, ignore)
             for node in toposorted(self.nodes, self.edges)
         ]
-        return DAG.from_nodes(*nodes)
+        return DAG(nodes=nodes, substitutions=self.substitutions).build_edges()
 
 
 @add_metaclass(ABCMeta)
