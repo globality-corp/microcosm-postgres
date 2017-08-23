@@ -7,13 +7,7 @@ from sqlalchemy.inspection import inspect
 from microcosm_postgres.identifiers import new_object_id
 
 
-DEFAULT_IGNORE = (
-    "created_at",
-    "updated_at",
-)
-
-
-def clone(instance, substitutions, ignore=DEFAULT_IGNORE):
+def clone(instance, substitutions, ignore=()):
     """
     Clone an instance of `Model` that uses `IdentityMixin`.
 
