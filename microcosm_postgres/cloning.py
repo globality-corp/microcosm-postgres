@@ -21,7 +21,7 @@ def clone(instance, substitutions, ignore=()):
     def substitute(value):
         try:
             hash(value)
-        except:
+        except Exception:
             return value
         else:
             return substitutions.get(value, value)

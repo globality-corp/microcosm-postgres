@@ -388,3 +388,25 @@ class TestEmployee(object):
             contains_inanyorder(employee3.id)
         )
         assert_that(self.employee_store.count(company_id=company2.id, offset=0, limit=10), is_(equal_to(1)))
+
+    def test_create_search_first(self):
+        """
+        Should be able to search for the first item with matching criteria after creation.
+
+        """
+        with transaction():
+            Employee(
+                first="first",
+                last="last",
+                company_id=self.company.id,
+            ).create()
+            Employee(
+                first="Jane",
+                last="Doe",
+                company_id=self.company.id,
+            ).create()
+
+        retrieved_real_employee = self.employee_store.search_first(first="Jane")
+        assert_that(retrieved_real_employee.last, is_(equal_to("Doe")))
+        retrieved_fake_employee = self.employee_store.search_first(first="Tarzan")
+        assert_that(retrieved_fake_employee, is_(equal_to(None)))
