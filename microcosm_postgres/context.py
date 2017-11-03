@@ -62,7 +62,7 @@ def transaction(commit=True):
         yield SessionContext.session
         if commit:
             SessionContext.session.commit()
-    except:
+    except Exception:
         if SessionContext.session:
             SessionContext.session.rollback()
         raise
