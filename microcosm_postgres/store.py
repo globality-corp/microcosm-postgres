@@ -167,9 +167,9 @@ class Store(object):
         query = self._filter(query, **kwargs)
         return query.all()
 
-    def search_exact(self, *criterion, **kwargs):
+    def search_first(self, *criterion, **kwargs):
         """
-        Returns the first exact match based on criteria or None.
+        Returns the first match based on criteria or None.
 
         """
         query = self._query(*criterion)
