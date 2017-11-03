@@ -171,9 +171,6 @@ class Store(object):
         """
         Returns the first exact match based on criteria or None.
 
-        :param offset: pagination offset, if any
-        :param limit: pagination limit, if any
-
         """
         query = self._query(*criterion)
         query = self._order_by(query, **kwargs)
