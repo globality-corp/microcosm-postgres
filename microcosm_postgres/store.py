@@ -167,6 +167,19 @@ class Store(object):
         query = self._filter(query, **kwargs)
         return query.all()
 
+    def search_exact(self, *criterion, **kwargs):
+        """
+        Returns the first exact match based on criteria or None.
+
+        :param offset: pagination offset, if any
+        :param limit: pagination limit, if any
+
+        """
+        query = self._query(*criterion)
+        query = self._order_by(query, **kwargs)
+        query = self._filter(query, **kwargs)
+        return query.first()
+
     def expunge(self, instance):
         return self.session.expunge(instance)
 
