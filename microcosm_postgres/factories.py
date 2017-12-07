@@ -26,9 +26,9 @@ from microcosm.api import binding, defaults
     # echo all SQL
     echo=False,
     # use SSL to connect to postgres
-    force_ssl=False
+    force_ssl=False,
     # specify certificate path
-    ssl_cert_path="/path/to/my/pem" #XXX not sure yet where to put this or how to specify it
+    ssl_cert_path="/path/to/my/pem", #XXX not sure yet where to put this or how to specify it
 )
 def configure_sqlalchemy_engine(graph):
     """
