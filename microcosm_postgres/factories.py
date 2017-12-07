@@ -25,6 +25,10 @@ from microcosm.api import binding, defaults
     max_overflow=10,
     # echo all SQL
     echo=False,
+    # use SSL to connect to postgres
+    force_ssl=False,
+    # specify certificate path
+    ssl_cert_path="/path/to/my/pem" #XXX not sure yet where to put this or how to specify it
 )
 def configure_sqlalchemy_engine(graph):
     """
@@ -57,13 +61,21 @@ def configure_sqlalchemy_engine(graph):
         database_name,
     )
 
-    return create_engine(
+    connection_args = dict(
         uri,
         pool_size=graph.config.postgres.pool_size,
         pool_timeout=graph.config.postgres.pool_timeout,
         max_overflow=graph.config.postgres.max_overflow,
         echo=bool(graph.config.postgres.echo),
     )
+
+    if graph.config.postgres.force_ssl:
+        connection_args["connect_args"] = {
+            "sslmode": "require",
+            "sslrootcert": ssl_cert_path,
+        }
+
+    return create_engine(**connection_args)
 
 
 def configure_sqlalchemy_sessionmaker(graph):
