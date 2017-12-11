@@ -2,12 +2,14 @@
 Factory that configures SQLAlchemy for PostgreSQL.
 
 """
+from distutils.util import strtobool
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from microcosm.api import binding, defaults
 
-MISSING=object()
+MISSING = object()
 
 
 @binding("postgres")
@@ -69,13 +71,13 @@ def configure_sqlalchemy_engine(graph):
         pool_size=graph.config.postgres.pool_size,
         pool_timeout=graph.config.postgres.pool_timeout,
         max_overflow=graph.config.postgres.max_overflow,
-        echo=bool(graph.config.postgres.echo),
+        echo=strtobool(graph.config.postgres.echo),
         connect_args=dict(
-            sslmode="require" if graph.config.postgres.require_ssl else "prefer"
+            sslmode="require" if strtobool(graph.config.postgres.require_ssl) else "prefer"
         )
     )
 
-    if graph.config.postgres.verify_ssl and graph.config.postgres.require_ssl:
+    if strtobool(graph.config.postgres.verify_ssl) and strtobool(graph.config.postgres.require_ssl):
         if graph.config.postgres.ssl_cert_path == MISSING:
             raise
         connection_args["connect_args"] = {
