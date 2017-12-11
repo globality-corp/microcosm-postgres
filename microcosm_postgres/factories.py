@@ -73,7 +73,7 @@ def configure_sqlalchemy_engine(graph):
         )
     )
 
-    if graph.config.postgres.verify_ssl:
+    if graph.config.postgres.verify_ssl and graph.config.postgres.require_ssl:
         connection_args["connect_args"] = {
             "sslmode": "verify-full",
             "sslrootcert": graph.config.postgres.ssl_cert_path,
