@@ -2,10 +2,14 @@
 Factory that configures SQLAlchemy for PostgreSQL.
 
 """
+from distutils.util import strtobool
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from microcosm.api import binding, defaults
+
+MISSING = object()
 
 
 @binding("postgres")
@@ -24,7 +28,13 @@ from microcosm.api import binding, defaults
     # the number of extra connections over/above the pool size; 10 is the default
     max_overflow=10,
     # echo all SQL
-    echo=False,
+    echo="False",
+    # always use SSL to connect to postgres
+    require_ssl="False",
+    # verify SSL certificate
+    verify_ssl="False",
+    # specify certificate path
+    ssl_cert_path=MISSING,
 )
 def configure_sqlalchemy_engine(graph):
     """
@@ -57,13 +67,25 @@ def configure_sqlalchemy_engine(graph):
         database_name,
     )
 
-    return create_engine(
-        uri,
+    connection_args = dict(
         pool_size=graph.config.postgres.pool_size,
         pool_timeout=graph.config.postgres.pool_timeout,
         max_overflow=graph.config.postgres.max_overflow,
-        echo=bool(graph.config.postgres.echo),
+        echo=strtobool(graph.config.postgres.echo),
+        connect_args=dict(
+            sslmode="require" if strtobool(graph.config.postgres.require_ssl) else "prefer"
+        )
     )
+
+    if strtobool(graph.config.postgres.verify_ssl) and strtobool(graph.config.postgres.require_ssl):
+        if graph.config.postgres.ssl_cert_path == MISSING:
+            raise
+        connection_args["connect_args"] = {
+            "sslmode": "verify-full",
+            "sslrootcert": graph.config.postgres.ssl_cert_path,
+        }
+
+    return create_engine(uri, **connection_args)
 
 
 def configure_sqlalchemy_sessionmaker(graph):
