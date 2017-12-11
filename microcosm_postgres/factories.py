@@ -30,7 +30,7 @@ MISSING = object()
     # echo all SQL
     echo="False",
     # always use SSL to connect to postgres
-    require_ssl="True",
+    require_ssl="False",
     # verify SSL certificate
     verify_ssl="False",
     # specify certificate path
