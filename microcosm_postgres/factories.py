@@ -9,8 +9,6 @@ from sqlalchemy.orm import sessionmaker
 
 from microcosm.api import binding, defaults
 
-MISSING = object()
-
 
 @binding("postgres")
 @defaults(
@@ -34,7 +32,7 @@ MISSING = object()
     # verify SSL certificate
     verify_ssl="False",
     # specify certificate path
-    ssl_cert_path=MISSING,
+    ssl_cert_path=None,
 )
 def configure_sqlalchemy_engine(graph):
     """
@@ -78,8 +76,8 @@ def configure_sqlalchemy_engine(graph):
     )
 
     if strtobool(graph.config.postgres.verify_ssl) and strtobool(graph.config.postgres.require_ssl):
-        if graph.config.postgres.ssl_cert_path == MISSING:
-            raise
+        if not graph.config.postgres.ssl_cert_path:
+            raise Exception("No SSL certificate defined")
         connection_args["connect_args"] = {
             "sslmode": "verify-full",
             "sslrootcert": graph.config.postgres.ssl_cert_path,
