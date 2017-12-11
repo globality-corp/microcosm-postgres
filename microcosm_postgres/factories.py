@@ -28,11 +28,11 @@ MISSING = object()
     # the number of extra connections over/above the pool size; 10 is the default
     max_overflow=10,
     # echo all SQL
-    echo=False,
+    echo="False",
     # always use SSL to connect to postgres
-    require_ssl=True,
+    require_ssl="True",
     # verify SSL certificate
-    verify_ssl=False,
+    verify_ssl="False",
     # specify certificate path
     ssl_cert_path=MISSING,
 )
