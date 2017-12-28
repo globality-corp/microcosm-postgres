@@ -41,6 +41,10 @@ class TestCloning(object):
             self.company.id: self.company,
             self.employee.id: self.employee,
         }))
+        assert_that(dag.nodes_map, has_entries({
+            'companies': [self.company],
+            'employees': [self.employee],
+        }))
         assert_that(dag.edges, contains(
             Edge(self.company.id, self.employee.id),
         ))
