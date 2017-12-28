@@ -7,7 +7,7 @@ from collections import namedtuple, OrderedDict
 from inspect import getmro
 from six import add_metaclass
 
-from inflection import underscore
+from inflection import pluralize, underscore
 
 from microcosm_postgres.cloning import clone
 from microcosm_postgres.toposort import toposorted
@@ -54,7 +54,7 @@ class DAG:
         dct = dict()
         for node in self.nodes.values():
             cls = next(base for base in getmro(node.__class__) if "__tablename__" in base.__dict__)
-            key = getattr(cls, "__alias__", underscore(cls.__name__))
+            key = getattr(cls, "__alias__", underscore(pluralize(cls.__name__)))
             dct.setdefault(key, []).append(node)
         return dct
 
