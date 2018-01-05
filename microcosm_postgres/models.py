@@ -60,7 +60,7 @@ class UTCDateTime(types.TypeDecorator):
             return value
 
 
-class PrimaryKeyMixin(object):
+class PrimaryKeyMixin:
     """
     Define a model with a randomized UUID primary key and tracking created/updated times.
 
@@ -81,7 +81,7 @@ class PrimaryKeyMixin(object):
         return (self.updated_at.replace(tzinfo=None) - EPOCH).total_seconds()
 
 
-class UnixTimestampPrimaryKeyMixin(object):
+class UnixTimestampPrimaryKeyMixin:
     """
     Define a model with a randomized UUID primary key and tracking created/updated times.
 
@@ -102,7 +102,7 @@ class UnixTimestampPrimaryKeyMixin(object):
         return self.updated_at
 
 
-class IdentityMixin(object):
+class IdentityMixin:
     """
     Define model identity in terms of members.
 
@@ -131,7 +131,7 @@ class IdentityMixin(object):
         return id(self) if self.id is None else hash(self.id)
 
 
-class SmartMixin(object):
+class SmartMixin:
     """
     Define a model with short cuts for CRUD operations against its `Store`.
 

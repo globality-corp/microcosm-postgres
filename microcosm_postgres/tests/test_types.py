@@ -22,7 +22,7 @@ class Sequential(EntityMixin, Model):
     value = Column(Serial, server_default=FetchedValue(), nullable=False)
 
 
-class TestSequential(object):
+class TestSequential:
 
     def setup(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")

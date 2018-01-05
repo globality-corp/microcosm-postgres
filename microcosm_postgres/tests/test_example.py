@@ -23,7 +23,7 @@ from microcosm_postgres.errors import (
 from microcosm_postgres.tests.example import Company, CompanyType, Employee
 
 
-class TestCompany(object):
+class TestCompany:
 
     def setup(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
@@ -160,7 +160,7 @@ class TestCompany(object):
         assert_that(calling(company.delete), raises(ReferencedModelError))
 
 
-class TestEmployee(object):
+class TestEmployee:
 
     def setup(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")

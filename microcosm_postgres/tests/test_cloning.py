@@ -10,7 +10,7 @@ from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.tests.example import Company, CompanyType
 
 
-class TestCloning(object):
+class TestCloning:
 
     def setup(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
