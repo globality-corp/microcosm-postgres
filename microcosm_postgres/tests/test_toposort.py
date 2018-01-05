@@ -8,7 +8,7 @@ from microcosm_postgres.dag import Edge
 from microcosm_postgres.toposort import toposorted
 
 
-class Node(object):
+class Node:
     def __init__(self, id):
         self.id = id
 

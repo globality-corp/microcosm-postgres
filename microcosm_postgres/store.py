@@ -32,7 +32,7 @@ from microcosm_postgres.errors import (
 from microcosm_postgres.identifiers import new_object_id
 
 
-class Store(object):
+class Store:
 
     def __init__(self, graph, model_class):
         self.graph = graph

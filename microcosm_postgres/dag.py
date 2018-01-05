@@ -5,7 +5,6 @@ Directed Acyclic Graph of model objects.
 from abc import ABCMeta, abstractmethod
 from collections import namedtuple, OrderedDict
 from inspect import getmro
-from six import add_metaclass
 
 from inflection import underscore
 
@@ -87,8 +86,7 @@ class DAG:
         return DAG(nodes=nodes, substitutions=self.substitutions).build_edges()
 
 
-@add_metaclass(ABCMeta)
-class DAGCloner(object):
+class DAGCloner(metaclass=ABCMeta):
     """
     A process for building and cloning a DAG.
 

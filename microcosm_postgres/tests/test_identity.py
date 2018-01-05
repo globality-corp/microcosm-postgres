@@ -14,7 +14,7 @@ from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.tests.example import Company, CompanyType
 
 
-class TestIdentity(object):
+class TestIdentity:
 
     def setup(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")

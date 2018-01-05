@@ -8,7 +8,7 @@ from functools import wraps
 from microcosm_postgres.operations import new_session, recreate_all
 
 
-class SessionContext(object):
+class SessionContext:
     """
     Save current session in well-known location and provide context management.
 
