@@ -101,7 +101,15 @@ class DAGCloner(metaclass=ABCMeta):
     def __init__(self, graph):
         pass
 
-    def explain(self, **kwargs):
+    @property
+    def anonymizers(self):
+        """
+        Model-based modifying functions that remove sensitive data when cloning
+
+        """
+        return dict()
+
+    def explain(self, anonymize=False, **kwargs):
         """
         Generate a "dry run" DAG of that state that WILL be cloned.
 
@@ -109,7 +117,22 @@ class DAGCloner(metaclass=ABCMeta):
         root = self.retrieve_root(**kwargs)
         children = self.iter_children(root, **kwargs)
         dag = DAG.from_nodes(root, *children)
+        if anonymize:
+            dag = self.anonymize(dag)
         return self.add_edges(dag)
+
+    def anonymize(self, dag):
+        if self.anonymizers:
+            for model_name, model_nodes in dag.nodes_map.items():
+                anonymize_func = self.anonymizers.get(model_name)
+                if anonymize_func:
+                    for node in model_nodes:
+                        # disconnect node from session so it won't get modified
+                        node.store.expunge(node)
+
+                        anonymize_func(node)
+
+        return dag
 
     def clone(self, substitutions, **kwargs):
         """
@@ -120,6 +143,24 @@ class DAGCloner(metaclass=ABCMeta):
         dag.substitutions.update(substitutions)
         cloned_dag = dag.clone(ignore=self.ignore)
         return self.update_nodes(self.add_edges(cloned_dag))
+
+    def replace_dag(self, nodes_map, edges, **kwargs):
+        """
+        Create objects from an input DAG.
+        Assuming all relevant stores are accessible.
+
+        """
+        nodes = [
+            getattr(self, '{}_store'.format(model_name)).model_class(**node)
+            for model_name, model_nodes in nodes_map.items()
+            for node in model_nodes
+        ]
+        dag = DAG(nodes=nodes, edges=[Edge(**edge) for edge in edges])
+
+        for node in dag.ordered_nodes:
+            node.create()
+
+        return dag
 
     @abstractmethod
     def retrieve_root(self, **kwargs):
