@@ -8,7 +8,7 @@ from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy_utils import UUIDType
 
 from microcosm.api import binding
-from microcosm_postgres.dag import DAGCloner
+from microcosm_postgres.dag import StoreDAGCloner
 from microcosm_postgres.models import EntityMixin, Model
 from microcosm_postgres.store import Store
 from microcosm_postgres.types import EnumType
@@ -71,10 +71,9 @@ class EmployeeStore(Store):
 
 def employee_anonymizer(node):
     node.last = "doe"
-    return node
 
 
-class CompanyDAGStore(DAGCloner):
+class CompanyDAGStore(StoreDAGCloner):
     def __init__(self, graph):
         super().__init__(graph)
         self.company_store = graph.company_store

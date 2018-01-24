@@ -78,8 +78,8 @@ class TestCloning:
 
     def _model_to_dict(self, instance):
         return {
-            c.name: getattr(instance, c.name)
-            for c in instance.__table__.columns
+            column.name: getattr(instance, column.name)
+            for column in instance.__table__.columns
         }
 
     def test_create_from_serialized_dag(self):
