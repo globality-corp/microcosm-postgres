@@ -101,7 +101,15 @@ class DAGCloner(metaclass=ABCMeta):
     def __init__(self, graph):
         pass
 
-    def explain(self, **kwargs):
+    @property
+    def anonymizers(self):
+        """
+        Model-based modifying functions that remove sensitive data when cloning
+
+        """
+        return dict()
+
+    def explain(self, anonymize=False, **kwargs):
         """
         Generate a "dry run" DAG of that state that WILL be cloned.
 
@@ -109,7 +117,23 @@ class DAGCloner(metaclass=ABCMeta):
         root = self.retrieve_root(**kwargs)
         children = self.iter_children(root, **kwargs)
         dag = DAG.from_nodes(root, *children)
+        dag = self.anonymize(dag, anonymize)
         return self.add_edges(dag)
+
+    def anonymize(self, dag, anonymize):
+        if not anonymize or not self.anonymizers:
+            return dag
+
+        for model_name, model_nodes in dag.nodes_map.items():
+            anonymize_func = self.anonymizers.get(model_name)
+            if anonymize_func:
+                for node in model_nodes:
+                    # disconnect node from session so it won't get modified
+                    node.store.expunge(node)
+
+                    anonymize_func(node)
+
+        return dag
 
     def clone(self, substitutions, **kwargs):
         """
@@ -120,6 +144,31 @@ class DAGCloner(metaclass=ABCMeta):
         dag.substitutions.update(substitutions)
         cloned_dag = dag.clone(ignore=self.ignore)
         return self.update_nodes(self.add_edges(cloned_dag))
+
+    @abstractmethod
+    def to_model(self, model_alias, node):
+        """
+        Convert an an input node mapping into a model.
+
+        """
+        pass
+
+    def replace_dag(self, nodes_map, edges, **kwargs):
+        """
+        Create objects from an input DAG.
+
+        """
+        nodes = [
+            self.to_model(model_alias, node)
+            for model_alias, model_nodes in nodes_map.items()
+            for node in model_nodes
+        ]
+        dag = DAG(nodes=nodes, edges=[Edge(**edge) for edge in edges])
+
+        for node in dag.ordered_nodes:
+            node.create()
+
+        return dag
 
     @abstractmethod
     def retrieve_root(self, **kwargs):
@@ -166,3 +215,18 @@ class DAGCloner(metaclass=ABCMeta):
 
         """
         return dag
+
+
+class StoreDAGCloner(DAGCloner):
+    """
+    An extension of DAGCloner that uses store binding convention
+    to automatically convert a deserialized nodes back into models.
+
+    """
+
+    def to_model(self, model_alias, node):
+        """
+        Use bound stores to convert an an input node mapping into a model.
+
+        """
+        return getattr(self, '{}_store'.format(model_alias)).model_class(**node)
