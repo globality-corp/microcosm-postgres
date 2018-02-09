@@ -18,7 +18,7 @@ setup(
     install_requires=[
         "alembic>=0.9.6",
         "microcosm>=2.0.0",
-        "psycopg2>=2.7.3.2",
+        "psycopg2-binary>=2.7.4",
         "python_dateutil>=2.6.1",
         "pytz>=2017.3",
         "SQLAlchemy>=1.2.0",
