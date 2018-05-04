@@ -34,9 +34,13 @@ from microcosm_postgres.identifiers import new_object_id
 
 class Store:
 
-    def __init__(self, graph, model_class):
+    def __init__(self, graph, model_class, auto_filter_fields=()):
         self.graph = graph
         self.model_class = model_class
+        self.auto_filters = {
+            auto_filter_field.name: auto_filter_field
+            for auto_filter_field in auto_filter_fields
+        }
         # Give the model class a backref to allow model-oriented CRUD
         # short cuts while still having an abstraction layer we can replace.
         self.model_class.store = self
@@ -200,6 +204,14 @@ class Store:
         :param limit: pagination limit, if any
 
         """
+        for key, value in kwargs.items():
+            if value is None:
+                continue
+            field = self.auto_filters.get(key)
+            if field is None:
+                continue
+            query = query.filter(field == value)
+
         offset, limit = kwargs.get("offset"), kwargs.get("limit")
         if offset is not None:
             query = query.offset(offset)
