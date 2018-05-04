@@ -41,9 +41,13 @@ class Store:
             auto_filter_field.name: auto_filter_field
             for auto_filter_field in auto_filter_fields
         }
-        # Give the model class a backref to allow model-oriented CRUD
-        # short cuts while still having an abstraction layer we can replace.
-        self.model_class.store = self
+        self.assign_model_class_store()
+
+    def assign_model_class_store(self):
+        if self.model_class:
+            # Give the model class a backref to allow model-oriented CRUD
+            # short cuts while still having an abstraction layer we can replace.
+            self.model_class.store = self
 
     @property
     def session(self):
