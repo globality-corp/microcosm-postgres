@@ -70,7 +70,7 @@ class EmployeeStore(Store):
 
 @binding("company_store")
 def configure_company_store(graph):
-    return CompanyStore(graph, Company)
+    return CompanyStore(graph, Company, [Company.name])
 
 
 @binding("employee_store")

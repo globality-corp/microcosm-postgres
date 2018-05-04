@@ -7,6 +7,7 @@ from hamcrest import (
     calling,
     contains,
     contains_inanyorder,
+    empty,
     equal_to,
     is_,
     raises,
@@ -51,6 +52,23 @@ class TestCompany:
         retrieved_company = Company.retrieve(company.id)
         assert_that(retrieved_company.name, is_(equal_to("name")))
         assert_that(retrieved_company.type, is_(equal_to(CompanyType.private)))
+
+    def test_search_company(self):
+        """
+        Should be able to search for companies.
+
+        """
+        with transaction():
+            company = Company(
+                name="name",
+                type=CompanyType.private,
+            ).create()
+
+        assert_that(Company.search(), contains(company))
+        assert_that(Company.search(name="whatever"), is_(empty()))
+        assert_that(Company.search(name=company.name), contains(company))
+        # NB: filtering is skipped if None
+        assert_that(Company.search(name=None), contains(company))
 
     def test_create_duplicate_company(self):
         """
