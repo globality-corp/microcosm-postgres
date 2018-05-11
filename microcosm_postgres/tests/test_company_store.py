@@ -36,6 +36,7 @@ class TestCompany:
 
     def teardown(self):
         self.context.close()
+        self.graph.postgres.dispose()
 
     def test_create_retrieve_company(self):
         """
@@ -114,7 +115,9 @@ class TestCompany:
 
         """
         with transaction():
-            company = Company(name="name").create()
+            company = Company(
+                name="name",
+            ).create()
 
         with transaction():
             updated_company = Company(
@@ -166,8 +169,14 @@ class TestCompany:
 
         """
         with transaction():
-            Company(name="name1").create()
-            company = Company(name="name2").create()
+            Company(
+                name="name1",
+            ).create()
+            company = Company(
+                name="name2",
+            ).create()
+
+        with transaction():
             Employee(
                 first="first",
                 last="last",

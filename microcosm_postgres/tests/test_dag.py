@@ -17,40 +17,41 @@ class TestDAG:
         self.company_store = self.graph.company_store
         self.employee_store = self.graph.employee_store
 
-        self.context = SessionContext(self.graph)
-        self.context.recreate_all()
-        self.context.open()
+        with SessionContext(self.graph) as context:
+            context.recreate_all()
 
-        with transaction():
-            self.company = Company(
-                name="name",
-                type=CompanyType.private,
-            ).create()
-            self.employee = Employee(
-                first="first",
-                last="last",
-                company_id=self.company.id,
-            ).create()
+            with transaction():
+                self.company = Company(
+                    name="name",
+                    type=CompanyType.private,
+                ).create()
+                self.employee = Employee(
+                    first="first",
+                    last="last",
+                    company_id=self.company.id,
+                ).create()
 
     def teardown(self):
-        self.context.close()
+        self.graph.postgres.dispose()
 
     def test_explain(self):
-        dag = DAG.from_nodes(self.company, self.employee)
-        assert_that(dag.nodes, has_entries({
-            self.company.id: self.company,
-            self.employee.id: self.employee,
-        }))
-        assert_that(dag.edges, contains(
-            Edge(self.company.id, self.employee.id),
-        ))
-        assert_that(dag.ordered_nodes, contains(
-            self.company,
-            self.employee,
-        ))
+        with SessionContext(self.graph):
+            dag = DAG.from_nodes(self.company, self.employee)
+            assert_that(dag.nodes, has_entries({
+                self.company.id: self.company,
+                self.employee.id: self.employee,
+            }))
+            assert_that(dag.edges, contains(
+                Edge(self.company.id, self.employee.id),
+            ))
+            assert_that(dag.ordered_nodes, contains(
+                self.company,
+                self.employee,
+            ))
 
     def test_clone(self):
-        substitutions = dict(name="newname")
-        dag = DAG.from_nodes(self.company, self.employee).clone(substitutions)
-        assert_that(dag.nodes, has_length(2))
-        assert_that(dag.edges, has_length(1))
+        with SessionContext(self.graph):
+            substitutions = dict(name="newname")
+            dag = DAG.from_nodes(self.company, self.employee).clone(substitutions)
+            assert_that(dag.nodes, has_length(2))
+            assert_that(dag.edges, has_length(1))

@@ -26,40 +26,38 @@ class TestSerialType:
 
     def setup(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
-        self.context = SessionContext(self.graph)
-        self.context.recreate_all()
-        self.context.open()
         self.store = Store(self.graph, WithSerial)
 
+        with SessionContext(self.graph) as context:
+            context.recreate_all()
+
     def teardown(self):
-        self.context.close()
+        self.graph.postgres.dispose()
 
     def test_create_sequence_values(self):
         """
         Creating new values should trigger auto increments.
 
         """
-        with transaction():
-            examples = [
-                self.store.create(WithSerial())
-                for _ in range(10)
-            ]
+        with SessionContext(self.graph), transaction():
+            for index in range(10):
+                example = self.store.create(WithSerial())
 
-        for index, example in enumerate(examples):
-            assert_that(examples[index].id, is_(not_none()))
-            assert_that(examples[index].value, is_(equal_to(index + 1)))
+                assert_that(example.id, is_(not_none()))
+                assert_that(example.value, is_(equal_to(index + 1)))
 
     def test_retrieve_sequence_value(self):
         """
         Retrieving existing values should return the previously generated sequence.
 
         """
-        with transaction():
-            example = self.store.create(WithSerial())
+        with SessionContext(self.graph) as context:
+            with transaction():
+                example = self.store.create(WithSerial())
 
-        self.context.session.expunge(example)
+            context.session.expunge(example)
 
-        example = self.store.retrieve(example.id)
+            example = self.store.retrieve(example.id)
 
         assert_that(example.value, is_(equal_to(1)))
 
@@ -68,12 +66,14 @@ class TestSerialType:
         Retrieving existing values should return the previously generated sequence.
 
         """
-        with transaction():
-            example = self.store.create(WithSerial())
+        with SessionContext(self.graph):
+            with transaction():
+                example = self.store.create(WithSerial())
 
-        retrieved = self.store._query().filter(
-            WithSerial.value == example.value,
-        ).one()
+            retrieved = self.store._query().filter(
+                WithSerial.value == example.value,
+            ).one()
+
         assert_that(retrieved.id, is_(equal_to(example.id)))
 
     def test_update_sequence(self):
@@ -81,17 +81,18 @@ class TestSerialType:
         Updating a sequence is allowed (but not advised).
 
         """
-        with transaction():
-            example = self.store.create(WithSerial())
+        with SessionContext(self.graph) as context:
+            with transaction():
+                example = self.store.create(WithSerial())
 
-        example.value = example.value + 1
+            example.value = example.value + 1
 
-        with transaction():
-            self.store.replace(example.id, example)
+            with transaction():
+                self.store.replace(example.id, example)
 
-        self.context.session.expunge(example)
+            context.session.expunge(example)
 
-        example = self.store.retrieve(example.id)
+            example = self.store.retrieve(example.id)
 
         assert_that(example.value, is_(equal_to(2)))
 
@@ -100,13 +101,14 @@ class TestSerialType:
         Deletion does not reset the sequence.
 
         """
-        with transaction():
-            example = self.store.create(WithSerial())
+        with SessionContext(self.graph):
+            with transaction():
+                example = self.store.create(WithSerial())
 
-        with transaction():
-            self.store.delete(example.id)
+            with transaction():
+                self.store.delete(example.id)
 
-        with transaction():
-            example = self.store.create(WithSerial())
+            with transaction():
+                example = self.store.create(WithSerial())
 
-        assert_that(example.value, is_(equal_to(2)))
+            assert_that(example.value, is_(equal_to(2)))

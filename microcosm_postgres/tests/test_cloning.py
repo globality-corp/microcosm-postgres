@@ -22,6 +22,7 @@ class TestCloning:
 
     def teardown(self):
         self.context.close()
+        self.graph.postgres.dispose()
 
     def test_clone(self):
         with transaction():
@@ -29,8 +30,6 @@ class TestCloning:
                 name="name",
                 type=CompanyType.private,
             ).create()
-
-        with transaction():
             copy = clone(company, dict(name="newname"))
 
         assert_that(copy.id, is_not(equal_to(company.id)))

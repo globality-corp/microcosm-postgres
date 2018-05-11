@@ -16,11 +16,23 @@ class Employee(EntityMixin, Model):
     first = Column(String(255), nullable=False)
     last = Column(String(255), nullable=False)
     other = Column(String(255), nullable=True)
-    company_id = Column(UUIDType, ForeignKey('company.id'), nullable=False)
+    company_id = Column(UUIDType, ForeignKey("company.id"), nullable=False)
 
     @property
     def edges(self):
         yield (self.company_id, self.id)
+
+
+class EmployeeData(EntityMixin, Model):
+    """
+    An employee data record containing sensitive data (accessed with a different engine).
+
+    """
+    __tablename__ = "employee_data"
+    __engine__ = "secret"
+
+    employee_id = Column(UUIDType, ForeignKey("employee.id"), nullable=False)
+    password = Column(String(255), nullable=False)
 
 
 @binding("employee_store")
@@ -43,3 +55,10 @@ class EmployeeStore(Store):
         if first is not None:
             query = query.filter(Employee.first == first)
         return super(EmployeeStore, self)._filter(query, **kwargs)
+
+
+@binding("employee_data_store")
+class EmployeeDataStore(Store):
+
+    def __init__(self, graph):
+        super().__init__(graph, EmployeeData)

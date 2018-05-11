@@ -98,6 +98,15 @@ def choose_args(metadata, config):
     )
 
 
+def make_engine(metadata, config):
+    uri = choose_uri(metadata, config.postgres)
+    args = choose_args(metadata, config.postgres)
+    return create_engine(
+        uri,
+        **args,
+    )
+
+
 @binding("postgres")
 @defaults(
     # database name will be chosen automatically if not supplied
@@ -130,9 +139,4 @@ def choose_args(metadata, config):
     ssl_cert_path=None,
 )
 def configure_engine(graph):
-    uri = choose_uri(graph.metadata, graph.config.postgres)
-    args = choose_args(graph.metadata, graph.config.postgres)
-    return create_engine(
-        uri,
-        **args,
-    )
+    return make_engine(graph.metadata, graph.config)

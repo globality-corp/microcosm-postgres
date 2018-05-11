@@ -31,13 +31,17 @@ class TestEmployeeStore:
         self.context = SessionContext(self.graph)
         self.context.recreate_all()
         self.context.open()
+
         with transaction():
-            self.company = Company(name="name").create()
+            self.company = Company(
+                name="name"
+            ).create()
 
     def teardown(self):
         self.context.close()
+        self.graph.postgres.dispose()
 
-    def test_create_employee(self):
+    def test_create(self):
         """
         Should be able to retrieve an employee after creating it.
 
@@ -53,7 +57,7 @@ class TestEmployeeStore:
         assert_that(retrieved_employee.first, is_(equal_to("first")))
         assert_that(retrieved_employee.last, is_(equal_to("last")))
 
-    def test_create_employee_without_company(self):
+    def test_create_requires_foreign_key(self):
         """
         Should not be able to create an employee without a company.
 
@@ -65,7 +69,7 @@ class TestEmployeeStore:
 
         assert_that(calling(employee.create), raises(ModelIntegrityError))
 
-    def test_update_employee_that_exists(self):
+    def test_update(self):
         """
         Should be able to update an employee after creating it.
 
@@ -93,7 +97,7 @@ class TestEmployeeStore:
             assert_that(retrieved_employee.last, is_(equal_to("Doe")))
             assert_that(Employee.count(), is_(equal_to(1)))
 
-    def test_update_with_diff_employee_that_exists(self):
+    def test_update_with_diff(self):
         """
         Should be able to update an employee after creating it and get a diff.
 
@@ -120,7 +124,7 @@ class TestEmployeeStore:
             assert_that(retrieved_employee.last, is_(equal_to("Doe")))
             assert_that(Employee.count(), is_(equal_to(1)))
 
-    def test_update_employee_that_does_not_exit(self):
+    def test_update_not_found(self):
         """
         Should not be able to update an employee that does not exist.
 
@@ -133,7 +137,7 @@ class TestEmployeeStore:
             )
             assert_that(calling(employee.update), raises(ModelNotFoundError))
 
-    def test_replace_employee_that_exists(self):
+    def test_replace(self):
         """
         Should be able to replace an employee after creating it.
 
@@ -160,7 +164,7 @@ class TestEmployeeStore:
             assert_that(retrieved_employee.last, is_(equal_to("Doe")))
             assert_that(Employee.count(), is_(equal_to(1)))
 
-    def test_replace_employee_that_does_not_exist(self):
+    def test_replace_not_found(self):
         """
         Should be able to replace an employee that does not exist.
 
@@ -178,7 +182,7 @@ class TestEmployeeStore:
             assert_that(retrieved_employee.last, is_(equal_to("last")))
             assert_that(Employee.count(), is_(equal_to(1)))
 
-    def test_search_for_employees_by_company(self):
+    def test_search_by_company(self):
         """
         Should be able to retrieve an employee after creating it.
 
@@ -194,7 +198,9 @@ class TestEmployeeStore:
                 last="Doe",
                 company_id=self.company.id,
             ).create()
-            company2 = Company(name="other").create()
+            company2 = Company(
+                name="other",
+            ).create()
             employee3 = Employee(
                 first="John",
                 last="Doe",
@@ -215,7 +221,7 @@ class TestEmployeeStore:
             contains_inanyorder(employee3.id)
         )
 
-    def test_search_filter_employees_by_company(self):
+    def test_search_by_company_kwargs(self):
         """
         Should be able to filter searches using kwargs.
 
@@ -231,7 +237,9 @@ class TestEmployeeStore:
                 last="Doe",
                 company_id=self.company.id,
             ).create()
-            company2 = Company(name="other").create()
+            company2 = Company(
+                name="other",
+            ).create()
             employee3 = Employee(
                 first="John",
                 last="Doe",
@@ -250,7 +258,7 @@ class TestEmployeeStore:
         )
         assert_that(self.employee_store.count(company_id=company2.id, offset=0, limit=10), is_(equal_to(1)))
 
-    def test_create_search_first(self):
+    def test_search_first(self):
         """
         Should be able to search for the first item with matching criteria after creation.
 

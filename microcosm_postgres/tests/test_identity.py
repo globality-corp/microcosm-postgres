@@ -27,17 +27,15 @@ class TestIdentity:
         self.graph.postgres.dispose()
 
     def _make_company(self):
-        with SessionContext(self.graph):
-            with transaction():
-                return Company(
-                    name="name",
-                    type=CompanyType.private,
-                ).create()
+        with SessionContext(self.graph), transaction():
+            return Company(
+                name="name",
+                type=CompanyType.private,
+            ).create()
 
     def _retrieve_company(self, company_id):
         with SessionContext(self.graph):
-            with transaction():
-                return Company.retrieve(company_id)
+            return Company.retrieve(company_id)
 
     def test_identity(self):
         # load companies in different sessions
