@@ -16,20 +16,20 @@ from microcosm_postgres.types import Serial
 from sqlalchemy import Column, FetchedValue
 
 
-class Sequential(EntityMixin, Model):
+class WithSerial(EntityMixin, Model):
     __tablename__ = "example"
 
     value = Column(Serial, server_default=FetchedValue(), nullable=False)
 
 
-class TestSequential:
+class TestSerialType:
 
     def setup(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
         self.context = SessionContext(self.graph)
         self.context.recreate_all()
         self.context.open()
-        self.store = Store(self.graph, Sequential)
+        self.store = Store(self.graph, WithSerial)
 
     def teardown(self):
         self.context.close()
@@ -41,7 +41,7 @@ class TestSequential:
         """
         with transaction():
             examples = [
-                self.store.create(Sequential())
+                self.store.create(WithSerial())
                 for _ in range(10)
             ]
 
@@ -55,7 +55,7 @@ class TestSequential:
 
         """
         with transaction():
-            example = self.store.create(Sequential())
+            example = self.store.create(WithSerial())
 
         self.context.session.expunge(example)
 
@@ -69,10 +69,10 @@ class TestSequential:
 
         """
         with transaction():
-            example = self.store.create(Sequential())
+            example = self.store.create(WithSerial())
 
         retrieved = self.store._query().filter(
-            Sequential.value == example.value,
+            WithSerial.value == example.value,
         ).one()
         assert_that(retrieved.id, is_(equal_to(example.id)))
 
@@ -82,7 +82,7 @@ class TestSequential:
 
         """
         with transaction():
-            example = self.store.create(Sequential())
+            example = self.store.create(WithSerial())
 
         example.value = example.value + 1
 
@@ -101,12 +101,12 @@ class TestSequential:
 
         """
         with transaction():
-            example = self.store.create(Sequential())
+            example = self.store.create(WithSerial())
 
         with transaction():
             self.store.delete(example.id)
 
         with transaction():
-            example = self.store.create(Sequential())
+            example = self.store.create(WithSerial())
 
         assert_that(example.value, is_(equal_to(2)))

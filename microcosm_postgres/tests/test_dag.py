@@ -7,10 +7,10 @@ from microcosm.api import create_object_graph
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.dag import DAG, Edge
-from microcosm_postgres.tests.example import Company, CompanyType, Employee
+from microcosm_postgres.tests.fixtures import Company, CompanyType, Employee
 
 
-class TestCloning:
+class TestDAG:
 
     def setup(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")

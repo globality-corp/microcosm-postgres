@@ -11,7 +11,7 @@ from hamcrest import (
 
 from microcosm.api import create_object_graph
 from microcosm_postgres.context import SessionContext, transaction
-from microcosm_postgres.tests.example import Company, CompanyType
+from microcosm_postgres.tests.fixtures import Company, CompanyType
 
 
 class TestIdentity:
