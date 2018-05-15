@@ -23,7 +23,7 @@ class TestEmployeeDataStore:
                 ),
             ),
             sessionmaker=dict(
-                multi=True,
+                engine_routing_strategy="model_engine_routing_strategy",
             ),
         )
         self.graph = create_object_graph(
@@ -32,6 +32,7 @@ class TestEmployeeDataStore:
             import_name="microcosm_postgres",
             loader=self.loader,
         )
+        self.graph.use("sessionmaker")
         self.company_store = self.graph.company_store
         self.employee_store = self.graph.employee_store
         self.employee_data_store = self.graph.employee_data_store

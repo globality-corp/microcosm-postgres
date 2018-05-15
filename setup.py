@@ -31,6 +31,8 @@ setup(
     ],
     entry_points={
         "microcosm.factories": [
+            "default_engine_routing_strategy = microcosm_postgres.factories.engine_routing_strategy:DefaultEngineRoutingStrategy",  # noqa: E501
+            "model_engine_routing_strategy = microcosm_postgres.factories.engine_routing_strategy:ModelEngineRoutingStrategy",  # noqa: E501
             "postgres = microcosm_postgres.factories.engine:configure_engine",
             "sessionmaker = microcosm_postgres.factories.sessionmaker:configure_sessionmaker",
         ],

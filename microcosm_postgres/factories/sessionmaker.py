@@ -1,29 +1,20 @@
 from microcosm.api import defaults
-from microcosm.config.types import boolean
-from microcosm.config.validation import typed
 from microcosm.scoping.factories import ScopedFactory
-from microcosm.scoping.proxies import ScopedProxy
 from sqlalchemy.orm import Session
 from sqlalchemy.orm import sessionmaker
 
 
-ENGINE = "__engine__"
-
-
-def unwrap(bind):
-    return bind.__component__ if isinstance(bind, ScopedProxy) else bind
-
-
 @defaults(
-    # enable multiple engines (binds) via ScopedFactory
-    multi=typed(boolean, default_value=False)
+    engine_routing_strategy="default_engine_routing_strategy",
 )
 def configure_sessionmaker(graph):
     """
     Create the SQLAlchemy session class.
 
     """
-    if graph.config.sessionmaker.multi:
+    engine_routing_strategy = getattr(graph, graph.config.sessionmaker.engine_routing_strategy)
+
+    if engine_routing_strategy.supports_multiple_binds:
         ScopedFactory.infect(graph, "postgres")
 
     class RoutingSession(Session):
@@ -34,14 +25,6 @@ def configure_sessionmaker(graph):
 
         """
         def get_bind(self, mapper=None, clause=None):
-            if mapper and mapper.class_:
-                try:
-                    engine_name = getattr(mapper.class_, ENGINE)
-                    with graph.postgres.scoped_to(engine_name):
-                        return unwrap(graph.postgres)
-                except AttributeError:
-                    pass
-
-            return unwrap(graph.postgres)
+            return engine_routing_strategy.get_bind(mapper, clause)
 
     return sessionmaker(class_=RoutingSession)
