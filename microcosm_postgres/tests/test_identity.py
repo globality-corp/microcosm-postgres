@@ -11,7 +11,7 @@ from hamcrest import (
 
 from microcosm.api import create_object_graph
 from microcosm_postgres.context import SessionContext, transaction
-from microcosm_postgres.tests.example import Company, CompanyType
+from microcosm_postgres.tests.fixtures import Company, CompanyType
 
 
 class TestIdentity:
@@ -27,17 +27,15 @@ class TestIdentity:
         self.graph.postgres.dispose()
 
     def _make_company(self):
-        with SessionContext(self.graph):
-            with transaction():
-                return Company(
-                    name="name",
-                    type=CompanyType.private,
-                ).create()
+        with SessionContext(self.graph), transaction():
+            return Company(
+                name="name",
+                type=CompanyType.private,
+            ).create()
 
     def _retrieve_company(self, company_id):
         with SessionContext(self.graph):
-            with transaction():
-                return Company.retrieve(company_id)
+            return Company.retrieve(company_id)
 
     def test_identity(self):
         # load companies in different sessions

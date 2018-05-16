@@ -7,7 +7,7 @@ from microcosm.api import create_object_graph
 
 from microcosm_postgres.cloning import clone
 from microcosm_postgres.context import SessionContext, transaction
-from microcosm_postgres.tests.example import Company, CompanyType
+from microcosm_postgres.tests.fixtures import Company, CompanyType
 
 
 class TestCloning:
@@ -22,6 +22,7 @@ class TestCloning:
 
     def teardown(self):
         self.context.close()
+        self.graph.postgres.dispose()
 
     def test_clone(self):
         with transaction():
@@ -29,8 +30,6 @@ class TestCloning:
                 name="name",
                 type=CompanyType.private,
             ).create()
-
-        with transaction():
             copy = clone(company, dict(name="newname"))
 
         assert_that(copy.id, is_not(equal_to(company.id)))
