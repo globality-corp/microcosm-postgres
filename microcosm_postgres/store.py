@@ -18,7 +18,7 @@ CRUD conventions as much as possible.
 from contextlib import contextmanager
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import NoResultFound
+from sqlalchemy.orm.exc import FlushError, NoResultFound
 
 from microcosm_postgres.context import SessionContext
 from microcosm_postgres.diff import Version
@@ -69,10 +69,14 @@ class Store:
         try:
             yield
             self.session.flush()
-        except IntegrityError as error:
+        except (FlushError, IntegrityError) as error:
             error_message = str(error)
             # There ought to be a cleaner way to capture this condition
-            if "duplicate" in error_message or "already exists" in error_message:
+            if "duplicate" in error_message:
+                raise DuplicateModelError(error)
+            if "already exists" in error_message:
+                raise DuplicateModelError(error)
+            if "conflicts with" in error_message and "identity key" in error_message:
                 raise DuplicateModelError(error)
             elif "still referenced" in error_message:
                 raise ReferencedModelError(error)
