@@ -279,3 +279,25 @@ class TestEmployeeStore:
         assert_that(retrieved_real_employee.last, is_(equal_to("Doe")))
         retrieved_fake_employee = self.employee_store.search_first(first="Tarzan")
         assert_that(retrieved_fake_employee, is_(equal_to(None)))
+
+    def test_search_ofer_by(self):
+        """
+        Should be sorted by created_at in descending order.
+
+        """
+        with transaction():
+            employee1 = Employee(
+                first="first",
+                last="last",
+                company_id=self.company.id,
+            ).create()
+            employee2 = Employee(
+                first="Jane",
+                last="Doe",
+                company_id=self.company.id,
+            ).create()
+
+        assert_that(
+            [employee.id for employee in self.employee_store.search()],
+            contains(employee2.id, employee1.id)
+        )

@@ -199,10 +199,10 @@ class Store:
         """
         Add an order by clause to a (search) query.
 
-        By default, is a noop.
+        By default, is by created_at.
 
         """
-        return query
+        return query.order_by(self.model_class.created_at.desc())
 
     def _filter(self, query, **kwargs):
         """
