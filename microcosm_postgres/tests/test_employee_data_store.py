@@ -24,6 +24,9 @@ class TestEmployeeDataStore:
                     host=environ["EXAMPLE__POSTGRES__HOST"],
                 ),
             ),
+            postgres=dict(
+                host=environ["EXAMPLE__POSTGRES__HOST"],
+            ),
             sessionmaker=dict(
                 engine_routing_strategy="model_engine_routing_strategy",
             ),

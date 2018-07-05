@@ -33,7 +33,7 @@ def test_configure_engine():
 
     assert_that(
         str(engine.url),
-        ends_with(":5432/example_test_db")),
+        ends_with(":5432/example_test_db"),
     )
 
     # engine supports connections
