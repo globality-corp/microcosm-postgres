@@ -2,6 +2,7 @@
   "type": "python-library",
   "params": {
     "name": "microcosm-postgres",
+    "app_name": "example",
     "database": "postgres"
   }
 }
