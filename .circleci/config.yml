@@ -145,16 +145,22 @@ workflows:
             # run for all branches and tags
             tags:
               only: /.*/
-      - lint:
+      - build_base_docker:
           requires:
             - checkout
+          filters:
+            # run for all branches and tags
+            tags:
+      - lint:
+          requires:
+            - build_base_docker
           filters:
             # run for all branches and tags
             tags:
               only: /.*/
       - test:
           requires:
-            - checkout
+            - build_base_docker
           filters:
             # run for all branches and tags
             tags:
