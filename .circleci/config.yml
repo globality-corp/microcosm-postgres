@@ -70,6 +70,7 @@ jobs:
           # install dependencies for loading ecs task definitions
           command: |
             eval $(aws ecr get-login --no-include-email)
+            sudo pip install --upgrade elcaminoreal
             sudo pip install --extra-index-url $EXTRA_INDEX_URL globality-build==2018.23.1rc3
             python -m middlefield globality build build-gen --config .globality/build.json
             python -m middlefield globality build docker-base --repo microcosm-postgres
