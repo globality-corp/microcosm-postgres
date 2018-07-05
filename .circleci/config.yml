@@ -151,6 +151,7 @@ workflows:
           filters:
             # run for all branches and tags
             tags:
+              only: /.*/
       - lint:
           requires:
             - build_base_docker
@@ -171,4 +172,4 @@ workflows:
             - lint
           filters:
             tags:
-              only: /[0-9]+(\.[0-9]+)*/
+              only: /^[0-9]+(\.[0-9]+)*/
