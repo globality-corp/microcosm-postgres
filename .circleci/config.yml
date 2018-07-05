@@ -171,5 +171,7 @@ workflows:
             - test
             - lint
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /^THIS-DOES-NOT-MATCH$/
