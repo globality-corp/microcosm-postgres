@@ -8,6 +8,8 @@ from hamcrest import (
     is_,
 )
 
+from os import environ
+
 from microcosm.api import create_object_graph, load_from_dict
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.tests.fixtures import Company, Employee, EmployeeData
@@ -19,8 +21,11 @@ class TestEmployeeDataStore:
         self.loader = load_from_dict(
             secret=dict(
                 postgres=dict(
-                    host="127.0.0.1",
+                    host=environ["EXAMPLE__POSTGRES__HOST"],
                 ),
+            ),
+            postgres=dict(
+                host=environ["EXAMPLE__POSTGRES__HOST"],
             ),
             sessionmaker=dict(
                 engine_routing_strategy="model_engine_routing_strategy",

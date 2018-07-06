@@ -7,6 +7,8 @@ from hamcrest import (
     equal_to,
     instance_of,
     is_,
+    starts_with,
+    ends_with,
 )
 
 from microcosm.api import create_object_graph
@@ -26,7 +28,12 @@ def test_configure_engine():
     # engine has expected configuration
     assert_that(
         str(engine.url),
-        is_(equal_to("postgresql://example:@localhost:5432/example_test_db")),
+        starts_with("postgresql://example:@"),
+    )
+
+    assert_that(
+        str(engine.url),
+        ends_with(":5432/example_test_db"),
     )
 
     # engine supports connections

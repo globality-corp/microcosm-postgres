@@ -92,3 +92,8 @@ docs/_build/
 
 # PyBuilder
 target/
+
+/.dockerignore
+/Dockerfile.template
+/build.*/
+/entrypoint.sh
