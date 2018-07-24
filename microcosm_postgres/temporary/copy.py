@@ -19,14 +19,16 @@ def copy_table(from_table, name):
 
     schema = metadata.schema
 
+    columns = [
+        column.copy(schema=schema)
+        for column in from_table.columns
+    ]
+
     return Table(
         name,
         metadata,
         schema=schema,
         comment=from_table.comment,
-        *(
-            column.copy(schema=schema)
-            for column in from_table.columns
-        ),
+        *columns,
         **from_table.kwargs,
     )

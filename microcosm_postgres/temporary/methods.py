@@ -6,16 +6,27 @@ from microcosm_postgres.context import SessionContext
 from sqlalchemy.dialects.postgresql import insert
 
 
+def to_dict(item, columns):
+    column_values = (
+        (column, getattr(item, column.name))
+        for column in columns
+    )
+    return dict(
+        (column.name, value)
+        for column, value in column_values
+        # discard nulls if defaulted
+        if value is not None or not column.default
+    )
+
+
 def insert_many(self, items):
     """
     Insert many items at once into a temporary table.
 
-    Items are expected to extend `IdentityMixin`
-
     """
     return SessionContext.session.execute(
         self.insert(values=[
-            item._members()
+            to_dict(item, self.c)
             for item in items
         ]),
     ).rowcount
