@@ -4,6 +4,7 @@ Temporary table support.
 """
 from types import MethodType
 
+from microcosm_postgres.temporary.copy import copy_table
 from microcosm_postgres.temporary.methods import (
     insert_many,
     select_from,
@@ -18,17 +19,10 @@ def create_temporary_table(from_table, name=None, on_commit=None):
     """
     from_table = from_table.__table__ if hasattr(from_table, "__table__") else from_table
 
-    metadata = from_table.metadata
     name = name or f"temporary_{from_table.name}"
 
     # copy the origin table into the metadata with the new name.
-    if name in metadata.tables:
-        temporary_table = metadata.tables[name]
-    else:
-        temporary_table = from_table.tometadata(
-            metadata=metadata,
-            name=name,
-        )
+    temporary_table = copy_table(from_table, name)
 
     # change create clause to: CREATE TEMPORARY TABLE
     temporary_table._prefixes = list(from_table._prefixes)
