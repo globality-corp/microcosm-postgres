@@ -18,4 +18,7 @@ def transient(from_table):
     bind = SessionContext.session.connection()
     transient_table.create(bind=bind)
 
-    yield transient_table
+    try:
+        yield transient_table
+    finally:
+        transient_table.metadata.remove(transient_table)
