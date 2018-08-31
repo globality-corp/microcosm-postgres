@@ -208,10 +208,13 @@ class Store:
         """
         Filter a query with user-supplied arguments.
 
-        :param offset: pagination offset, if any
-        :param limit: pagination limit, if any
-
         """
+        query = self._auto_filter(query, **kwargs)
+        # NB: pagination must go last
+        query = self._paginate(query, **kwargs)
+        return query
+
+    def _auto_filter(self, query, **kwargs):
         for key, value in kwargs.items():
             if value is None:
                 continue
@@ -220,11 +223,15 @@ class Store:
                 continue
             query = query.filter(field == value)
 
+        return query
+
+    def _paginate(self, query, **kwargs):
         offset, limit = kwargs.get("offset"), kwargs.get("limit")
         if offset is not None:
             query = query.offset(offset)
         if limit is not None:
             query = query.limit(limit)
+
         return query
 
     def _retrieve(self, *criterion):
