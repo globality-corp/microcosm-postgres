@@ -88,6 +88,13 @@ def make_script_directory(cls, config):
     )
 
 
+def get_alembic_env_opts(graph):
+    try:
+        return graph.config.alembic.env_opts
+    except (AttributeError, LockedGraphError, NotBoundError):
+        return dict()
+
+
 def run_online_migration(self):
     """
     Run an online migration using microcosm configuration.
@@ -102,6 +109,7 @@ def run_online_migration(self):
             connection=connection,
             # assumes that all models extend our base
             target_metadata=Model.metadata,
+            **get_alembic_env_opts(self.graph),
         )
 
         with context.begin_transaction():
