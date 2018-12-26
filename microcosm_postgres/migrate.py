@@ -88,9 +88,9 @@ def make_script_directory(cls, config):
     )
 
 
-def get_alembic_env_opts(graph):
+def get_alembic_environment_options(graph):
     try:
-        return graph.config.alembic.env_opts
+        return graph.config.alembic.environment_options
     except (AttributeError, LockedGraphError, NotBoundError):
         return dict()
 
@@ -109,7 +109,7 @@ def run_online_migration(self):
             connection=connection,
             # assumes that all models extend our base
             target_metadata=Model.metadata,
-            **get_alembic_env_opts(self.graph),
+            **get_alembic_environment_options(self.graph),
         )
 
         with context.begin_transaction():
