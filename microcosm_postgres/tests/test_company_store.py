@@ -107,6 +107,10 @@ class TestCompany:
             company2 = Company(name="name2").create()
 
         assert_that(Company.count(), is_(equal_to(2)))
+
+        # Pagination fields do not affect count calculations
+        assert_that(self.company_store.count(offset=1, limit=1), is_(equal_to(2)))
+
         assert_that([company.id for company in Company.search()], contains_inanyorder(company1.id, company2.id))
 
     def test_create_update_company(self):

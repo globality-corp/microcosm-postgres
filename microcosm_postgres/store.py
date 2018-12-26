@@ -177,6 +177,8 @@ class Store:
         query = self._query(*criterion)
         query = self._order_by(query, **kwargs)
         query = self._filter(query, **kwargs)
+        # NB: pagination must go last
+        query = self._paginate(query, **kwargs)
         return query.all()
 
     def search_first(self, *criterion, **kwargs):
@@ -187,6 +189,8 @@ class Store:
         query = self._query(*criterion)
         query = self._order_by(query, **kwargs)
         query = self._filter(query, **kwargs)
+        # NB: pagination must go last
+        query = self._paginate(query, **kwargs)
         return query.first()
 
     def expunge(self, instance):
@@ -210,8 +214,6 @@ class Store:
 
         """
         query = self._auto_filter(query, **kwargs)
-        # NB: pagination must go last
-        query = self._paginate(query, **kwargs)
         return query
 
     def _auto_filter(self, query, **kwargs):
