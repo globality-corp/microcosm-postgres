@@ -17,7 +17,7 @@ from sqlalchemy import Column, FetchedValue
 
 
 class WithSerial(EntityMixin, Model):
-    __tablename__ = "example"
+    __tablename__ = "serial_example"
 
     value = Column(Serial, server_default=FetchedValue(), nullable=False)
 
