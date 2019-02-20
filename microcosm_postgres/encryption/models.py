@@ -20,6 +20,7 @@ def on_init(target: "EncryptableMixin", args, kwargs):
 
     The `kwargs` dictionary is mutable (which is why it is not passed as `**kwargs`). We leverage
     this callback to conditionally remove the `__plaintext__` value and set the `ciphertext` property.
+
     """
     encryptor = target.__encryptor__
 
@@ -110,17 +111,25 @@ class EncryptableMixin:
         # save the current encryptor statically
         cls.__encryptor__ = encryptor
 
-        # remove any existing registrations for the same function
-        if contains(cls, "init", on_init):
-            remove(cls, "init", on_init)
+        # NB: we cannot use the before_insert listener in conjunction with a foreign key relationship
+        # for encrypted data; SQLAlchemy will warn about using 'related attribute set' operation so
+        # late in its insert/flush process.
+        listeners = dict(
+            init=on_init,
+            load=on_load,
+        )
 
-        if contains(cls, "load", on_load):
-            remove(cls, "load", on_load)
-
-        # register the above functions; it's quite important that these are not closures,
-        # hence the __encryptor__ hack
-        listen(cls, "init", on_init)
-        listen(cls, "load", on_load)
+        for name, func in listeners.items():
+            # If we initialize the graph multiple times (as in many unit testing scenarios),
+            # we will accumulate listener functions -- with unpredictable results. As protection,
+            # we need to remove existing listeners before adding new ones; this solution only
+            # works if the id (e.g. memory address) of the listener does not change, which means
+            # they cannot be closures around the `encryptor` reference.
+            #
+            # Hence the `__encryptor__` hack above...
+            if contains(cls, name, func):
+                remove(cls, name, func)
+            listen(cls, name, func)
 
 
 class EncryptedMixin:
