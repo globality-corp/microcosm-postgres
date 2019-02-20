@@ -2,7 +2,7 @@
 Encryption-related models.
 
 """
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from sqlalchemy import Column, LargeBinary, String
 from sqlalchemy.event import contains, listen, remove
@@ -81,7 +81,7 @@ class EncryptableMixin:
     __plaintext__ = "value"
 
     @property
-    def encryption_context_key(self) -> str:
+    def encryption_context_key(self) -> Optional[str]:
         return getattr(self, self.__encryption_context_key__)
 
     @property
@@ -93,7 +93,7 @@ class EncryptableMixin:
         return setattr(self, self.__plaintext__, value)
 
     @property
-    def ciphertext(self) -> Tuple[bytes, Sequence[str]]:
+    def ciphertext(self) -> Optional[Tuple[bytes, Sequence[str]]]:
         raise NotImplementedError("Encryptable must implement `ciphertext` property")
 
     @ciphertext.setter
