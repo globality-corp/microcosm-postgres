@@ -29,7 +29,7 @@ def test_parse_config_key_ids():
     assert_that(
         parse_config(
             context_keys=["foo"],
-            key_ids=["bar,baz"],
+            key_ids=["bar;baz"],
         ),
         is_(equal_to(dict(
             foo=["bar", "baz"],
