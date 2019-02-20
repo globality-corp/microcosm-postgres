@@ -68,17 +68,20 @@ class SingleTenantEncryptor:
 
 class MultiTenantEncryptor:
 
-    def __init__(self, encryptors: Mapping[str, SingleTenantEncryptor]):
+    def __init__(self,
+                 encryptors: Mapping[str, SingleTenantEncryptor],
+                 default_key="default"):
         self.encryptors = encryptors
+        self.default_key = default_key
 
     def __contains__(self, encryption_context_key: str) -> bool:
-        return encryption_context_key in self.encryptors or "default" in self.encryptors
+        return encryption_context_key in self.encryptors or self.default_key in self.encryptors
 
     def __getitem__(self, encryption_context_key: str) -> SingleTenantEncryptor:
         try:
             return self.encryptors[encryption_context_key]
         except KeyError:
-            return self.encryptors["default"]
+            return self.encryptors[self.default_key]
 
     def encrypt(self, encryption_context_key: str, plaintext: str) -> Tuple[bytes, Sequence[str]]:
         encryptor = self[encryption_context_key]

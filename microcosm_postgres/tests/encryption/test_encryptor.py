@@ -29,8 +29,13 @@ def cycle(encryptor, encryption_context_key, key_ids):
 
 def test_cycle_single_tenant():
     loader = load_from_dict(
-        multi_tenant_encryptor=dict(
-            default=["key1", "key2"],
+        multi_tenant_key_registry=dict(
+            context_keys=[
+                "default",
+            ],
+            key_ids=[
+                ["key1", "key2"],
+            ],
         ),
     )
     graph = create_object_graph(
@@ -49,9 +54,15 @@ def test_cycle_single_tenant():
 
 def test_cycle_multi_tenant():
     loader = load_from_dict(
-        multi_tenant_encryptor=dict(
-            bar=["bar1", "bar2"],
-            foo=["foo1", "foo2"],
+        multi_tenant_key_registry=dict(
+            context_keys=[
+                "foo",
+                "bar",
+            ],
+            key_ids=[
+                ["foo1", "foo2"],
+                ["bar1", "bar2"],
+            ],
         ),
     )
     graph = create_object_graph(
