@@ -53,7 +53,7 @@ def configure_encryptor(graph):
         key: SingleTenantEncryptor(
             key_provider=configure_key_provider(graph, strings(value))
         )
-        for key, value in graph.config.encryptor.items()
+        for key, value in graph.config.multi_tenant_encryptor.items()
         if value
     }
     encryptor = MultiTenantEncryptor(encryptors=encryptors)
