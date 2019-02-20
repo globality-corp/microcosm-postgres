@@ -53,7 +53,7 @@ def on_load(target: "EncryptableMixin", context):
     encryption_context_key = str(target.encryption_context_key)
 
     # do not decrypt targets that are not configured for it
-    if encryption_context_key not in encryptor:
+    if encryption_context_key not in encryptor or target.ciphertext is None:
         return
 
     ciphertext, key_ids = target.ciphertext
