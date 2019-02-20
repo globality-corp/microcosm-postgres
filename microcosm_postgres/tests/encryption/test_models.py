@@ -23,7 +23,7 @@ class TestEncryptable:
 
     def setup(self):
         loader = load_from_dict(
-            encryptor=dict(
+            multi_tenant_encryptor=dict(
                 private=["key_id"],
             ),
         )
