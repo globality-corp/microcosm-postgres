@@ -22,8 +22,8 @@ def parse_config(context_keys: Sequence[str],
 
 
 @defaults(
-    context_keys=typed(comma_separated_list),
-    key_ids=typed(comma_separated_list),
+    context_keys=typed(comma_separated_list, default_value=""),
+    key_ids=typed(comma_separated_list, default_value=""),
 )
 @logger
 class MultiTenantKeyRegistry:
