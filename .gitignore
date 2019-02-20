@@ -97,3 +97,5 @@ target/
 /Dockerfile.template
 /build.*/
 /entrypoint.sh
+
+.mypy_cache
