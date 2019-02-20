@@ -16,7 +16,8 @@ from microcosm_postgres.encryption.providers import configure_key_provider
 def parse_config(context_keys: Sequence[str],
                  key_ids: Sequence[str]) -> Mapping[str, Sequence[str]]:
     return {
-        context_key: comma_separated_list(key_id)
+        # NB: split key id on non-comma to avoid confusion with config parsing
+        context_key: key_id.split(";") if isinstance(key_id, str) else key_id
         for context_key, key_id in zip(context_keys, key_ids)
     }
 
