@@ -23,8 +23,13 @@ class TestEncryptable:
 
     def setup(self):
         loader = load_from_dict(
-            multi_tenant_encryptor=dict(
-                private=["key_id"],
+            multi_tenant_key_registry=dict(
+                context_keys=[
+                    "private",
+                ],
+                key_ids=[
+                    "key_id",
+                ],
             ),
         )
         self.graph = create_object_graph(

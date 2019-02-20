@@ -2,7 +2,7 @@
 from setuptools import find_packages, setup
 
 project = "microcosm-postgres"
-version = "1.11.1"
+version = "1.12.0"
 
 setup(
     name=project,
@@ -18,7 +18,8 @@ setup(
     keywords="microcosm",
     install_requires=[
         "alembic>=1.0.0",
-        "microcosm>=2.5.0",
+        "microcosm>=2.6.0",
+        "microcosm-logging>=1.3.0",
         "psycopg2-binary>=2.7.5",
         "python-dateutil>=2.7.3",
         "pytz>=2018.5",
@@ -38,6 +39,7 @@ setup(
             "default_engine_routing_strategy = microcosm_postgres.factories.engine_routing_strategy:DefaultEngineRoutingStrategy",  # noqa: E501
             "model_engine_routing_strategy = microcosm_postgres.factories.engine_routing_strategy:ModelEngineRoutingStrategy",  # noqa: E501
             "multi_tenant_encryptor = microcosm_postgres.encryption.factories:configure_encryptor [encryption]",
+            "multi_tenant_key_registry = microcosm_postgres.encryption.registry:MultiTenantKeyRegistry [encryption]",
             "postgres = microcosm_postgres.factories.engine:configure_engine",
             "sessionmaker = microcosm_postgres.factories.sessionmaker:configure_sessionmaker",
         ],
