@@ -118,7 +118,8 @@ class IdentityMixin:
         return {
             key: value
             for key, value in self.__dict__.items()
-            if not key.startswith("_")
+            # NB: ignore internal SQLAlchemy state and nested relationships
+            if not key.startswith("_") and not isinstance(value, Model)
         }
 
     def __eq__(self, other):
