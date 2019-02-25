@@ -102,6 +102,16 @@ class TestEncryptable:
                 ),
             )
             assert_that(
+                encryptable._members(),
+                is_(equal_to(dict(
+                    created_at=encryptable.created_at,
+                    encrypted_id=encryptable.encrypted_id,
+                    id=encryptable.id,
+                    key=encryptable.key,
+                    updated_at=encryptable.updated_at,
+                ))),
+            )
+            assert_that(
                 self.encryptable_store.count(), is_(equal_to(1)),
             )
             assert_that(
