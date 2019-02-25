@@ -6,15 +6,18 @@ except ImportError:
     raise SkipTest
 from hamcrest import (
     assert_that,
+    calling,
     equal_to,
     has_properties,
     is_,
     is_not,
+    raises,
     none,
 )
 from microcosm.api import create_object_graph, load_from_dict
 
 from microcosm_postgres.context import SessionContext, transaction
+from microcosm_postgres.errors import ModelIntegrityError
 from microcosm_postgres.tests.encryption.fixtures import Encryptable
 import microcosm_postgres.encryption.factories  # noqa: F401
 
@@ -136,4 +139,16 @@ class TestEncryptable:
             )
             assert_that(
                 self.encrypted_store.count(), is_(equal_to(0)),
+            )
+
+    def test_throw_model_integrity_when_value_is_none(self):
+        with SessionContext(self.graph):
+            assert_that(
+                calling(self.encryptable_store.create).with_args(
+                    Encryptable(
+                        key="private",
+                        value=None,
+                    ),
+                ),
+                raises(ModelIntegrityError),
             )

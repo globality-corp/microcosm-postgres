@@ -35,6 +35,11 @@ def on_init(target: "EncryptableMixin", args, kwargs):
         return
 
     plaintext = kwargs.pop(target.__plaintext__)
+
+    # do not try to encrypt when plaintext is None
+    if plaintext is None:
+        return
+
     ciphertext, key_ids = encryptor.encrypt(encryption_context_key, plaintext)
     target.ciphertext = (ciphertext, key_ids)
 
