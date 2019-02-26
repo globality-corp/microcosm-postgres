@@ -18,7 +18,9 @@ from microcosm.api import create_object_graph, load_from_dict
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.errors import ModelIntegrityError
-from microcosm_postgres.tests.encryption.fixtures import Encryptable
+from microcosm_postgres.tests.encryption.fixtures.encrpytable import Encryptable
+from microcosm_postgres.tests.encryption.fixtures.json_encrpytable import JsonEncryptable
+
 import microcosm_postgres.encryption.factories  # noqa: F401
 
 
@@ -43,6 +45,8 @@ class TestEncryptable:
         )
         self.encryptable_store = self.graph.encryptable_store
         self.encrypted_store = self.graph.encrypted_store
+        self.json_encryptable_store = self.graph.json_encryptable_store
+        self.json_encrypted_store = self.graph.json_encrypted_store
         self.encryptor = self.graph.multi_tenant_encryptor
 
         with SessionContext(self.graph) as context:
@@ -151,4 +155,52 @@ class TestEncryptable:
                     ),
                 ),
                 raises(ModelIntegrityError),
+            )
+
+    def test_json_encrypted(self):
+        with SessionContext(self.graph):
+            with transaction():
+                encryptable = self.json_encryptable_store.create(
+                    JsonEncryptable(
+                        key="private",
+                        value=["foo", {"bar": "baz"}],
+                    ),
+                )
+
+            assert_that(
+                encryptable,
+                has_properties(
+                    key=is_(equal_to("private")),
+                    value=is_(none()),
+                    json_encrypted_id=is_not(none()),
+                ),
+            )
+            assert_that(
+                encryptable._members(),
+                is_(equal_to(dict(
+                    created_at=encryptable.created_at,
+                    json_encrypted_id=encryptable.json_encrypted_id,
+                    id=encryptable.id,
+                    key=encryptable.key,
+                    updated_at=encryptable.updated_at,
+                ))),
+            )
+            assert_that(
+                self.json_encryptable_store.count(), is_(equal_to(1)),
+            )
+            assert_that(
+                self.json_encrypted_store.count(), is_(equal_to(1)),
+            )
+
+            # NB: ORM events will not trigger if we can reuse the object from the session cache
+            self.json_encryptable_store.expunge(encryptable)
+
+            encryptable = self.json_encryptable_store.retrieve(encryptable.id)
+            assert_that(
+                encryptable,
+                has_properties(
+                    key=is_(equal_to("private")),
+                    value=is_(equal_to(["foo", {"bar": "baz"}])),
+                    json_encrypted_id=is_not(none()),
+                ),
             )
