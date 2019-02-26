@@ -34,7 +34,7 @@ def on_init(target: "EncryptableMixin", args, kwargs):
     if encryption_context_key not in encryptor:
         return
 
-    plaintext = kwargs.pop(target.__plaintext__)
+    plaintext = target.plaintext_to_str(kwargs.pop(target.__plaintext__))
 
     # do not try to encrypt when plaintext is None
     if plaintext is None:
@@ -49,7 +49,7 @@ def on_load(target: "EncryptableMixin", context):
     Intercept SQLAlchemy's instance load event.
 
     """
-    encryptor = target.__encryptor__
+    encryptor: Encryptor = target.__encryptor__  # type: ignore
 
     # encryption context may be nullable
     if target.encryption_context_key is None:
@@ -58,11 +58,12 @@ def on_load(target: "EncryptableMixin", context):
     encryption_context_key = str(target.encryption_context_key)
 
     # do not decrypt targets that are not configured for it
-    if encryption_context_key not in encryptor or target.ciphertext is None:
+    if (encryption_context_key not in encryptor) or (target.ciphertext is None):
         return
 
     ciphertext, key_ids = target.ciphertext
-    target.plaintext = encryptor.decrypt(encryption_context_key, ciphertext)
+    decrypted_str = encryptor.decrypt(encryption_context_key, ciphertext)
+    target.plaintext = target.str_to_plaintext(decrypted_str)  # type: ignore
 
 
 class EncryptableMixin:
@@ -93,9 +94,17 @@ class EncryptableMixin:
     def plaintext(self) -> str:
         return getattr(self, self.__plaintext__)
 
-    @plaintext.setter
+    @plaintext.setter  # type: ignore
     def plaintext(self, value: str) -> None:
         return setattr(self, self.__plaintext__, value)
+
+    @classmethod
+    def plaintext_to_str(cls, plaintext) -> str:
+        return plaintext
+
+    @classmethod
+    def str_to_plaintext(cls, text: str) -> object:
+        return text
 
     @property
     def ciphertext(self) -> Optional[Tuple[bytes, Sequence[str]]]:
