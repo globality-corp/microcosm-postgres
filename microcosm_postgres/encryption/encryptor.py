@@ -5,7 +5,7 @@ Implement application-layer encryption using the aws-encryption-sdk.
 from typing import Mapping, Sequence, Tuple, Union
 
 from aws_encryption_sdk import decrypt, encrypt
-from aws_encryption_sdk.key_providers.base import MasterKeyProvider
+from aws_encryption_sdk.materials_managers.base import CryptoMaterialsManager
 
 
 class SingleTenantEncryptor:
@@ -13,8 +13,8 @@ class SingleTenantEncryptor:
     A single tenant encryptor.
 
     """
-    def __init__(self, key_provider: MasterKeyProvider):
-        self.key_provider = key_provider
+    def __init__(self, materials_manager: CryptoMaterialsManager):
+        self.materials_manager = materials_manager
 
     def __contains__(self, encryption_context_key: str) -> bool:
         return True
@@ -36,7 +36,7 @@ class SingleTenantEncryptor:
 
         cyphertext, header = encrypt(
             source=plaintext,
-            key_provider=self.key_provider,
+            materials_manager=self.materials_manager,
             encryption_context=encryption_context,
         )
 
@@ -49,7 +49,7 @@ class SingleTenantEncryptor:
     def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
         plaintext, header = decrypt(
             source=ciphertext,
-            key_provider=self.key_provider,
+            materials_manager=self.materials_manager,
         )
         return plaintext.decode("utf-8")
 
