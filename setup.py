@@ -40,6 +40,7 @@ setup(
             "model_engine_routing_strategy = microcosm_postgres.factories.engine_routing_strategy:ModelEngineRoutingStrategy",  # noqa: E501
             "multi_tenant_encryptor = microcosm_postgres.encryption.factories:configure_encryptor [encryption]",
             "multi_tenant_key_registry = microcosm_postgres.encryption.registry:MultiTenantKeyRegistry [encryption]",
+            "materials_manager = microcosm_postgres.encryption.providers:configure_materials_manager [encryption]",
             "postgres = microcosm_postgres.factories.engine:configure_engine",
             "sessionmaker = microcosm_postgres.factories.sessionmaker:configure_sessionmaker",
         ],

@@ -12,6 +12,7 @@ from hamcrest import (
     is_not,
 )
 from microcosm.api import create_object_graph, load_from_dict
+from unittest.mock import patch
 
 import microcosm_postgres.encryption.factories  # noqa: F401
 
@@ -82,4 +83,43 @@ def test_cycle_multi_tenant():
         encryptor=graph.multi_tenant_encryptor,
         encryption_context_key="bar",
         key_ids=["bar1", "bar2"],
+    )
+
+
+def test_cycle_cache():
+    loader = load_from_dict(
+        materials_manager=dict(
+            enable_cache=True,
+        ),
+        multi_tenant_key_registry=dict(
+            context_keys=[
+                "default",
+            ],
+            key_ids=[
+                ["key1", "key2"],
+            ],
+        ),
+    )
+    graph = create_object_graph(
+        name="example",
+        testing=True,
+        import_name="microcosm_postgres",
+        loader=loader,
+    )
+    encryptor = graph.multi_tenant_encryptor.encryptors["default"]
+    master_key_provider = encryptor.materials_manager.master_key_provider
+    decrypt_data_key = master_key_provider.decrypt_data_key
+
+    with patch.object(master_key_provider, "decrypt_data_key") as mocked_decrypt_data_key:
+        mocked_decrypt_data_key.side_effect = decrypt_data_key
+        for _ in range(5):
+            cycle(
+                encryptor=graph.multi_tenant_encryptor,
+                encryption_context_key="whatever",
+                key_ids=["key1", "key2"],
+            )
+
+    assert_that(
+        mocked_decrypt_data_key.call_count,
+        is_(equal_to(1)),
     )
