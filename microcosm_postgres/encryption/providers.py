@@ -4,6 +4,14 @@ Custom key providers
 """
 from os import urandom
 
+from microcosm.api import defaults
+from microcosm.config.validation import typed
+from microcosm.config.types import boolean
+from aws_encryption_sdk import (
+    CachingCryptoMaterialsManager,
+    DefaultCryptoMaterialsManager,
+    LocalCryptoMaterialsCache,
+)
 from aws_encryption_sdk.identifiers import EncryptionKeyType, WrappingAlgorithm
 from aws_encryption_sdk.internal.crypto.wrapping_keys import WrappingKey
 from aws_encryption_sdk.key_providers.kms import KMSMasterKeyProvider
@@ -44,3 +52,24 @@ def configure_key_provider(graph, key_ids):
 
     # use AWS provider
     return KMSMasterKeyProvider(key_ids=key_ids)
+
+
+@defaults(
+    enable_cache=typed(boolean, default_value=False),
+    cache_capacity=typed(int, default_value=100),
+    cache_max_age=typed(float, default_value=3600.0),
+    cache_max_messages_encrypted=typed(int, default_value=1000),
+)
+def configure_materials_manager(graph, key_provider):
+    """
+    Configure a crypto materials manager
+
+    """
+    if graph.config.materials_manager.enable_cache:
+        return CachingCryptoMaterialsManager(
+            cache=LocalCryptoMaterialsCache(graph.config.materials_manager.cache_capacity),
+            master_key_provider=key_provider,
+            max_age=graph.config.materials_manager.cache_max_age,
+            max_messages_encrypted=graph.config.materials_manager.cache_max_messages_encrypted,
+        )
+    return DefaultCryptoMaterialsManager(master_key_provider=key_provider)
