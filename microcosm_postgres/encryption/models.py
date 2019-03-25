@@ -83,8 +83,13 @@ class EncryptableMixin:
 
     """
     __encryptor__ = None
+    __encrypted_identifier__ = "encrypted_id"
     __encryption_context_key__ = "key"
     __plaintext__ = "value"
+
+    @property
+    def encrypted_identifier(self) -> str:
+        return getattr(self, self.__encrypted_identifier__)
 
     @property
     def encryption_context_key(self) -> Optional[str]:

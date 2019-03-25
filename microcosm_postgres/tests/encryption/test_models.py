@@ -204,3 +204,42 @@ class TestEncryptable:
                     json_encrypted_id=is_not(none()),
                 ),
             )
+
+    def test_update(self):
+        with SessionContext(self.graph):
+            with transaction():
+                encryptable = self.encryptable_store.create(
+                    Encryptable(
+                        key="private",
+                        value="value",
+                    ),
+                )
+
+            self.encryptable_store.expunge(encryptable)
+            self.encryptable_store.update(
+                encryptable.id,
+                Encryptable(
+                    id=encryptable.id,
+                    # We have to pass the key again in order to encrypt the new value
+                    key="private",
+                    value="new-value",
+                ),
+            )
+
+            encryptable = self.encryptable_store.retrieve(encryptable.id)
+
+            assert_that(
+                encryptable,
+                has_properties(
+                    key=is_(equal_to("private")),
+                    value=is_(equal_to("new-value")),
+                    encrypted_id=is_not(none()),
+                ),
+            )
+
+            assert_that(
+                self.encryptable_store.count(), is_(equal_to(1)),
+            )
+            assert_that(
+                self.encrypted_store.count(), is_(equal_to(1)),
+            )
