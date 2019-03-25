@@ -9,6 +9,7 @@ from sqlalchemy_utils import JSONType, UUIDType
 from microcosm_postgres.models import EntityMixin, Model
 from microcosm_postgres.store import Store
 from microcosm_postgres.encryption.models import EncryptableMixin, EncryptedMixin
+from microcosm_postgres.encryption.store import EncryptableStore
 
 
 class JsonEncrypted(EntityMixin, EncryptedMixin, Model):
@@ -28,8 +29,13 @@ class JsonEncryptable(EntityMixin, EncryptableMixin, Model):
     value = Column(JSONType, nullable=False)
     # foreign key to encrypted data
     json_encrypted_id = Column(UUIDType, ForeignKey("json_encrypted.id"), nullable=True)
-    # load encrypted relationship automatically
-    encrypted = relationship(JsonEncrypted, lazy="joined")
+    # load and update encrypted relationship automatically
+    encrypted = relationship(
+        JsonEncrypted,
+        cascade="expunge, merge, save-update",
+        lazy="joined",
+        single_parent=True,
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -71,7 +77,7 @@ class JsonEncryptedStore(Store):
 
 
 @binding("json_encryptable_store")
-class JsonEncryptableStore(Store):
+class JsonEncryptableStore(EncryptableStore):
 
     def __init__(self, graph):
-        super().__init__(graph, JsonEncryptable)
+        super().__init__(graph, JsonEncryptable, graph.json_encrypted_store)
