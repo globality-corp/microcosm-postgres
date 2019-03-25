@@ -31,7 +31,7 @@ class Encryptable(EntityMixin, EncryptableMixin, Model):
     # load and update encrypted relationship automatically
     encrypted = relationship(
         Encrypted,
-        cascade="delete-orphan, expunge, merge, save-update",
+        cascade="expunge, merge, save-update",
         lazy="joined",
         single_parent=True,
     )
