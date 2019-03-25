@@ -8,6 +8,7 @@ from sqlalchemy_utils import UUIDType
 from microcosm_postgres.models import EntityMixin, Model
 from microcosm_postgres.store import Store
 from microcosm_postgres.encryption.models import EncryptableMixin, EncryptedMixin
+from microcosm_postgres.encryption.store import EncryptableStore
 
 
 class Encrypted(EntityMixin, EncryptedMixin, Model):
@@ -27,8 +28,13 @@ class Encryptable(EntityMixin, EncryptableMixin, Model):
     value = Column(String, nullable=True)
     # foreign key to encrypted data
     encrypted_id = Column(UUIDType, ForeignKey("encrypted.id"), nullable=True)
-    # load encrypted relationship automatically
-    encrypted = relationship(Encrypted, lazy="joined")
+    # load and update encrypted relationship automatically
+    encrypted = relationship(
+        Encrypted,
+        cascade="expunge, merge, save-update",
+        lazy="joined",
+        single_parent=True,
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -62,15 +68,7 @@ class EncryptedStore(Store):
 
 
 @binding("encryptable_store")
-class EncryptableStore(Store):
+class EncryptableModelStore(EncryptableStore):
 
     def __init__(self, graph):
-        super().__init__(graph, Encryptable)
-        self.encrypted_store = graph.encrypted_store
-
-    def delete(self, identifier):
-        instance = self.retrieve(identifier)
-        result = super().delete(identifier)
-        if instance.encrypted_id:
-            self.encrypted_store.delete(instance.encrypted_id)
-        return result
+        super().__init__(graph, Encryptable, graph.encrypted_store)
