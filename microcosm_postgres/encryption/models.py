@@ -45,6 +45,10 @@ def on_init(target: "EncryptableMixin", args, kwargs):
 
 
 def on_load(target: "EncryptableMixin", context):
+    target.plaintext = decrypt_instance(target)
+
+
+def decrypt_instance(target: "EncryptableMixin"):
     """
     Intercept SQLAlchemy's instance load event.
 
@@ -63,7 +67,7 @@ def on_load(target: "EncryptableMixin", context):
 
     ciphertext, key_ids = target.ciphertext
     decrypted_str = encryptor.decrypt(encryption_context_key, ciphertext)
-    target.plaintext = target.str_to_plaintext(decrypted_str)  # type: ignore
+    return target.str_to_plaintext(decrypted_str)  # type: ignore
 
 
 class EncryptableMixin:
@@ -81,15 +85,24 @@ class EncryptableMixin:
      -  A settable, `plaintext` property (defaults to `self.value`)
      -  A settable, `ciphertext` property (not defaulted)
 
+    Note: in order to use the EncryptableStore, must define:
+    -  An `encrypted_identifier` property (defaults to `encrypted_id`)
+    -  An `encrypted_relationship` property (defaults to `encrypted`)
+
     """
     __encryptor__ = None
     __encrypted_identifier__ = "encrypted_id"
+    __encrypted_relationship__ = "encrypted"
     __encryption_context_key__ = "key"
     __plaintext__ = "value"
 
     @property
     def encrypted_identifier(self) -> str:
         return getattr(self, self.__encrypted_identifier__)
+
+    @property
+    def encrypted_relationship(self) -> str:
+        return getattr(self, self.__encrypted_relationship__)
 
     @property
     def encryption_context_key(self) -> Optional[str]:
