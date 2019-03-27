@@ -18,8 +18,9 @@ from microcosm.api import create_object_graph, load_from_dict
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.errors import ModelIntegrityError
-from microcosm_postgres.tests.encryption.fixtures.encrpytable import Encryptable
-from microcosm_postgres.tests.encryption.fixtures.json_encrpytable import JsonEncryptable
+from microcosm_postgres.tests.encryption.fixtures.encryptable import Encryptable
+from microcosm_postgres.tests.encryption.fixtures.json_encryptable import JsonEncryptable
+from microcosm_postgres.tests.encryption.fixtures.nullable_encryptable import NullableEncryptable
 
 import microcosm_postgres.encryption.factories  # noqa: F401
 
@@ -47,6 +48,8 @@ class TestEncryptable:
         self.encrypted_store = self.graph.encrypted_store
         self.json_encryptable_store = self.graph.json_encryptable_store
         self.json_encrypted_store = self.graph.json_encrypted_store
+        self.nullable_encryptable_store = self.graph.nullable_encryptable_store
+        self.nullable_encrypted_store = self.graph.nullable_encrypted_store
         self.encryptor = self.graph.multi_tenant_encryptor
 
         with SessionContext(self.graph) as context:
@@ -215,17 +218,26 @@ class TestEncryptable:
                     ),
                 )
 
-            self.encryptable_store.expunge(encryptable)
-            self.encryptable_store.update(
-                encryptable.id,
-                Encryptable(
-                    id=encryptable.id,
-                    # We have to pass the key again in order to encrypt the new value
-                    key="private",
-                    value="new-value",
-                ),
-            )
+        with SessionContext(self.graph):
+            with transaction():
+                res = self.encryptable_store.update(
+                    encryptable.id,
+                    Encryptable(
+                        id=encryptable.id,
+                        # We don't have to pass the key again in order to encrypt the new value
+                        value="new-value",
+                    ),
+                )
+                assert_that(
+                    res,
+                    has_properties(
+                        key=is_(equal_to("private")),
+                        value=is_(equal_to("new-value")),
+                        encrypted_id=is_not(none()),
+                    ),
+                )
 
+        with SessionContext(self.graph):
             encryptable = self.encryptable_store.retrieve(encryptable.id)
 
             assert_that(
@@ -242,4 +254,100 @@ class TestEncryptable:
             )
             assert_that(
                 self.encrypted_store.count(), is_(equal_to(1)),
+            )
+
+    def test_update_with_key(self):
+        with SessionContext(self.graph):
+            with transaction():
+                encryptable = self.encryptable_store.create(
+                    Encryptable(
+                        key="private",
+                        value="value",
+                    ),
+                )
+
+        with SessionContext(self.graph):
+            with transaction():
+                res = self.encryptable_store.update(
+                    encryptable.id,
+                    Encryptable(
+                        id=encryptable.id,
+                        # Pass the key
+                        key="private",
+                        value="new-value",
+                    ),
+                )
+                assert_that(
+                    res,
+                    has_properties(
+                        key=is_(equal_to("private")),
+                        value=is_(equal_to("new-value")),
+                        encrypted_id=is_not(none()),
+                    ),
+                )
+
+        with SessionContext(self.graph):
+            encryptable = self.encryptable_store.retrieve(encryptable.id)
+
+            assert_that(
+                encryptable,
+                has_properties(
+                    key=is_(equal_to("private")),
+                    value=is_(equal_to("new-value")),
+                    encrypted_id=is_not(none()),
+                ),
+            )
+
+            assert_that(
+                self.encryptable_store.count(), is_(equal_to(1)),
+            )
+            assert_that(
+                self.encrypted_store.count(), is_(equal_to(1)),
+            )
+
+    def test_update_from_null(self):
+        with SessionContext(self.graph):
+            with transaction():
+                encryptable = self.nullable_encryptable_store.create(
+                    NullableEncryptable(
+                        key="private",
+                        value=None,
+                    ),
+                )
+
+        with SessionContext(self.graph):
+            with transaction():
+                res = self.nullable_encryptable_store.update(
+                    encryptable.id,
+                    NullableEncryptable(
+                        id=encryptable.id,
+                        value="new-value",
+                    ),
+                )
+                assert_that(
+                    res,
+                    has_properties(
+                        key=is_(equal_to("private")),
+                        value=is_(equal_to("new-value")),
+                        encrypted_id=is_not(none()),
+                    ),
+                )
+
+        with SessionContext(self.graph):
+            encryptable = self.nullable_encryptable_store.retrieve(encryptable.id)
+
+            assert_that(
+                encryptable,
+                has_properties(
+                    key=is_(equal_to("private")),
+                    value=is_(equal_to("new-value")),
+                    encrypted_id=is_not(none()),
+                ),
+            )
+
+            assert_that(
+                self.nullable_encryptable_store.count(), is_(equal_to(1)),
+            )
+            assert_that(
+                self.nullable_encrypted_store.count(), is_(equal_to(1)),
             )
