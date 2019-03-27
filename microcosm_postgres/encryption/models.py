@@ -51,7 +51,7 @@ def on_load(target: "EncryptableMixin", context):
     """
     decrypt, plaintext = decrypt_instance(target)
     if decrypt:
-        target.plaintext = plaintext
+        target.plaintext = plaintext  # type: ignore
 
 
 def decrypt_instance(target: "EncryptableMixin") -> Tuple[bool, Optional[str]]:
@@ -69,7 +69,7 @@ def decrypt_instance(target: "EncryptableMixin") -> Tuple[bool, Optional[str]]:
 
     ciphertext, key_ids = target.ciphertext
     decrypted_str = encryptor.decrypt(encryption_context_key, ciphertext)
-    return (True, target.str_to_plaintext(decrypted_str))
+    return (True, target.str_to_plaintext(decrypted_str))  # type: ignore
 
 
 class EncryptableMixin:
