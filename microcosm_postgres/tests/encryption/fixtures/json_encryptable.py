@@ -32,9 +32,7 @@ class JsonEncryptable(EntityMixin, EncryptableMixin, Model):
     # load and update encrypted relationship automatically
     encrypted = relationship(
         JsonEncrypted,
-        cascade="expunge, merge, save-update",
         lazy="joined",
-        single_parent=True,
     )
 
     __table_args__ = (

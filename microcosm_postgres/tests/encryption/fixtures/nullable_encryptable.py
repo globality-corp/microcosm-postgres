@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple
+from typing import Optional, Sequence, Tuple
 
 from microcosm.api import binding
 from sqlalchemy import CheckConstraint, Column, ForeignKey, String
@@ -11,36 +11,30 @@ from microcosm_postgres.encryption.models import EncryptableMixin, EncryptedMixi
 from microcosm_postgres.encryption.store import EncryptableStore
 
 
-class Encrypted(EntityMixin, EncryptedMixin, Model):
-    __tablename__ = "encrypted"
+class NullableEncrypted(EntityMixin, EncryptedMixin, Model):
+    __tablename__ = "nullable_encrypted"
 
 
-class Encryptable(EntityMixin, EncryptableMixin, Model):
+class NullableEncryptable(EntityMixin, EncryptableMixin, Model):
     """
     A model for conditionally-encrypted plaintext.
 
     """
-    __tablename__ = "encryptable"
+    __tablename__ = "nullable_encryptable"
 
     # key used for encryption context
     key = Column(String, nullable=False)
     # value is not encrypted
     value = Column(String, nullable=True)
     # foreign key to encrypted data
-    encrypted_id = Column(UUIDType, ForeignKey("encrypted.id"), nullable=True)
+    encrypted_id = Column(UUIDType, ForeignKey("nullable_encrypted.id"), nullable=True)
     # load and update encrypted relationship automatically
     encrypted = relationship(
-        Encrypted,
-        cascade="expunge, merge, save-update",
+        NullableEncrypted,
         lazy="joined",
-        single_parent=True,
     )
 
     __table_args__ = (
-        CheckConstraint(
-            name="value_or_encrypted_is_not_null",
-            sqltext="value IS NOT NULL OR encrypted_id IS NOT NULL",
-        ),
         CheckConstraint(
             name="value_or_encrypted_is_null",
             sqltext="value IS NULL OR encrypted_id IS NULL",
@@ -48,27 +42,29 @@ class Encryptable(EntityMixin, EncryptableMixin, Model):
     )
 
     @property
-    def ciphertext(self) -> Tuple[bytes, Sequence[str]]:
+    def ciphertext(self) -> Optional[Tuple[bytes, Sequence[str]]]:
+        if not self.encrypted:
+            return None
         return (self.encrypted.ciphertext, self.encrypted.key_ids)
 
     @ciphertext.setter
     def ciphertext(self, value: Tuple[bytes, Sequence[str]]) -> None:
         ciphertext, key_ids = value
-        self.encrypted = Encrypted(
+        self.encrypted = NullableEncrypted(
             ciphertext=ciphertext,
             key_ids=key_ids,
         )
 
 
-@binding("encrypted_store")
-class EncryptedStore(Store):
+@binding("nullable_encrypted_store")
+class NullableEncryptedStore(Store):
 
     def __init__(self, graph):
-        super().__init__(graph, Encrypted)
+        super().__init__(graph, NullableEncrypted)
 
 
-@binding("encryptable_store")
-class EncryptableModelStore(EncryptableStore):
+@binding("nullable_encryptable_store")
+class ENullablencryptableModelStore(EncryptableStore):
 
     def __init__(self, graph):
-        super().__init__(graph, Encryptable, graph.encrypted_store)
+        super().__init__(graph, NullableEncryptable, graph.nullable_encrypted_store)
