@@ -45,29 +45,31 @@ def on_init(target: "EncryptableMixin", args, kwargs):
 
 
 def on_load(target: "EncryptableMixin", context):
-    target.plaintext = decrypt_instance(target)
-
-
-def decrypt_instance(target: "EncryptableMixin"):
     """
     Intercept SQLAlchemy's instance load event.
 
     """
+    decrypt, plaintext = decrypt_instance(target)
+    if decrypt:
+        target.plaintext = plaintext  # type: ignore
+
+
+def decrypt_instance(target: "EncryptableMixin") -> Tuple[bool, Optional[str]]:
     encryptor: Encryptor = target.__encryptor__  # type: ignore
 
     # encryption context may be nullable
     if target.encryption_context_key is None:
-        return
+        return (False, None)
 
     encryption_context_key = str(target.encryption_context_key)
 
     # do not decrypt targets that are not configured for it
     if (encryption_context_key not in encryptor) or (target.ciphertext is None):
-        return
+        return (False, None)
 
     ciphertext, key_ids = target.ciphertext
     decrypted_str = encryptor.decrypt(encryption_context_key, ciphertext)
-    return target.str_to_plaintext(decrypted_str)  # type: ignore
+    return (True, target.str_to_plaintext(decrypted_str))  # type: ignore
 
 
 class EncryptableMixin:

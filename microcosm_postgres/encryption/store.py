@@ -40,7 +40,7 @@ class EncryptableStore(Store):
         old_instance = self.retrieve(identifier)
         old_encrypted_identifier = old_instance.encrypted_identifier
 
-        if all(
+        if (
             new_instance.encryption_context_key and
             old_instance.encryption_context_key != new_instance.encryption_context_key
         ):
@@ -59,7 +59,7 @@ class EncryptableStore(Store):
             expected_new_plaintext = new_instance.plaintext
             new_instance = self.reencrypt_instance(new_instance, old_instance.encryption_context_key)
         else:
-            expected_new_plaintext = decrypt_instance(new_instance)
+            decrypt, expected_new_plaintext = decrypt_instance(new_instance)
 
         result = super().update(identifier, new_instance)
 
