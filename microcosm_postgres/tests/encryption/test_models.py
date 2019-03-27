@@ -83,6 +83,16 @@ class TestEncryptable:
                 self.encrypted_store.count(), is_(equal_to(0)),
             )
 
+            res = self.encryptable_store.retrieve(encryptable.id)
+            assert_that(
+                res,
+                has_properties(
+                    key=is_(equal_to("key")),
+                    value=is_(equal_to("value")),
+                    encrypted_id=is_(none()),
+                ),
+            )
+
             with transaction():
                 self.encryptable_store.delete(encryptable.id)
 
