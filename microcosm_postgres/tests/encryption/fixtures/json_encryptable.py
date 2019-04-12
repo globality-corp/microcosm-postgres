@@ -2,14 +2,19 @@ from json import dumps, loads
 from typing import Sequence, Tuple
 
 from microcosm.api import binding
-from sqlalchemy import CheckConstraint, Column, ForeignKey, String
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    ForeignKey,
+    String,
+)
 from sqlalchemy.orm import relationship
 from sqlalchemy_utils import JSONType, UUIDType
 
-from microcosm_postgres.models import EntityMixin, Model
-from microcosm_postgres.store import Store
 from microcosm_postgres.encryption.models import EncryptableMixin, EncryptedMixin
 from microcosm_postgres.encryption.store import EncryptableStore
+from microcosm_postgres.models import EntityMixin, Model
+from microcosm_postgres.store import Store
 
 
 class JsonEncrypted(EntityMixin, EncryptedMixin, Model):

@@ -1,7 +1,7 @@
+from microcosm.api import binding
 from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy_utils import UUIDType
 
-from microcosm.api import binding
 from microcosm_postgres.models import EntityMixin, Model
 from microcosm_postgres.store import Store
 

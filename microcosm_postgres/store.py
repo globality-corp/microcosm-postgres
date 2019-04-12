@@ -27,7 +27,7 @@ from microcosm_postgres.errors import (
     MissingDependencyError,
     ModelIntegrityError,
     ModelNotFoundError,
-    ReferencedModelError
+    ReferencedModelError,
 )
 from microcosm_postgres.identifiers import new_object_id
 

@@ -2,13 +2,9 @@
 Persistence tests for employee "secret" data.
 
 """
-from hamcrest import (
-    assert_that,
-    equal_to,
-    is_,
-)
-
+from hamcrest import assert_that, equal_to, is_
 from microcosm.api import create_object_graph, load_from_environ
+
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.tests.fixtures import Company, Employee, EmployeeData
 

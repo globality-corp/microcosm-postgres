@@ -3,8 +3,8 @@ Create a SQL alchemy postgres engine.
 
 """
 from microcosm.api import binding, defaults
-from microcosm.config.validation import typed
 from microcosm.config.types import boolean
+from microcosm.config.validation import typed
 from sqlalchemy import create_engine
 
 

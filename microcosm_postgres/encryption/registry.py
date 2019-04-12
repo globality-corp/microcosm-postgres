@@ -10,7 +10,10 @@ from microcosm.config.validation import typed
 from microcosm_logging.decorators import logger
 
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
-from microcosm_postgres.encryption.providers import configure_key_provider, configure_materials_manager
+from microcosm_postgres.encryption.providers import (
+    configure_key_provider,
+    configure_materials_manager,
+)
 
 
 def parse_config(context_keys: Sequence[str],

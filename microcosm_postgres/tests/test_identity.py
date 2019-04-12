@@ -8,8 +8,8 @@ from hamcrest import (
     is_,
     is_not,
 )
-
 from microcosm.api import create_object_graph
+
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.tests.fixtures import Company, CompanyType
 

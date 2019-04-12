@@ -4,13 +4,15 @@ Test registry configuration.
 """
 from unittest import SkipTest
 
+from hamcrest import assert_that, equal_to, is_
+
+from microcosm_postgres.encryption.registry import parse_config
+
+
 try:
     from aws_encryption_sdk import decrypt, encrypt  # noqa: F401
 except ImportError:
     raise SkipTest
-from hamcrest import assert_that, equal_to, is_
-
-from microcosm_postgres.encryption.registry import parse_config
 
 
 def test_parse_config_simple():

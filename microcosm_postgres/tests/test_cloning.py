@@ -2,7 +2,13 @@
 Test cloning.
 
 """
-from hamcrest import assert_that, equal_to, is_, is_not, not_none
+from hamcrest import (
+    assert_that,
+    equal_to,
+    is_,
+    is_not,
+    not_none,
+)
 from microcosm.api import create_object_graph
 
 from microcosm_postgres.cloning import clone

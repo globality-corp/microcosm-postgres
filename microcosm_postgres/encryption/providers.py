@@ -5,8 +5,9 @@ Custom key providers
 from os import urandom
 
 from microcosm.api import defaults
-from microcosm.config.validation import typed
 from microcosm.config.types import boolean
+from microcosm.config.validation import typed
+
 from aws_encryption_sdk import (
     CachingCryptoMaterialsManager,
     DefaultCryptoMaterialsManager,
