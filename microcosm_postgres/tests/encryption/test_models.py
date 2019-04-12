@@ -8,7 +8,12 @@ from hamcrest import (
     none,
     raises,
 )
-from microcosm.api import create_object_graph, load_from_dict
+from microcosm.api import (
+    create_object_graph,
+    load_each,
+    load_from_dict,
+    load_from_environ,
+)
 
 import microcosm_postgres.encryption.factories  # noqa: F401
 from microcosm_postgres.context import SessionContext, transaction
@@ -21,21 +26,24 @@ from microcosm_postgres.tests.encryption.fixtures.nullable_encryptable import Nu
 class TestEncryptable:
 
     def setup(self):
-        loader = load_from_dict(
-            multi_tenant_key_registry=dict(
-                context_keys=[
-                    "private",
-                ],
-                key_ids=[
-                    "key_id",
-                ],
+        loaders = load_each(
+            load_from_dict(
+                multi_tenant_key_registry=dict(
+                    context_keys=[
+                        "private",
+                    ],
+                    key_ids=[
+                        "key_id",
+                    ],
+                ),
             ),
+            load_from_environ,
         )
         self.graph = create_object_graph(
             name="example",
             testing=True,
             import_name="microcosm_postgres",
-            loader=loader,
+            loader=loaders,
         )
         self.encryptable_store = self.graph.encryptable_store
         self.encrypted_store = self.graph.encrypted_store
