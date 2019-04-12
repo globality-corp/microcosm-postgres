@@ -1,5 +1,3 @@
-from unittest import SkipTest
-
 from hamcrest import (
     assert_that,
     calling,
@@ -18,12 +16,6 @@ from microcosm_postgres.errors import ModelIntegrityError
 from microcosm_postgres.tests.encryption.fixtures.encryptable import Encryptable
 from microcosm_postgres.tests.encryption.fixtures.json_encryptable import JsonEncryptable
 from microcosm_postgres.tests.encryption.fixtures.nullable_encryptable import NullableEncryptable
-
-
-try:
-    from aws_encryption_sdk import decrypt, encrypt  # noqa: F401
-except ImportError:
-    raise SkipTest
 
 
 class TestEncryptable:
