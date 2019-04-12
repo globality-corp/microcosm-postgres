@@ -2,7 +2,12 @@
 Implement application-layer encryption using the aws-encryption-sdk.
 
 """
-from typing import Mapping, Sequence, Tuple, Union
+from typing import (
+    Mapping,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from aws_encryption_sdk import decrypt, encrypt
 from aws_encryption_sdk.materials_managers.base import CryptoMaterialsManager

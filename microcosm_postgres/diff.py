@@ -5,7 +5,7 @@ Compute ORM differences.
 from collections import namedtuple
 from itertools import chain
 
-from sqlalchemy.orm import class_mapper, ColumnProperty
+from sqlalchemy.orm import ColumnProperty, class_mapper
 
 
 Change = namedtuple("Change", ["before", "after"])

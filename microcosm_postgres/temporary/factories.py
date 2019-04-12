@@ -5,11 +5,7 @@ Temporary table support.
 from types import MethodType
 
 from microcosm_postgres.temporary.copy import copy_table
-from microcosm_postgres.temporary.methods import (
-    insert_many,
-    select_from,
-    upsert_into,
-)
+from microcosm_postgres.temporary.methods import insert_many, select_from, upsert_into
 
 
 def create_temporary_table(from_table, name=None, on_commit=None):
