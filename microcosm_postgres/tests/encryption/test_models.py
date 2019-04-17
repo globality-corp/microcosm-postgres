@@ -1,4 +1,5 @@
 from hamcrest import (
+    all_of,
     assert_that,
     calling,
     equal_to,
@@ -361,4 +362,28 @@ class TestEncryptable:
             )
             assert_that(
                 self.nullable_encrypted_store.count(), is_(equal_to(1)),
+            )
+
+    def test_search_encrypted_ids(self):
+        with SessionContext(self.graph):
+            with transaction():
+                encryptable = self.encryptable_store.create(
+                    Encryptable(
+                        key="private",
+                        value="value",
+                    ),
+                )
+                self.encryptable_store.create(
+                    Encryptable(
+                        key="key",
+                        value="value",
+                    ),
+                )
+
+            encrypted_ids = self.encryptable_store.search_encrypted_ids("private")
+            assert_that(
+                all_of(
+                    len(encrypted_ids), is_(equal_to(1)),
+                    encrypted_ids[0].id, is_(equal_to(encryptable.id))
+                )
             )

@@ -81,3 +81,13 @@ class EncryptableStore(Store):
         }
         values[self.model_class.__encryption_context_key__] = encryption_context_key
         return self.model_class(**values)
+
+    def search_encrypted_ids(self, context_id):
+        query = self.session.query(
+            self.model_class.id,
+        ).filter(
+            getattr(self.model_class, self.model_class.__encrypted_identifier__) != None,  # noqa
+            getattr(self.model_class, self.model_class.__encryption_context_key__) == context_id,
+        )
+
+        return query.all()
