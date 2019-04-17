@@ -3,8 +3,8 @@ Create a SQL alchemy postgres engine.
 
 """
 from microcosm.api import binding, defaults
-from microcosm.config.validation import typed
 from microcosm.config.types import boolean
+from microcosm.config.validation import typed
 from sqlalchemy import create_engine
 
 
@@ -115,11 +115,11 @@ def make_engine(metadata, config):
     driver="postgresql",
     # enable SQL echoing (verbose; only use for narrow debugging)
     echo=typed(boolean, default_value=False),
-    # connection host; will usually need to be overriden (except for local development)
+    # connection host; will usually need to be overridden (except for local development)
     host="localhost",
     # the number of extra connections over/above the pool size; 10 is the default
     max_overflow=typed(int, default_value=10),
-    # password; will usually need to be overriden (except for local development)
+    # password; will usually need to be overridden (except for local development)
     password="",
     # the default size of the connection pool
     pool_size=typed(int, default_value=5),

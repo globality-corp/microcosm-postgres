@@ -43,8 +43,8 @@ from textwrap import dedent
 from alembic import context
 from alembic.config import CommandLine, Config
 from alembic.script import ScriptDirectory
-
 from microcosm.errors import LockedGraphError, NotBoundError
+
 from microcosm_postgres.models import Model
 
 

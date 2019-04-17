@@ -4,13 +4,12 @@ Factory tests.
 """
 from hamcrest import (
     assert_that,
+    ends_with,
     equal_to,
     instance_of,
     is_,
     starts_with,
-    ends_with,
 )
-
 from microcosm.api import create_object_graph
 from sqlalchemy.engine.base import Engine
 

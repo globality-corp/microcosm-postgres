@@ -1,7 +1,6 @@
 from microcosm.api import defaults
 from microcosm.scoping.factories import ScopedFactory
-from sqlalchemy.orm import Session
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 
 @defaults(

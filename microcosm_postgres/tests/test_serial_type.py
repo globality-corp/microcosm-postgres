@@ -9,11 +9,12 @@ from hamcrest import (
     not_none,
 )
 from microcosm.api import create_object_graph
+from sqlalchemy import Column, FetchedValue
+
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.models import EntityMixin, Model
 from microcosm_postgres.store import Store
 from microcosm_postgres.types import Serial
-from sqlalchemy import Column, FetchedValue
 
 
 class WithSerial(EntityMixin, Model):

@@ -1,9 +1,6 @@
 from unittest import SkipTest
+from unittest.mock import patch
 
-try:
-    from aws_encryption_sdk import decrypt, encrypt  # noqa: F401
-except ImportError:
-    raise SkipTest
 from hamcrest import (
     assert_that,
     contains_inanyorder,
@@ -12,9 +9,14 @@ from hamcrest import (
     is_not,
 )
 from microcosm.api import create_object_graph, load_from_dict
-from unittest.mock import patch
 
 import microcosm_postgres.encryption.factories  # noqa: F401
+
+
+try:
+    from aws_encryption_sdk import decrypt, encrypt  # noqa: F401
+except ImportError:
+    raise SkipTest
 
 
 def cycle(encryptor, encryption_context_key, key_ids):

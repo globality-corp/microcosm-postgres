@@ -5,8 +5,8 @@ Encryption-related models.
 from typing import Optional, Sequence, Tuple
 
 from sqlalchemy import Column, LargeBinary, String
-from sqlalchemy.event import contains, listen, remove
 from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.event import contains, listen, remove
 
 from microcosm_postgres.encryption.encryptor import Encryptor
 

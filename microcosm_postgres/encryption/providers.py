@@ -4,9 +4,6 @@ Custom key providers
 """
 from os import urandom
 
-from microcosm.api import defaults
-from microcosm.config.validation import typed
-from microcosm.config.types import boolean
 from aws_encryption_sdk import (
     CachingCryptoMaterialsManager,
     DefaultCryptoMaterialsManager,
@@ -16,6 +13,9 @@ from aws_encryption_sdk.identifiers import EncryptionKeyType, WrappingAlgorithm
 from aws_encryption_sdk.internal.crypto.wrapping_keys import WrappingKey
 from aws_encryption_sdk.key_providers.kms import KMSMasterKeyProvider
 from aws_encryption_sdk.key_providers.raw import RawMasterKeyProvider
+from microcosm.api import defaults
+from microcosm.config.types import boolean
+from microcosm.config.validation import typed
 
 
 class StaticMasterKeyProvider(RawMasterKeyProvider):

@@ -5,10 +5,10 @@ Every model must inherit from `Model` and should inherit from the `EntityMixin`.
 
 """
 from datetime import datetime
-from dateutil.tz import tzutc
 from time import time
 from uuid import uuid4
 
+from dateutil.tz import tzutc
 from pytz import utc
 from sqlalchemy import Column, Float, types
 from sqlalchemy.ext.declarative import declarative_base

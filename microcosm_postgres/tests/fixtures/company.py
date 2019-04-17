@@ -1,8 +1,8 @@
 from enum import Enum, unique
 
+from microcosm.api import binding
 from sqlalchemy import Column, String
 
-from microcosm.api import binding
 from microcosm_postgres.models import EntityMixin, Model
 from microcosm_postgres.store import Store
 from microcosm_postgres.types import EnumType

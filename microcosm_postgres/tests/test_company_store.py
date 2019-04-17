@@ -12,14 +12,10 @@ from hamcrest import (
     is_,
     raises,
 )
-
 from microcosm.api import create_object_graph
+
 from microcosm_postgres.context import SessionContext, transaction
-from microcosm_postgres.errors import (
-    DuplicateModelError,
-    ModelNotFoundError,
-    ReferencedModelError,
-)
+from microcosm_postgres.errors import DuplicateModelError, ModelNotFoundError, ReferencedModelError
 from microcosm_postgres.tests.fixtures import Company, CompanyType, Employee
 
 

@@ -2,7 +2,12 @@
 Test DAG.
 
 """
-from hamcrest import assert_that, contains, has_entries, has_length
+from hamcrest import (
+    assert_that,
+    contains,
+    has_entries,
+    has_length,
+)
 from microcosm.api import create_object_graph
 
 from microcosm_postgres.context import SessionContext, transaction

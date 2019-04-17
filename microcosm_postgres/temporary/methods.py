@@ -2,8 +2,9 @@
 Extension methods on top of a temporary table.
 
 """
-from microcosm_postgres.context import SessionContext
 from sqlalchemy.dialects.postgresql import insert
+
+from microcosm_postgres.context import SessionContext
 
 
 def to_dict(item, columns):

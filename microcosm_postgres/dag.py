@@ -3,7 +3,7 @@ Directed Acyclic Graph of model objects.
 
 """
 from abc import ABCMeta, abstractmethod
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 from inspect import getmro
 
 from inflection import underscore
