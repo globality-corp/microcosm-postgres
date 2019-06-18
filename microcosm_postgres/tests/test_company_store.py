@@ -93,6 +93,22 @@ class TestCompany:
             raises(ModelNotFoundError, pattern="Company not found"),
         )
 
+    def test_create_delete_company_complicated_expression(self):
+        """
+        Should not be able to retrieve a company after deleting it.
+
+        """
+        with transaction():
+            company = Company(name="name").create()
+
+        with transaction():
+            self.company_store._delete(Company.name.in_(["name"]), synchronize_session="fetch")
+
+        assert_that(
+            calling(Company.retrieve).with_args(company.id),
+            raises(ModelNotFoundError, pattern="Company not found"),
+        )
+
     def test_create_search_count_company(self):
         """
         Should be able to search and count companies after creation.
