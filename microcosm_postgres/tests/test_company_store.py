@@ -100,6 +100,7 @@ class TestCompany:
         """
         with transaction():
             company = Company(name="name").create()
+            other_company = Company(name="other-name").create()
 
         with transaction():
             self.company_store._delete(Company.name.in_(["name"]), synchronize_session="fetch")
@@ -108,6 +109,9 @@ class TestCompany:
             calling(Company.retrieve).with_args(company.id),
             raises(ModelNotFoundError, pattern="Company not found"),
         )
+
+        assert_that(Company.count(), is_(equal_to(1)))
+
 
     def test_create_search_count_company(self):
         """
