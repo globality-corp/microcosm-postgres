@@ -95,7 +95,7 @@ class TestCompany:
 
     def test_create_delete_company_complicated_expression(self):
         """
-        Should not be able to retrieve a company after deleting it.
+        Delete should support more complicated criterion with the `fetch` synchronization strategy enabled.
 
         """
         with transaction():
