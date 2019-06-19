@@ -2,7 +2,7 @@
   "params": {
     "app_name": "example",
     "database": "postgres",
-    "name": "microcosm_postgres",
+    "name": "microcosm-postgres",
     "pypi": {
       "repository": "pypi"
     }
