@@ -35,6 +35,14 @@ def insert_many(self, items):
 
 def upsert_into(self, table):
     """
+    Deprecated. Use `upsert_into_on_conflict_do_nothing` instead
+
+    """
+    return self.upsert_into_on_conflict_do_nothing(table)
+
+
+def upsert_into_on_conflict_do_nothing(self, table):
+    """
     Upsert from a temporarty table into another table.
 
     """
@@ -46,7 +54,7 @@ def upsert_into(self, table):
     ).rowcount
 
 
-def upsert_into_on_conflict_update(self, table, **on_conflict_kwargs):
+def upsert_into_on_conflict_do_update(self, table, **on_conflict_kwargs):
     return SessionContext.session.execute(
         insert(table).from_select(
             self.c,

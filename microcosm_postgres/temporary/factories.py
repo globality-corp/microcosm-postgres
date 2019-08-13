@@ -9,7 +9,8 @@ from microcosm_postgres.temporary.methods import (
     insert_many,
     select_from,
     upsert_into,
-    upsert_into_on_conflict_update,
+    upsert_into_on_conflict_do_nothing,
+    upsert_into_on_conflict_do_update,
 )
 
 
@@ -37,8 +38,17 @@ def create_temporary_table(from_table, name=None, on_commit=None):
 
     temporary_table.insert_many = MethodType(insert_many, temporary_table)
     temporary_table.select_from = MethodType(select_from, temporary_table)
+
+    # XXX: Deprecated. Use `upsert_into_on_conflict_do_nothing` instead
     temporary_table.upsert_into = MethodType(upsert_into, temporary_table)
-    temporary_table.upsert_into_on_conflict_update = MethodType(upsert_into_on_conflict_update, temporary_table)
+    temporary_table.upsert_into_on_conflict_do_nothing = MethodType(
+        upsert_into_on_conflict_do_nothing,
+        temporary_table,
+    )
+    temporary_table.upsert_into_on_conflict_do_update = MethodType(
+        upsert_into_on_conflict_do_update,
+        temporary_table,
+    )
 
     return temporary_table
 

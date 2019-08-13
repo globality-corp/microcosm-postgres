@@ -56,7 +56,7 @@ class TestTransient:
                         is_(equal_to(3)),
                     )
                     assert_that(
-                        transient_company.upsert_into(Company),
+                        transient_company.upsert_into_on_conflict_do_nothing(Company),
                         is_(equal_to(2)),
                     )
                     assert_that(
@@ -64,7 +64,7 @@ class TestTransient:
                         is_(equal_to(3)),
                     )
 
-    def test_upsert_into_on_conflict_update(self):
+    def test_upsert_into_on_conflict_do_update(self):
         with SessionContext(self.graph):
             with transaction():
                 # NB: create() will set the id of companies[0]
@@ -78,7 +78,7 @@ class TestTransient:
                         is_(equal_to(3)),
                     )
                     assert_that(
-                        transient_company.upsert_into_on_conflict_update(
+                        transient_company.upsert_into_on_conflict_do_update(
                             Company,
                             index_elements=["id"],
                             set_=dict(
@@ -92,7 +92,6 @@ class TestTransient:
                         self.company_store.count(),
                         is_(equal_to(3)),
                     )
-
 
         with SessionContext(self.graph):
             company_0 = self.company_store.retrieve(self.companies[0].id)
