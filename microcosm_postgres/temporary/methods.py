@@ -2,6 +2,8 @@
 Extension methods on top of a temporary table.
 
 """
+import warnings
+
 from sqlalchemy.dialects.postgresql import insert
 
 from microcosm_postgres.context import SessionContext
@@ -38,6 +40,10 @@ def upsert_into(self, table):
     Deprecated. Use `upsert_into_on_conflict_do_nothing` instead
 
     """
+    warnings.warn(
+        "`upsert_into` is deprecated. Please use `upsert_into_on_conflict_do_nothing`",
+        DeprecationWarning,
+    )
     return self.upsert_into_on_conflict_do_nothing(table)
 
 
