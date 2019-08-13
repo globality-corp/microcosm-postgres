@@ -46,6 +46,17 @@ def upsert_into(self, table):
     ).rowcount
 
 
+def upsert_into_on_conflict_update(self, table, **on_conflict_kwargs):
+    return SessionContext.session.execute(
+        insert(table).from_select(
+            self.c,
+            self,
+        ).on_conflict_do_update(
+            **on_conflict_kwargs,
+        ),
+    ).rowcount
+
+
 def select_from(self, table):
     return SessionContext.session.query(
         table

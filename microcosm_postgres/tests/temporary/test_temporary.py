@@ -61,6 +61,40 @@ class TestTransient:
                         is_(equal_to(3)),
                     )
 
+    def test_upsert_into_on_conflict_update(self):
+        with SessionContext(self.graph):
+            with transaction():
+                # NB: create() will set the id of companies[0]
+                self.companies[0].create()
+
+            with transaction():
+                with transient(Company) as transient_company:
+                    assert_that(
+                        transient_company.insert_many(self.companies),
+                        is_(equal_to(3)),
+                    )
+                    assert_that(
+                        transient_company.upsert_into_on_conflict_update(
+                            Company,
+                            index_elements=["id"],
+                            set_=dict(
+                                type=CompanyType.public,
+                            ),
+                        ),
+                        is_(equal_to(3)),
+                    )
+                    assert_that(
+                        self.company_store.count(),
+                        is_(equal_to(3)),
+                    )
+
+        with SessionContext(self.graph):
+            company_0 = self.company_store.retrieve(self.companies[0].id)
+            assert_that(
+                company_0.type,
+                equal_to(CompanyType.public),
+            )
+
     def test_select_from_none(self):
         with SessionContext(self.graph):
             with transient(Company) as transient_company:
