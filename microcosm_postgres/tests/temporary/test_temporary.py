@@ -1,7 +1,10 @@
+from datetime import datetime
+
 from hamcrest import (
     assert_that,
     contains,
     equal_to,
+    greater_than,
     has_properties,
     is_,
 )
@@ -67,6 +70,7 @@ class TestTransient:
                 # NB: create() will set the id of companies[0]
                 self.companies[0].create()
 
+            old_updated_at = self.companies[0].updated_at
             with transaction():
                 with transient(Company) as transient_company:
                     assert_that(
@@ -79,6 +83,7 @@ class TestTransient:
                             index_elements=["id"],
                             set_=dict(
                                 type=CompanyType.public,
+                                updated_at=datetime.now(),
                             ),
                         ),
                         is_(equal_to(3)),
@@ -88,11 +93,16 @@ class TestTransient:
                         is_(equal_to(3)),
                     )
 
+
         with SessionContext(self.graph):
             company_0 = self.company_store.retrieve(self.companies[0].id)
             assert_that(
                 company_0.type,
                 equal_to(CompanyType.public),
+            )
+            assert_that(
+                company_0.updated_at,
+                greater_than(old_updated_at),
             )
 
     def test_select_from_none(self):

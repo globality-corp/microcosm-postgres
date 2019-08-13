@@ -23,6 +23,7 @@ def on_init(target: "EncryptableMixin", args, kwargs):
 
     """
     encryptor = target.__encryptor__
+    assert encryptor is not None
 
     # encryption context may be nullable
     try:
@@ -92,7 +93,7 @@ class EncryptableMixin:
     -  An `encrypted_relationship` property (defaults to `encrypted`)
 
     """
-    __encryptor__ = None
+    __encryptor__: Optional[Encryptor] = None
     __encrypted_identifier__ = "encrypted_id"
     __encrypted_relationship__ = "encrypted"
     __encryption_context_key__ = "key"
