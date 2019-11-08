@@ -20,6 +20,7 @@ from microcosm.api import create_object_graph
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.errors import DuplicateModelError, ModelNotFoundError, ReferencedModelError
+from microcosm_postgres.metrics import SQLExecutionStatus
 from microcosm_postgres.tests.fixtures import Company, CompanyType, Employee
 
 
@@ -223,16 +224,16 @@ class TestCompany:
             assert_that(mocked_metrics.call_count, is_(equal_to(2)))
             call_arg1 = mocked_metrics.call_args_list[0][1]
             call_arg2 = mocked_metrics.call_args_list[1][1]
-            assert_that(call_arg1, has_entries({'execution_result': equal_to('SUCCESS'),
-                                                'model_name': equal_to('Company'),
-                                                'action': equal_to('create')
-                                                }))
+            assert_that(call_arg1, has_entries(dict(execution_result=equal_to(SQLExecutionStatus.SUCCESS),
+                                                    model_name=equal_to('Company'),
+                                                    action=equal_to('create')
+                                                    )))
             assert_that(call_arg1, has_key(equal_to('elapsed_time')))
 
-            assert_that(call_arg2, has_entries({'execution_result': equal_to('SUCCESS'),
-                                                'model_name': equal_to('Company'),
-                                                'action': equal_to('retrieve'),
-                                                }))
+            assert_that(call_arg2, has_entries(dict(execution_result=equal_to(SQLExecutionStatus.SUCCESS),
+                                                    model_name=equal_to('Company'),
+                                                    action=equal_to('retrieve')
+                                                    )))
             assert_that(call_arg2, has_key(equal_to('elapsed_time')))
 
     def test_create_company_create_and_delete_employee_stores_metrics(self):
@@ -258,22 +259,22 @@ class TestCompany:
                 call_arg1 = mocked_employee_metrics.call_args_list[0][1]
                 call_arg2 = mocked_employee_metrics.call_args_list[1][1]
                 call_arg3 = mocked_employee_metrics.call_args_list[2][1]
-                assert_that(call_arg1, has_entries({'execution_result': equal_to('SUCCESS'),
-                                                    'model_name': equal_to('Employee'),
-                                                    'action': equal_to('create')
-                                                    }))
+                assert_that(call_arg1, has_entries(dict(execution_result=equal_to(SQLExecutionStatus.SUCCESS),
+                                                        model_name=equal_to('Employee'),
+                                                        action=equal_to('create')
+                                                        )))
                 assert_that(call_arg1, has_key(equal_to('elapsed_time')))
 
-                assert_that(call_arg2, has_entries({'execution_result': equal_to('SUCCESS'),
-                                                    'model_name': equal_to('Employee'),
-                                                    'action': equal_to('retrieve'),
-                                                    }))
+                assert_that(call_arg2, has_entries(dict(execution_result=equal_to(SQLExecutionStatus.SUCCESS),
+                                                        model_name=equal_to('Employee'),
+                                                        action=equal_to('retrieve')
+                                                        )))
                 assert_that(call_arg2, has_key(equal_to('elapsed_time')))
 
-                assert_that(call_arg3, has_entries({'execution_result': equal_to('SUCCESS'),
-                                                    'model_name': equal_to('Employee'),
-                                                    'action': equal_to('delete'),
-                                                    }))
+                assert_that(call_arg3, has_entries(dict(execution_result=equal_to(SQLExecutionStatus.SUCCESS),
+                                                        model_name=equal_to('Employee'),
+                                                        action=equal_to('delete')
+                                                        )))
                 assert_that(call_arg3, has_key(equal_to('elapsed_time')))
 
     def test_create_raises_exception_stores_metrics(self):
@@ -293,20 +294,20 @@ class TestCompany:
             call_arg1 = mocked_metrics.call_args_list[0][1]
             call_arg2 = mocked_metrics.call_args_list[1][1]
             call_arg3 = mocked_metrics.call_args_list[2][1]
-            assert_that(call_arg1, has_entries({'execution_result': equal_to('SUCCESS'),
-                                                'model_name': equal_to('Company'),
-                                                'action': equal_to('create')
-                                                }))
+            assert_that(call_arg1, has_entries(dict(execution_result=equal_to(SQLExecutionStatus.SUCCESS),
+                                                    model_name=equal_to('Company'),
+                                                    action=equal_to('create')
+                                                    )))
             assert_that(call_arg1, has_key(equal_to('elapsed_time')))
 
-            assert_that(call_arg2, has_entries({'execution_result': equal_to('FAILURE'),
-                                                'model_name': equal_to('Company'),
-                                                'action': equal_to('create'),
-                                                }))
+            assert_that(call_arg2, has_entries(dict(execution_result=equal_to(SQLExecutionStatus.FAILURE),
+                                                    model_name=equal_to('Company'),
+                                                    action=equal_to('create')
+                                                    )))
             assert_that(call_arg2, has_key(equal_to('elapsed_time')))
 
-            assert_that(call_arg3, has_entries({'execution_result': equal_to('FAILURE'),
-                                                'model_name': equal_to('Company'),
-                                                'action': equal_to('delete'),
-                                                }))
+            assert_that(call_arg3, has_entries(dict(execution_result=equal_to(SQLExecutionStatus.FAILURE),
+                                                    model_name=equal_to('Company'),
+                                                    action=equal_to('delete')
+                                                    )))
             assert_that(call_arg3, has_key(equal_to('elapsed_time')))

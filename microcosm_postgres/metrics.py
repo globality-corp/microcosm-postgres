@@ -58,6 +58,11 @@ class PostgresStoreMetrics:
         )
 
 
+class SQLExecutionStatus:
+    SUCCESS = "SUCCESS"
+    FAILURE = "FAILURE"
+
+
 def postgres_metric_timing(action):
     def wrap(func):
         def func_wrapper(self, *args, **kwargs):
@@ -69,10 +74,10 @@ def postgres_metric_timing(action):
                 with elapsed_time(extra):
                     try:
                         result = func(self, *args, **kwargs)
-                        execution_status = "SUCCESS"
+                        execution_status = SQLExecutionStatus.SUCCESS
                         return result
                     except Exception:
-                        execution_status = "FAILURE"
+                        execution_status = SQLExecutionStatus.FAILURE
                         raise
             finally:
                 self.postgres_store_metrics(
@@ -81,4 +86,5 @@ def postgres_metric_timing(action):
                 )
 
         return func_wrapper
+
     return wrap
