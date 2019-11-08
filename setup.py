@@ -33,6 +33,7 @@ setup(
     dependency_links=[
     ],
     extras_require={
+        "metrics": "microcosm-metrics>=2.5.0",
         "encryption": "aws-encryption-sdk>=1.3.8",
     },
     entry_points={
@@ -43,6 +44,7 @@ setup(
             "multi_tenant_key_registry = microcosm_postgres.encryption.registry:MultiTenantKeyRegistry [encryption]",
             "materials_manager = microcosm_postgres.encryption.providers:configure_materials_manager [encryption]",
             "postgres = microcosm_postgres.factories.engine:configure_engine",
+            "postgres_store_metrics = microcosm_postgres.metrics:PostgresStoreMetrics",
             "sessionmaker = microcosm_postgres.factories.sessionmaker:configure_sessionmaker",
         ],
     },

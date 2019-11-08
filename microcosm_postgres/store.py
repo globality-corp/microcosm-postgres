@@ -30,6 +30,7 @@ from microcosm_postgres.errors import (
     ReferencedModelError,
 )
 from microcosm_postgres.identifiers import new_object_id
+from microcosm_postgres.metrics import postgres_metric_timing
 
 
 class Store:
@@ -41,6 +42,7 @@ class Store:
             auto_filter_field.name: auto_filter_field
             for auto_filter_field in auto_filter_fields
         }
+        self.postgres_store_metrics = self.graph.postgres_store_metrics
         self.assign_model_class_store()
 
     def assign_model_class_store(self):
@@ -48,6 +50,10 @@ class Store:
             # Give the model class a backref to allow model-oriented CRUD
             # short cuts while still having an abstraction layer we can replace.
             self.model_class.store = self
+
+    @property
+    def model_name(self):
+        return self.model_class.__name__ if self.model_class else None
 
     @property
     def session(self):
@@ -85,6 +91,7 @@ class Store:
             else:
                 raise ModelIntegrityError(error)
 
+    @postgres_metric_timing(action="create")
     def create(self, instance):
         """
         Create a new model instance.
@@ -96,6 +103,7 @@ class Store:
             self.session.add(instance)
         return instance
 
+    @postgres_metric_timing(action="retrieve")
     def retrieve(self, identifier, *criterion):
         """
         Retrieve a model by primary key and zero or more other criteria.
@@ -108,6 +116,7 @@ class Store:
             *criterion
         )
 
+    @postgres_metric_timing(action="update")
     def update(self, identifier, new_instance):
         """
         Update an existing model with a new one.
@@ -121,6 +130,7 @@ class Store:
             instance.updated_at = instance.new_timestamp()
         return instance
 
+    @postgres_metric_timing(action="update_with_diff")
     def update_with_diff(self, identifier, new_instance):
         """
         Update an existing model with a new one.
@@ -148,6 +158,7 @@ class Store:
         except ModelNotFoundError:
             return self.create(new_instance)
 
+    @postgres_metric_timing(action="delete")
     def delete(self, identifier):
         """
         Delete a model by primary key.
@@ -157,6 +168,7 @@ class Store:
         """
         return self._delete(self.model_class.id == identifier)
 
+    @postgres_metric_timing(action="count")
     def count(self, *criterion, **kwargs):
         """
         Count the number of models matching some criterion.
@@ -166,6 +178,7 @@ class Store:
         query = self._filter(query, **kwargs)
         return query.count()
 
+    @postgres_metric_timing(action="search")
     def search(self, *criterion, **kwargs):
         """
         Return the list of models matching some criterion.
@@ -181,6 +194,7 @@ class Store:
         query = self._paginate(query, **kwargs)
         return query.all()
 
+    @postgres_metric_timing(action="search_first")
     def search_first(self, *criterion, **kwargs):
         """
         Returns the first match based on criteria or None.
