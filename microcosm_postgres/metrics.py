@@ -35,7 +35,7 @@ class PostgresStoreMetrics:
 
     def __call__(self, model_name, action, elapsed_time, execution_result):
         """
-        Send metrics for how long it takes to produce a message
+        Send metrics for how long it takes to execute a sql operation
 
         """
         if not self.enabled:
