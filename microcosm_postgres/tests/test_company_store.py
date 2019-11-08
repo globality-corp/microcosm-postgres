@@ -11,9 +11,11 @@ from hamcrest import (
     contains_inanyorder,
     empty,
     equal_to,
+    has_entries,
+    has_key,
     is_,
     raises,
-    has_entries, has_key)
+)
 from microcosm.api import create_object_graph
 
 from microcosm_postgres.context import SessionContext, transaction
