@@ -31,7 +31,7 @@ def test_configure_metrics_default_metrics_installed():
         mocked.return_value = Mock(host="localhost")
 
         graph = create_object_graph("example", testing=True)
-        assert_that(graph.postgres_store_metrics.enabled, is_(equal_to(False)))
+        assert_that(graph.postgres_store_metrics.enabled, is_(equal_to(True)))
 
 
 def test_configure_metrics_default_metrics_configured():
