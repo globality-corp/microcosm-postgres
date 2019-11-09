@@ -2,6 +2,8 @@
 Persistence tests for company store.
 
 """
+from unittest.mock import patch
+
 from hamcrest import (
     assert_that,
     calling,
@@ -9,6 +11,8 @@ from hamcrest import (
     contains_inanyorder,
     empty,
     equal_to,
+    has_entries,
+    has_key,
     is_,
     raises,
 )
@@ -16,6 +20,7 @@ from microcosm.api import create_object_graph
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.errors import DuplicateModelError, ModelNotFoundError, ReferencedModelError
+from microcosm_postgres.metrics import SQLExecutionStatus
 from microcosm_postgres.tests.fixtures import Company, CompanyType, Employee
 
 
@@ -203,3 +208,114 @@ class TestCompany:
             ).create()
 
         assert_that(calling(company.delete), raises(ReferencedModelError))
+
+    def test_create_company_stores_metrics(self):
+        with patch.object(self.graph.company_store, "postgres_store_metrics") as mocked_metrics:
+            with transaction():
+                company = Company(
+                    name="name",
+                    type=CompanyType.private,
+                ).create()
+
+            retrieved_company = Company.retrieve(company.id)
+            assert_that(retrieved_company.name, is_(equal_to("name")))
+            assert_that(retrieved_company.type, is_(equal_to(CompanyType.private)))
+
+            assert_that(mocked_metrics.call_count, is_(equal_to(2)))
+            call_arg1 = mocked_metrics.call_args_list[0][1]
+            call_arg2 = mocked_metrics.call_args_list[1][1]
+            assert_that(call_arg1, has_entries(dict(
+                execution_result=equal_to(SQLExecutionStatus.SUCCESS.name),
+                model_name=equal_to('Company'),
+                action=equal_to('create')
+            )))
+            assert_that(call_arg1, has_key(equal_to('elapsed_time')))
+
+            assert_that(call_arg2, has_entries(dict(
+                execution_result=equal_to(SQLExecutionStatus.SUCCESS.name),
+                model_name=equal_to('Company'),
+                action=equal_to('retrieve')
+            )))
+            assert_that(call_arg2, has_key(equal_to('elapsed_time')))
+
+    def test_create_company_create_and_delete_employee_stores_metrics(self):
+        with patch.object(self.graph.company_store, "postgres_store_metrics") as mocked_company_metrics:
+            with patch.object(self.graph.employee_store, "postgres_store_metrics") as mocked_employee_metrics:
+                with transaction():
+                    company = Company(
+                        name="name",
+                    ).create()
+                    employee = Employee(
+                        first="first",
+                        last="last",
+                        company_id=company.id,
+                    ).create()
+                retrieved_employee = Employee.retrieve(employee.id)
+                assert_that(retrieved_employee.first, is_(equal_to("first")))
+
+                with transaction():
+                    employee.delete()
+
+                assert_that(mocked_company_metrics.call_count, is_(equal_to(1)))
+                assert_that(mocked_employee_metrics.call_count, is_(equal_to(3)))
+                call_arg1 = mocked_employee_metrics.call_args_list[0][1]
+                call_arg2 = mocked_employee_metrics.call_args_list[1][1]
+                call_arg3 = mocked_employee_metrics.call_args_list[2][1]
+                assert_that(call_arg1, has_entries(dict(
+                    execution_result=equal_to(SQLExecutionStatus.SUCCESS.name),
+                    model_name=equal_to('Employee'),
+                    action=equal_to('create')
+                )))
+                assert_that(call_arg1, has_key(equal_to('elapsed_time')))
+
+                assert_that(call_arg2, has_entries(dict(
+                    execution_result=equal_to(SQLExecutionStatus.SUCCESS.name),
+                    model_name=equal_to('Employee'),
+                    action=equal_to('retrieve')
+                )))
+                assert_that(call_arg2, has_key(equal_to('elapsed_time')))
+
+                assert_that(call_arg3, has_entries(dict(
+                    execution_result=equal_to(SQLExecutionStatus.SUCCESS.name),
+                    model_name=equal_to('Employee'),
+                    action=equal_to('delete')
+                )))
+                assert_that(call_arg3, has_key(equal_to('elapsed_time')))
+
+    def test_create_raises_exception_stores_metrics(self):
+        with patch.object(self.graph.company_store, "postgres_store_metrics") as mocked_metrics:
+            with transaction():
+                Company(name="name").create()
+
+            company = Company(name="name")
+            assert_that(calling(company.create), raises(DuplicateModelError))
+
+            SessionContext.session.rollback()
+
+            with transaction():
+                assert_that(calling(company.delete), raises(ModelNotFoundError))
+
+            assert_that(mocked_metrics.call_count, is_(equal_to(3)))
+            call_arg1 = mocked_metrics.call_args_list[0][1]
+            call_arg2 = mocked_metrics.call_args_list[1][1]
+            call_arg3 = mocked_metrics.call_args_list[2][1]
+            assert_that(call_arg1, has_entries(dict(
+                execution_result=equal_to(SQLExecutionStatus.SUCCESS.name),
+                model_name=equal_to('Company'),
+                action=equal_to('create')
+            )))
+            assert_that(call_arg1, has_key(equal_to('elapsed_time')))
+
+            assert_that(call_arg2, has_entries(dict(
+                execution_result=equal_to(SQLExecutionStatus.FAILURE.name),
+                model_name=equal_to('Company'),
+                action=equal_to('create')
+            )))
+            assert_that(call_arg2, has_key(equal_to('elapsed_time')))
+
+            assert_that(call_arg3, has_entries(dict(
+                execution_result=equal_to(SQLExecutionStatus.FAILURE.name),
+                model_name=equal_to('Company'),
+                action=equal_to('delete')
+            )))
+            assert_that(call_arg3, has_key(equal_to('elapsed_time')))
