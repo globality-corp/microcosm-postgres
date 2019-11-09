@@ -1,3 +1,5 @@
+from enum import Enum
+
 from microcosm.api import defaults, typed
 from microcosm.config.types import boolean
 from microcosm.errors import NotBoundError
@@ -15,9 +17,10 @@ class PostgresStoreMetrics:
 
     def __init__(self, graph):
         self.metrics = self.get_metrics(graph)
-        self.enabled = bool(
-            self.metrics and graph.config.postgres_store_metrics.enabled
-        )
+        self.enabled = all([
+            self.metrics,
+            graph.config.postgres_store_metrics.enabled
+        ])
 
     def get_metrics(self, graph):
         """
@@ -56,7 +59,7 @@ class PostgresStoreMetrics:
         )
 
 
-class SQLExecutionStatus:
+class SQLExecutionStatus(Enum):
     SUCCESS = "SUCCESS"
     FAILURE = "FAILURE"
 
@@ -72,10 +75,10 @@ def postgres_metric_timing(action):
                 with elapsed_time(extra):
                     try:
                         result = func(self, *args, **kwargs)
-                        execution_status = SQLExecutionStatus.SUCCESS
+                        execution_status = SQLExecutionStatus.SUCCESS.name
                         return result
                     except Exception:
-                        execution_status = SQLExecutionStatus.FAILURE
+                        execution_status = SQLExecutionStatus.FAILURE.name
                         raise
             finally:
                 self.postgres_store_metrics(
