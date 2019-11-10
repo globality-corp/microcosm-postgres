@@ -17,10 +17,11 @@ class PostgresStoreMetrics:
 
     def __init__(self, graph):
         self.metrics = self.get_metrics(graph)
-        self.enabled = all([
-            self.metrics,
-            graph.config.postgres_store_metrics.enabled
-        ])
+        self.enabled = bool(
+            self.metrics
+            and self.metrics.host != "localhost"
+            and graph.config.postgres_store_metrics.enabled
+        )
 
     def get_metrics(self, graph):
         """
