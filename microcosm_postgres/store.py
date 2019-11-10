@@ -42,7 +42,6 @@ class Store:
             auto_filter_field.name: auto_filter_field
             for auto_filter_field in auto_filter_fields
         }
-        self.postgres_store_metrics = self.graph.postgres_store_metrics
         self.assign_model_class_store()
 
     def assign_model_class_store(self):
