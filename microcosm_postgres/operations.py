@@ -2,6 +2,7 @@
 Common database operations.
 
 """
+from sqlalchemy import MetaData
 from sqlalchemy.exc import ProgrammingError
 
 from microcosm_postgres.migrate import main
@@ -65,13 +66,34 @@ def drop_alembic_table(graph):
         return True
 
 
+# Cached database metadata instance
+_metadata = None
+
+
 def recreate_all(graph):
     """
-    Drop and add back all database tables.
+    Drop and add back all database tables, or reset all data associated with a database.
+    Intended mainly for testing, where a test database may either need to be re-initialized
+    or cleared out between tests
 
     """
-    drop_all(graph)
-    create_all(graph)
+
+    global _metadata
+
+    if _metadata is None:
+        # First-run, the test database/metadata needs to be initialized
+        drop_all(graph)
+        create_all(graph)
+
+        _metadata = MetaData(bind=graph.postgres, reflect=True)
+        return
+
+    # Otherwise, truncate all existing tables
+    connection = graph.postgres.connect()
+    transaction = connection.begin()
+    for table in reversed(_metadata.sorted_tables):
+        connection.execute(table.delete())
+    transaction.commit()
 
 
 def new_session(graph, expire_on_commit=False):

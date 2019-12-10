@@ -56,11 +56,12 @@ class TestSerialType:
             with transaction():
                 example = self.store.create(WithSerial())
 
+            value = example.value
             context.session.expunge(example)
 
             example = self.store.retrieve(example.id)
 
-        assert_that(example.value, is_(equal_to(1)))
+        assert_that(example.value, is_(equal_to(value)))
 
     def test_retrieve_by_sequence_value(self):
         """
@@ -86,6 +87,7 @@ class TestSerialType:
             with transaction():
                 example = self.store.create(WithSerial())
 
+            previous_value = example.value
             example.value = example.value + 1
 
             with transaction():
@@ -95,7 +97,7 @@ class TestSerialType:
 
             example = self.store.retrieve(example.id)
 
-        assert_that(example.value, is_(equal_to(2)))
+        assert_that(example.value, is_(previous_value + 1))
 
     def test_delete_does_not_reset_sequence(self):
         """
@@ -106,10 +108,12 @@ class TestSerialType:
             with transaction():
                 example = self.store.create(WithSerial())
 
+            previous_value = example.value
+
             with transaction():
                 self.store.delete(example.id)
 
             with transaction():
                 example = self.store.create(WithSerial())
 
-            assert_that(example.value, is_(equal_to(2)))
+            assert_that(example.value, is_(equal_to(previous_value + 1)))
