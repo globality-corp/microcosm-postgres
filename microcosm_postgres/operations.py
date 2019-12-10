@@ -79,16 +79,13 @@ def recreate_all(graph):
     """
 
     global _metadata
-    initialize = False
 
     if _metadata is None:
-        _metadata = MetaData(bind=graph.postgres, reflect=True)
-        initialize = True
-
-    # First use of this function, re-create the database from scratch.
-    if initialize:
+        # First-run, the test database/metadata needs to be initialized
         drop_all(graph)
         create_all(graph)
+
+        _metadata = MetaData(bind=graph.postgres, reflect=True)
         return
 
     # Otherwise, truncate all existing tables
