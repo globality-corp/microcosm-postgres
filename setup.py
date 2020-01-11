@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 
 project = "microcosm-postgres"
-version = "1.19.0"
+version = "1.20.0"
 
 setup(
     name=project,
@@ -22,7 +22,6 @@ setup(
         "microcosm>=2.12.0",
         "microcosm-logging>=1.5.0",
         "psycopg2-binary>=2.7.5",
-        "python-dateutil<2.8.1",
         "pytz>=2018.5",
         "SQLAlchemy>=1.2.11",
         "SQLAlchemy-Utils>=0.33.3",
