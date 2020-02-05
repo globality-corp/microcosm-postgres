@@ -220,6 +220,9 @@ class Store:
         By default, is a noop.
 
         """
+        if hasattr(self.model_class, "sort_by"):
+            return query.order_by(self.model_class.sort_by)
+
         return query
 
     def _filter(self, query, **kwargs):
