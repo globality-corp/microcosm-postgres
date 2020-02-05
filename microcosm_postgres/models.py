@@ -80,9 +80,9 @@ class PrimaryKeyMixin:
     def updated_timestamp(self):
         return (self.updated_at.replace(tzinfo=None) - EPOCH).total_seconds()
 
-    @property
-    def sort_key(self):
-        return self.created_at.asc()
+    @classmethod
+    def sort_by(cls):
+        return cls.created_at.asc()
 
 
 class UnixTimestampPrimaryKeyMixin:

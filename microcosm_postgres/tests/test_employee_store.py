@@ -12,6 +12,7 @@ from hamcrest import (
     raises,
 )
 from microcosm.api import create_object_graph
+from datetime import datetime, timedelta
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.errors import ModelIntegrityError, ModelNotFoundError
@@ -216,6 +217,36 @@ class TestEmployeeStore:
         assert_that(
             [employee.id for employee in self.employee_store.search_by_company(company2.id)],
             contains_inanyorder(employee3.id)
+        )
+
+    def test_search_by_company_created_ordering(self):
+        """
+        Elements should by-default order by created by date.
+
+        """
+        with transaction():
+            company1 = Company(
+                created_at=datetime.now() + timedelta(days=1),
+                name="company newer",
+            ).create()
+
+            # We mock this second object to have a `created_at` date that's older than the first, so when
+            # we query for this endpoint and use the default sorting mechanism
+            company2 = Company(
+                created_at=datetime.now() - timedelta(days=1),
+                name="company older",
+            ).create()
+
+        assert_that(Company.count(), is_(equal_to(3)))
+
+        print([company.created_at for company in self.company_store.search()])
+        assert_that(
+            [company.name for company in self.company_store.search()],
+            contains(
+                "company older",
+                "name",
+                "company newer",
+            ),
         )
 
     def test_search_by_company_kwargs(self):
