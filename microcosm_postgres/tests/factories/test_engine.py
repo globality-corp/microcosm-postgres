@@ -27,7 +27,7 @@ def test_configure_engine():
     # engine has expected configuration
     assert_that(
         str(engine.url),
-        starts_with("postgresql://example:@"),
+        starts_with("postgresql://example:test@"),
     )
 
     assert_that(

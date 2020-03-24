@@ -1,6 +1,6 @@
 *
 !microcosm_postgres
-microcosm_postgres/test*
+microcosm_postgres/tests
 !dist/*-none-any.whl
 !entrypoint.sh
 !MANIFEST.in

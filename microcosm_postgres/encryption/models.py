@@ -164,7 +164,7 @@ class EncryptableMixin:
             # Hence the `__encryptor__` hack above...
             if contains(cls, name, func):
                 remove(cls, name, func)
-            listen(cls, name, func)
+            listen(cls, name, func, restore_load_context=True)
 
 
 class EncryptedMixin:
