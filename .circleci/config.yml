@@ -85,7 +85,7 @@ jobs:
           name: pull and run database - postgres
           command: |
             docker pull postgres
-            docker run -d --name microcosm_postgres_db -e POSTGRES_DB=example_test_db -e POSTGRES_USER=example postgres
+            docker run -d --name microcosm_postgres_db -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=example_test_db -e POSTGRES_USER=example postgres
       - run:
           name: Test code
           command: |
