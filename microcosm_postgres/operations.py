@@ -85,7 +85,8 @@ def recreate_all(graph):
         drop_all(graph)
         create_all(graph)
 
-        _metadata = MetaData(bind=graph.postgres, reflect=True)
+        _metadata = MetaData(bind=graph.postgres)
+        _metadata.reflect()
         return
 
     # Otherwise, truncate all existing tables
