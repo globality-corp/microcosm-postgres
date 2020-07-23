@@ -10,7 +10,9 @@ from microcosm_postgres.operations import create_all, drop_all
 def parse_args(graph):
     parser = ArgumentParser()
     parser.add_argument("--drop", "-D", action="store_true")
-    return parser.parse_args()
+    # Allow services to set custom arguments for `createall`
+    arguments, _ = parser.parse_known_args()
+    return arguments
 
 
 def main(graph):
