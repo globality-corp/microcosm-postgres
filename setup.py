@@ -34,7 +34,7 @@ setup(
     extras_require={
         "metrics": "microcosm-metrics>=2.5.0",
         # 09-25-2020: pin aws encryption b/c of breaking API changes
-        "encryption": "aws-encryption-sdk>=1.3.8<2.0.0",
+        "encryption": "aws-encryption-sdk==1.7.1",
     },
     entry_points={
         "microcosm.factories": [
