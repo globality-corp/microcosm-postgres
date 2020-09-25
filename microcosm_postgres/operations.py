@@ -70,14 +70,13 @@ def drop_alembic_table(graph):
 _metadata = None
 
 
-def recreate_all(graph):
+def recreate_all(graph, cascade_truncation=False):
     """
     Drop and add back all database tables, or reset all data associated with a database.
     Intended mainly for testing, where a test database may either need to be re-initialized
     or cleared out between tests
 
     """
-
     global _metadata
 
     if _metadata is None:
@@ -93,7 +92,12 @@ def recreate_all(graph):
     connection = graph.postgres.connect()
     transaction = connection.begin()
     for table in reversed(_metadata.sorted_tables):
-        connection.execute(table.delete())
+        # Occasionally SqlAlchemy can't resolve the order in which to truncate records, due to cyclic
+        # Foreign Key constraints. We can use this flag to ensure truncation cascades between records.
+        if cascade_truncation:
+            connection.execute(f"TRUNCATE TABLE public.{table} CASCADE")
+        else:
+            connection.execute(table.delete())
     transaction.commit()
 
 
