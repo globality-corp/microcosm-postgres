@@ -17,6 +17,7 @@ class Employee(EntityMixin, Model):
     last = Column(String(255), nullable=False)
     other = Column(String(255), nullable=True)
     company_id = Column(UUIDType, ForeignKey("company.id"), nullable=False)
+    employee_identity_id = Column(UUIDType, ForeignKey("employee_idenity.id", name="fk_employee_employee_identity_employee_identity_id"))
 
     @property
     def edges(self):
