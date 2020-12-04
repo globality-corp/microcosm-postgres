@@ -10,7 +10,7 @@ from microcosm_postgres.encryption.registry import parse_config
 
 
 try:
-    from aws_encryption_sdk import decrypt, encrypt  # noqa: F401
+    from aws_encryption_sdk import EncryptionSDKClient  # noqa: F401
 except ImportError:
     raise SkipTest
 
