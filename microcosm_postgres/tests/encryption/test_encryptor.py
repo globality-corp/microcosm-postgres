@@ -14,7 +14,7 @@ import microcosm_postgres.encryption.factories  # noqa: F401
 
 
 try:
-    from aws_encryption_sdk import decrypt, encrypt  # noqa: F401
+    from aws_encryption_sdk import EncryptionSDKClient  # noqa: F401
 except ImportError:
     raise SkipTest
 

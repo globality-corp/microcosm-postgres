@@ -9,7 +9,7 @@ from typing import (
     Union,
 )
 
-from aws_encryption_sdk import decrypt, encrypt
+from aws_encryption_sdk import CommitmentPolicy, EncryptionSDKClient
 from aws_encryption_sdk.materials_managers.base import CryptoMaterialsManager
 
 
@@ -20,6 +20,9 @@ class SingleTenantEncryptor:
     """
     def __init__(self, materials_manager: CryptoMaterialsManager):
         self.materials_manager = materials_manager
+        self.encryption_client = EncryptionSDKClient(
+            commitment_policy=CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT,
+        )
 
     def __contains__(self, encryption_context_key: str) -> bool:
         return True
@@ -39,7 +42,7 @@ class SingleTenantEncryptor:
             microcosm=encryption_context_key,
         )
 
-        cyphertext, header = encrypt(
+        cyphertext, header = self.encryption_client.encrypt(
             source=plaintext,
             materials_manager=self.materials_manager,
             encryption_context=encryption_context,
@@ -52,7 +55,7 @@ class SingleTenantEncryptor:
         return cyphertext, key_ids
 
     def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
-        plaintext, header = decrypt(
+        plaintext, header = self.encryption_client.decrypt(
             source=ciphertext,
             materials_manager=self.materials_manager,
         )
