@@ -11,7 +11,11 @@ from aws_encryption_sdk import (
 )
 from aws_encryption_sdk.identifiers import EncryptionKeyType, WrappingAlgorithm
 from aws_encryption_sdk.internal.crypto.wrapping_keys import WrappingKey
-from aws_encryption_sdk.key_providers.kms import KMSMasterKeyProvider
+from aws_encryption_sdk.key_providers.kms import (
+    DiscoveryAwsKmsMasterKeyProvider,
+    DiscoveryFilter,
+    StrictAwsKmsMasterKeyProvider,
+)
 from aws_encryption_sdk.key_providers.raw import RawMasterKeyProvider
 from microcosm.api import defaults
 from microcosm.config.types import boolean
@@ -25,6 +29,10 @@ class StaticMasterKeyProvider(RawMasterKeyProvider):
     Intended for unit testing.
 
     """
+    # Declared statically to allow for multiple key_providers to be used
+    # in the same unit test
+    wrapping_key = urandom(32)
+
     @property
     def provider_id(self) -> str:
         return "static"
@@ -32,12 +40,12 @@ class StaticMasterKeyProvider(RawMasterKeyProvider):
     def _get_raw_key(self, key_id) -> WrappingKey:
         return WrappingKey(
             wrapping_algorithm=WrappingAlgorithm.AES_256_GCM_IV12_TAG16_NO_PADDING,
-            wrapping_key=urandom(32),
+            wrapping_key=self.wrapping_key,
             wrapping_key_type=EncryptionKeyType.SYMMETRIC,
         )
 
 
-def configure_key_provider(graph, key_ids):
+def configure_encrypting_key_provider(graph, key_ids):
     """
     Configure a key provider.
 
@@ -51,7 +59,29 @@ def configure_key_provider(graph, key_ids):
         return provider
 
     # use AWS provider
-    return KMSMasterKeyProvider(key_ids=key_ids)
+    return StrictAwsKmsMasterKeyProvider(key_ids=key_ids)
+
+
+def configure_decrypting_key_provider(graph, account_ids, partition, key_ids):
+    """
+    Configure a key provider.
+
+    During unit tests, use a static key provider (e.g. without AWS calls).
+
+    """
+    if graph.metadata.testing:
+        # use static provider
+        provider = StaticMasterKeyProvider()
+        provider.add_master_keys_from_list(key_ids)
+        return provider
+
+    discovery_filter = DiscoveryFilter(
+        account_ids=account_ids,
+        partition=partition,
+    )
+
+    # use AWS provider
+    return DiscoveryAwsKmsMasterKeyProvider(discovery_filter=discovery_filter)
 
 
 @defaults(

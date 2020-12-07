@@ -36,6 +36,12 @@ class TestEncryptable:
                     key_ids=[
                         "key_id",
                     ],
+                    partitions=[
+                        "aws",
+                    ],
+                    account_ids=[
+                        "12345",
+                    ]
                 ),
             ),
             load_from_environ,

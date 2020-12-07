@@ -18,8 +18,13 @@ class SingleTenantEncryptor:
     A single tenant encryptor.
 
     """
-    def __init__(self, materials_manager: CryptoMaterialsManager):
-        self.materials_manager = materials_manager
+    def __init__(
+        self,
+        encrypting_materials_manager: CryptoMaterialsManager,
+        decrypting_materials_manager: CryptoMaterialsManager,
+    ):
+        self.encrypting_materials_manager = encrypting_materials_manager
+        self.decrypting_materials_manager = decrypting_materials_manager
         self.encryption_client = EncryptionSDKClient(
             commitment_policy=CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT,
         )
@@ -42,9 +47,9 @@ class SingleTenantEncryptor:
             microcosm=encryption_context_key,
         )
 
-        cyphertext, header = self.encryption_client.encrypt(
+        ciphertext, header = self.encryption_client.encrypt(
             source=plaintext,
-            materials_manager=self.materials_manager,
+            materials_manager=self.encrypting_materials_manager,
             encryption_context=encryption_context,
         )
 
@@ -52,12 +57,12 @@ class SingleTenantEncryptor:
             self.unpack_key_id(encrypted_data_key.key_provider)
             for encrypted_data_key in header.encrypted_data_keys
         ]
-        return cyphertext, key_ids
+        return ciphertext, key_ids
 
     def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
         plaintext, header = self.encryption_client.decrypt(
             source=ciphertext,
-            materials_manager=self.materials_manager,
+            materials_manager=self.decrypting_materials_manager,
         )
         return plaintext.decode("utf-8")
 

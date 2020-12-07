@@ -4,7 +4,7 @@ Test registry configuration.
 """
 from unittest import SkipTest
 
-from hamcrest import assert_that, equal_to, is_
+from hamcrest import assert_that, has_entries
 
 from microcosm_postgres.encryption.registry import parse_config
 
@@ -20,20 +20,37 @@ def test_parse_config_simple():
         parse_config(
             context_keys=["foo"],
             key_ids=["bar"],
+            account_ids=["12345"],
+            partitions=["aws"],
         ),
-        is_(equal_to(dict(
-            foo=["bar"],
-        ))),
+        has_entries(
+            foo=has_entries(
+                key_ids=["bar"],
+                account_ids=["12345"],
+                partition="aws",
+            ),
+        ),
     )
 
 
 def test_parse_config_key_ids():
     assert_that(
         parse_config(
-            context_keys=["foo"],
-            key_ids=["bar;baz"],
+            context_keys=["foo", "quux"],
+            key_ids=["bar;baz", "quuz;corge"],
+            partitions=["aws", "aws-cn"],
+            account_ids=["12345;67890", "23456;78901"],
         ),
-        is_(equal_to(dict(
-            foo=["bar", "baz"],
-        ))),
+        has_entries(
+            foo=has_entries(
+                key_ids=["bar", "baz"],
+                partition="aws",
+                account_ids=["12345", "67890"],
+            ),
+            quux=has_entries(
+                key_ids=["quuz", "corge"],
+                partition="aws-cn",
+                account_ids=["23456", "78901"],
+            ),
+        ),
     )

@@ -39,6 +39,12 @@ def test_cycle_single_tenant():
             key_ids=[
                 ["key1", "key2"],
             ],
+            partitions=[
+                "aws",
+            ],
+            account_ids=[
+                "12345",
+            ]
         ),
     )
     graph = create_object_graph(
@@ -65,6 +71,14 @@ def test_cycle_multi_tenant():
             key_ids=[
                 ["foo1", "foo2"],
                 ["bar1", "bar2"],
+            ],
+            partitions=[
+                "aws",
+                "aws-cn",
+            ],
+            account_ids=[
+                ["12345", "67890"],
+                ["23456", "78901"],
             ],
         ),
     )
@@ -100,6 +114,12 @@ def test_cycle_cache():
             key_ids=[
                 ["key1", "key2"],
             ],
+            partitions=[
+                "aws",
+            ],
+            account_ids=[
+                ["12345"],
+            ]
         ),
     )
     graph = create_object_graph(
@@ -109,7 +129,7 @@ def test_cycle_cache():
         loader=loader,
     )
     encryptor = graph.multi_tenant_encryptor.encryptors["default"]
-    master_key_provider = encryptor.materials_manager.master_key_provider
+    master_key_provider = encryptor.decrypting_materials_manager.master_key_provider
     decrypt_data_key = master_key_provider.decrypt_data_key
 
     with patch.object(master_key_provider, "decrypt_data_key") as mocked_decrypt_data_key:
