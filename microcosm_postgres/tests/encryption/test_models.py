@@ -1,5 +1,4 @@
 from hamcrest import (
-    all_of,
     assert_that,
     calling,
     equal_to,
@@ -22,6 +21,7 @@ from microcosm_postgres.errors import ModelIntegrityError
 from microcosm_postgres.tests.encryption.fixtures.encryptable import Encryptable
 from microcosm_postgres.tests.encryption.fixtures.json_encryptable import JsonEncryptable
 from microcosm_postgres.tests.encryption.fixtures.nullable_encryptable import NullableEncryptable
+from microcosm_postgres.tests.encryption.fixtures.sub_encryptable import SubEncryptable
 
 
 class TestEncryptable:
@@ -48,6 +48,8 @@ class TestEncryptable:
         )
         self.encryptable_store = self.graph.encryptable_store
         self.encrypted_store = self.graph.encrypted_store
+        self.sub_encrypted_store = self.graph.sub_encrypted_store
+        self.sub_encryptable_store = self.graph.sub_encryptable_store
         self.json_encryptable_store = self.graph.json_encryptable_store
         self.json_encrypted_store = self.graph.json_encrypted_store
         self.nullable_encryptable_store = self.graph.nullable_encryptable_store
@@ -140,6 +142,7 @@ class TestEncryptable:
             # NB: ORM events will not trigger if we can reuse the object from the session cache
             self.encryptable_store.expunge(encryptable)
 
+        with SessionContext(self.graph):
             encryptable = self.encryptable_store.retrieve(encryptable.id)
             assert_that(
                 encryptable,
@@ -150,6 +153,7 @@ class TestEncryptable:
                 ),
             )
 
+        with SessionContext(self.graph):
             with transaction():
                 self.encryptable_store.delete(encryptable.id)
 
@@ -158,6 +162,68 @@ class TestEncryptable:
             )
             assert_that(
                 self.encrypted_store.count(), is_(equal_to(0)),
+            )
+
+    def test_sub_encrypted(self):
+        with SessionContext(self.graph):
+            with transaction():
+                sub_encryptable = self.sub_encryptable_store.create(
+                    SubEncryptable(
+                        name="sub",
+                        key="private",
+                        value="value",
+                    ),
+                )
+
+            assert_that(
+                sub_encryptable,
+                has_properties(
+                    key=is_(equal_to("private")),
+                    value=is_(none()),
+                    sub_encrypted_id=is_not(none()),
+                ),
+            )
+            assert_that(
+                sub_encryptable._members(),
+                is_(equal_to(dict(
+                    created_at=sub_encryptable.created_at,
+                    sub_encrypted_id=sub_encryptable.sub_encrypted_id,
+                    id=sub_encryptable.id,
+                    key=sub_encryptable.key,
+                    updated_at=sub_encryptable.updated_at,
+                    name="sub",
+                ))),
+            )
+            assert_that(
+                self.sub_encryptable_store.count(), is_(equal_to(1)),
+            )
+            assert_that(
+                self.sub_encrypted_store.count(), is_(equal_to(1)),
+            )
+
+            # NB: ORM events will not trigger if we can reuse the object from the session cache
+            self.encryptable_store.expunge(sub_encryptable)
+
+        with SessionContext(self.graph):
+            collection = self.graph.parent_store.search_first()
+            assert_that(
+                collection,
+                has_properties(
+                    key=is_(equal_to("private")),
+                    value=is_(equal_to("value")),
+                    sub_encrypted_id=is_not(none()),
+                ),
+            )
+
+        with SessionContext(self.graph):
+            with transaction():
+                self.sub_encryptable_store.delete(sub_encryptable.id)
+
+            assert_that(
+                self.sub_encryptable_store.count(), is_(equal_to(0)),
+            )
+            assert_that(
+                self.sub_encrypted_store.count(), is_(equal_to(0)),
             )
 
     def test_throw_model_integrity_when_value_is_none(self):
@@ -381,9 +447,5 @@ class TestEncryptable:
                 )
 
             encrypted_ids = self.encryptable_store.search_encrypted_ids("private")
-            assert_that(
-                all_of(
-                    len(encrypted_ids), is_(equal_to(1)),
-                    encrypted_ids[0].id, is_(equal_to(encryptable.id))
-                )
-            )
+            assert len(encrypted_ids) == 1
+            assert encrypted_ids[0].id == encryptable.id
