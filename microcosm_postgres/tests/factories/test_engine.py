@@ -2,6 +2,13 @@
 Factory tests.
 
 """
+from hamcrest import (
+    assert_that,
+    ends_with,
+    equal_to,
+    is_,
+    starts_with,
+)
 from microcosm.api import create_object_graph
 from sqlalchemy.engine.base import Engine
 
@@ -17,10 +24,10 @@ def test_configure_engine():
     assert isinstance(engine, Engine)
 
     # engine has expected configuration
-    assert str(engine.url).startswith("postgresql://example:@")
-    assert str(engine.url).endswith(":5432/example_test_db")
+    assert_that(str(engine.url), starts_with("postgresql://example:test@"))
+    assert_that(str(engine.url), ends_with(":5432/example_test_db"))
 
     # engine supports connections
     with engine.connect() as connection:
         row = connection.execute("SELECT 1;").fetchone()
-        assert row[0] == 1
+        assert_that(row[0], is_(equal_to(1)))
