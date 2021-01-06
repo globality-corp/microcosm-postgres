@@ -143,8 +143,8 @@ jobs:
             echo >> ~/.pypirc
             echo "[pypi]" >> ~/.pypirc
             echo "repository:https://upload.pypi.org/legacy/" >> ~/.pypirc
-            echo "username:$PYPI_USERNAME" >> ~/.pypirc
-            echo "password:$PYPI_PASSWORD" >> ~/.pypirc
+            echo "username = __token__" >> ~/.pypirc
+            echo "password = ${PYPI_AUTH_TOKEN}" >> ~/.pypirc
             echo >> ~/.pypirc
             version=$(cat .bumpversion.cfg | awk '/current_version / {print $3}')
             python setup.py register -r pypi
