@@ -24,7 +24,7 @@ def test_configure_engine():
     assert isinstance(engine, Engine)
 
     # engine has expected configuration
-    assert_that(str(engine.url), starts_with("postgresql://example:test@"))
+    assert_that(str(engine.url), starts_with("postgresql://example:@"))
     assert_that(str(engine.url), ends_with(":5432/example_test_db"))
 
     # engine supports connections
