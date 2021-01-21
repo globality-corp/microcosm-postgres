@@ -2,6 +2,8 @@
 Factory tests.
 
 """
+from os import environ
+
 from hamcrest import (
     assert_that,
     ends_with,
@@ -24,7 +26,10 @@ def test_configure_engine():
     assert isinstance(engine, Engine)
 
     # engine has expected configuration
-    assert_that(str(engine.url), starts_with("postgresql://example:@"))
+    user = environ.get("EXAMPLE__POSTGRES__USER", "example")
+    password = environ.get("EXAMPLE__POSTGRES__PASSWORD", "")
+
+    assert_that(str(engine.url), starts_with(f"postgresql://{user}:{password}@"))
     assert_that(str(engine.url), ends_with(":5432/example_test_db"))
 
     # engine supports connections
