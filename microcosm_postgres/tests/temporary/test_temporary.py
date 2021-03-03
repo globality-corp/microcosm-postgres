@@ -83,7 +83,7 @@ class TestTransient:
                             index_elements=["id"],
                             set_=dict(
                                 type=CompanyType.public,
-                                updated_at=datetime.now(),
+                                updated_at=datetime.utcnow(),
                             ),
                         ),
                         is_(equal_to(3)),
