@@ -10,7 +10,12 @@ from uuid import uuid4
 from sqlalchemy import Column, Float
 from sqlalchemy.ext.declarative import declarative_base
 
-from microcosm_postgres.types import EPOCH, UTCDateTime, UUIDType, utcnow
+from microcosm_postgres.types import (
+    EPOCH,
+    UTCDateTime,
+    UUIDType,
+    utcnow,
+)
 
 
 Model = declarative_base()
