@@ -2,8 +2,8 @@ from microcosm.api import binding
 from sqlalchemy import Column, ForeignKey, String
 
 from microcosm_postgres.models import EntityMixin, Model
-from microcosm_postgres.types import UUIDType
 from microcosm_postgres.store import Store
+from microcosm_postgres.types import UUIDType
 
 
 class Employee(EntityMixin, Model):
