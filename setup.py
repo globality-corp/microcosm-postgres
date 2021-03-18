@@ -18,13 +18,13 @@ setup(
     python_requires=">=3.6",
     keywords="microcosm",
     install_requires=[
+        "anyjson>=0.3.3",
         "alembic>=1.0.0",
         "microcosm>=2.12.0",
         "microcosm-logging>=1.5.0",
         "psycopg2-binary>=2.7.5",
         "pytz>=2018.5",
         "SQLAlchemy>=1.2.11",
-        "SQLAlchemy-Utils>=0.33.3",
     ],
     setup_requires=[
         "nose>=1.3.6",
