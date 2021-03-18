@@ -1,8 +1,7 @@
 """
 Copyright (c) 2012, Konsta Vesterinen
 
-Temporarily moved code we use from sqlAlchemy-utils into microcosm-postgres,
-until sqlalchemy-utils will start to support sqlalchemy >= 1.4
+Code from SQLAlchemy-Utils moved here until the library will support SQLAlchemy >= 1.4
 Related github issue: https://github.com/kvesteri/sqlalchemy-utils/issues/505
 
 """
