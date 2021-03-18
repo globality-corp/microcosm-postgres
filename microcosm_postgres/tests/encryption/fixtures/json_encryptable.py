@@ -13,7 +13,7 @@ from sqlalchemy.orm import relationship
 from microcosm_postgres.encryption.models import EncryptableMixin, EncryptedMixin
 from microcosm_postgres.encryption.store import EncryptableStore
 from microcosm_postgres.models import EntityMixin, Model
-from microcosm_postgres.sqlalchemy_utils import JSONType, UUIDType
+from microcosm_postgres.types import JSONType, UUIDType
 from microcosm_postgres.store import Store
 
 

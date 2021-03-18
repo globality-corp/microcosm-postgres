@@ -13,7 +13,7 @@ from pytz import utc
 from sqlalchemy import Column, Float, types
 from sqlalchemy.ext.declarative import declarative_base
 
-from microcosm_postgres.sqlalchemy_utils import UUIDType
+from microcosm_postgres.types import UUIDType
 
 
 EPOCH = datetime(1970, 1, 1)
