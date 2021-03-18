@@ -5,14 +5,10 @@ Code from SQLAlchemy-Utils moved here until the library will support SQLAlchemy 
 Related github issue: https://github.com/kvesteri/sqlalchemy-utils/issues/505
 
 """
-
 import uuid
 
-import anyjson as json
-import sqlalchemy as sa
 from sqlalchemy import types, util
 from sqlalchemy.dialects import mssql, postgresql
-from sqlalchemy.dialects.postgresql import JSON
 
 
 class ScalarCoercible(object):
@@ -23,64 +19,12 @@ class ScalarCoercible(object):
         return self._coerce(value)
 
 
-class JSONType(sa.types.TypeDecorator):
-    """
-    JSONType offers way of saving JSON data structures to database. On
-    PostgreSQL the underlying implementation of this data type is 'json' while
-    on other databases its simply 'text'.
-
-    ::
-
-
-        from sqlalchemy_utils import JSONType
-
-
-        class Product(Base):
-            __tablename__ = 'product'
-            id = sa.Column(sa.Integer, autoincrement=True)
-            name = sa.Column(sa.Unicode(50))
-            details = sa.Column(JSONType)
-
-
-        product = Product()
-        product.details = {
-            'color': 'red',
-            'type': 'car',
-            'max-speed': '400 mph'
-        }
-        session.commit()
-    """
-    impl = sa.UnicodeText
-
-    def load_dialect_impl(self, dialect):
-        if dialect.name == 'postgresql':
-            # Use the native JSON type.
-            return dialect.type_descriptor(JSON())
-
-        else:
-            return dialect.type_descriptor(self.impl)
-
-    def process_bind_param(self, value, dialect):
-        if dialect.name == 'postgresql':
-            return value
-        if value is not None:
-            value = json.dumps(value)
-        return value
-
-    def process_result_value(self, value, dialect):
-        if dialect.name == 'postgresql':
-            return value
-        if value is not None:
-            value = json.loads(value)
-        return value
-
-
 class UUIDType(types.TypeDecorator, ScalarCoercible):
     """
     Stores a UUID in the database natively when it can and falls back to
     a BINARY(16) or a CHAR(32) when it can't.
 
-    ::
+    Usage
 
         from sqlalchemy_utils import UUIDType
         import uuid
@@ -90,6 +34,7 @@ class UUIDType(types.TypeDecorator, ScalarCoercible):
 
             # Pass `binary=False` to fallback to CHAR instead of BINARY
             id = sa.Column(UUIDType(binary=False), primary_key=True)
+
     """
     impl = types.BINARY(16)
 
@@ -98,6 +43,7 @@ class UUIDType(types.TypeDecorator, ScalarCoercible):
     def __init__(self, binary=True, native=True, **kwargs):
         """
         :param binary: Whether to use a BINARY(16) or CHAR(32) fallback.
+
         """
         self.binary = binary
         self.native = native
