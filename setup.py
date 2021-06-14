@@ -51,4 +51,9 @@ setup(
         "coverage>=3.7.1",
         "PyHamcrest>=1.8.5",
     ],
+    typehinting_require=[
+        "mypy>=0.902",
+        "types-python-dateutil>=0.1.3",
+        "types-pytz>=0.1.1",
+    ]
 )
