@@ -33,7 +33,7 @@ setup(
     ],
     extras_require={
         "metrics": "microcosm-metrics>=2.5.0",
-        "encryption": "aws-encryption-sdk>=2.0.0",
+        "encryption": "aws-encryption-sdk>=2.2.0",
     },
     entry_points={
         "microcosm.factories": [
