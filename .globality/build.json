@@ -1,12 +1,20 @@
 {
   "params": {
     "app_name": "example",
+    "build_packages": "build-essential libffi-dev",
+    "core_packages": "locales libpq-dev",
     "database": "postgres",
+    "entrypoint": {
+      "pre_typehinting_commands": [
+        "pip install types-python-dateutil types-pytz"
+      ]
+    },
     "name": "microcosm-postgres",
     "pypi": {
+      "enabled": true,
       "repository": "pypi"
     }
   },
   "type": "python-library",
-  "version": "2020.51.0"
+  "version": "2022.7.0"
 }

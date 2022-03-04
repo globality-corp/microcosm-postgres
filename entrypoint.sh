@@ -1,5 +1,10 @@
 #!/bin/bash -e
 
+#  This file is auto generated with globality-build.
+#  You should not make any changes to this file manually
+#
+#  See: http://github.com/globality-corp/globality-build
+
 # Container entrypoint to simplify running the production and dev servers.
 
 # Entrypoint conventions are as follows:
@@ -27,8 +32,9 @@ elif [ "$1" = "lint" ]; then
    # Install standard linting dependencies; YMMV
    pip --quiet install \
        .[lint] flake8 flake8-print flake8-logging-format flake8-isort
-   exec flake8 ${NAME}
+   flake8 ${NAME}
 elif [ "$1" = "typehinting" ]; then
+   pip install types-python-dateutil types-pytz
    # Install standard type-linting dependencies
    pip --quiet install mypy
    mypy ${NAME} --ignore-missing-imports

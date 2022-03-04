@@ -22,6 +22,7 @@ setup(
         "microcosm>=2.12.0",
         "microcosm-logging>=1.5.0",
         "psycopg2-binary>=2.7.5",
+        "python-dateutil>=2.7.3",
         "pytz>=2018.5",
         "SQLAlchemy>=1.4.10",
         "SQLAlchemy-Utils>=0.37.0",
@@ -34,6 +35,11 @@ setup(
     extras_require={
         "metrics": "microcosm-metrics>=2.5.0",
         "encryption": "aws-encryption-sdk>=2.0.0",
+        "test": [
+            "aws-encryption-sdk>=2.0.0",
+            "coverage>=3.7.1",
+            "PyHamcrest>=1.8.5",
+        ],
     },
     entry_points={
         "microcosm.factories": [
@@ -47,8 +53,4 @@ setup(
             "sessionmaker = microcosm_postgres.factories.sessionmaker:configure_sessionmaker",
         ],
     },
-    tests_require=[
-        "coverage>=3.7.1",
-        "PyHamcrest>=1.8.5",
-    ],
 )

@@ -23,7 +23,7 @@ FROM python:slim-stretch as deps
 ARG EXTRA_INDEX_URL
 ENV EXTRA_INDEX_URL ${EXTRA_INDEX_URL}
 
-ENV CORE_PACKAGES locales
+ENV CORE_PACKAGES locales libpq-dev
 ENV BUILD_PACKAGES build-essential libffi-dev
 ENV OTHER_PACKAGES libssl-dev
 
@@ -85,7 +85,6 @@ RUN pip install --no-cache-dir --upgrade --extra-index-url ${EXTRA_INDEX_URL} /s
     apt-get autoremove -y && \
     rm -rf /var/lib/apt/lists/*
 
-
 # ----------- final -----------
 FROM base
 
@@ -111,4 +110,4 @@ ARG SHA1
 ENV MICROCOSM_POSTGRES__BUILD_INFO_CONVENTION__BUILD_NUM ${BUILD_NUM}
 ENV MICROCOSM_POSTGRES__BUILD_INFO_CONVENTION__SHA1 ${SHA1}
 COPY $NAME /src/$NAME/
-RUN pip install --no-cache-dir --extra-index-url $EXTRA_INDEX_URL -e .[encryption]
+RUN pip install --no-cache-dir --extra-index-url $EXTRA_INDEX_URL -e .
