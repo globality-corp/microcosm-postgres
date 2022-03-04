@@ -95,6 +95,8 @@ def choose_args(metadata, config):
         max_overflow=config.max_overflow,
         pool_size=config.pool_size,
         pool_timeout=config.pool_timeout,
+        pool_recycle=config.pool_recycle,
+        pool_pre_ping=config.pool_pre_ping,
     )
 
 
@@ -125,6 +127,10 @@ def make_engine(metadata, config):
     pool_size=typed(int, default_value=5),
     # the timeout waiting for a connection from the pool; 30 is the default and much too large
     pool_timeout=typed(int, default_value=2),
+    # recycle connections in pool after given number of seconds; -1 means no recycle timeout
+    pool_recycle=typed(int, default_value=-1),
+    # enable the connection pool 'pre-ping' to test connections for liveness upon each checkout
+    pool_pre_ping=typed(boolean, default_value=False),
     # the postgres connection port
     port=typed(int, default_value=5432),
     # enable read_only username convention; depends on out-of-band configuration
