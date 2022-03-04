@@ -12,7 +12,7 @@ from microcosm_postgres.encryption.registry import parse_config
 try:
     from aws_encryption_sdk import EncryptionSDKClient  # noqa: F401
 except ImportError:
-    raise SkipTest
+    raise SkipTest("aws_encryption_sdk not installed")
 
 
 def test_parse_config_simple():

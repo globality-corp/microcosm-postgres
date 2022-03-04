@@ -16,7 +16,7 @@ import microcosm_postgres.encryption.factories  # noqa: F401
 try:
     from aws_encryption_sdk import EncryptionSDKClient  # noqa: F401
 except ImportError:
-    raise SkipTest
+    raise SkipTest("aws_encryption_sdk not installed")
 
 
 def cycle(encryptor, encryption_context_key, key_ids):
