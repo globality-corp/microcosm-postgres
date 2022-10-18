@@ -17,7 +17,7 @@ executors:
   node-executor:
     working_directory: ~/repo
     docker:
-      - image: circleci/node:14.17.3
+      - image: cimg/node:14.19.0
         environment:
           EXTRA_INDEX_URL: "InjectedDuringRuntime"
           AWS_ECR_DOMAIN: "InjectedDuringRuntime"
@@ -27,7 +27,7 @@ executors:
   globality-build-executor:
     working_directory: ~/repo
     docker:
-      - image: ${AWS_ECR_DOMAIN}/globality-build:2022.7.0
+      - image: ${AWS_ECR_DOMAIN}/globality-build:2022.42.0
         aws_auth:
           aws_access_key_id: ${AWS_ACCESS_KEY_ID}
           aws_secret_access_key: ${AWS_SECRET_ACCESS_KEY}
@@ -39,7 +39,7 @@ executors:
 defaults: &defaults
   working_directory: ~/repo
   docker:
-    - image: ${AWS_ECR_DOMAIN}/globality-build:2022.7.0
+    - image: ${AWS_ECR_DOMAIN}/globality-build:2022.42.0
       aws_auth:
         aws_access_key_id: ${AWS_ACCESS_KEY_ID}
         aws_secret_access_key: ${AWS_SECRET_ACCESS_KEY}
@@ -54,7 +54,7 @@ defaults: &defaults
 deploy_defaults: &deploy_defaults
   working_directory: ~/repo
   docker:
-    - image: ${AWS_ECR_DOMAIN}/globality-build:2022.7.0
+    - image: ${AWS_ECR_DOMAIN}/globality-build:2022.42.0
       aws_auth:
         aws_access_key_id: ${AWS_ACCESS_KEY_ID}
         aws_secret_access_key: ${AWS_SECRET_ACCESS_KEY}
@@ -112,6 +112,7 @@ jobs:
               --build-arg JFROG_AUTH=$JFROG_AUTH .
 
             docker push $AWS_ECR_DOMAIN/python-library:$CIRCLE_SHA1
+
 
   test:
     <<: *defaults
@@ -179,7 +180,6 @@ jobs:
 
 
 
-
   typehinting:
     <<: *defaults
 
@@ -208,17 +208,15 @@ jobs:
           command: |
             docker run -it --volumes-from service_tests ${AWS_ECR_DOMAIN}/python-library:${CIRCLE_SHA1} typehinting
 
+
+
   deploy_jfrog_rc:
     <<: *defaults
     steps:
       - attach_workspace:
           at: ~/repo
       - run:
-          name: Override Version
-          command: |
-            sed -i -e "s/^\(version = \".*\)\"$/\1.dev${CIRCLE_BUILD_NUM}\"/" setup.py
-      - run:
-          name: Authenticate
+          name: Deploy  # If package publishing enabled, always push RCs to JFrog
           command: |
             echo "[distutils]" > ~/.pypirc
             echo "index-servers =" >> ~/.pypirc
@@ -229,9 +227,12 @@ jobs:
             echo "username:$JFROG_USERNAME" >> ~/.pypirc
             echo "password:$JFROG_PASSWORD" >> ~/.pypirc
             echo >> ~/.pypirc
-      - run:
-          name: Publish
-          command: python setup.py sdist upload -r jfrog
+            echo >> ~/.pypirc
+            version=0.${CIRCLE_BUILD_NUM}.dev${CIRCLE_BUILD_NUM}
+            sed  -i '/version \=/s/\".*\"/'"\"${version}\"/" setup.py
+            python setup.py register -r jfrog
+            python setup.py sdist
+            twine upload --repository jfrog dist/microcosm-postgres-${version}.tar.gz
 
   publish_library:
     <<: *defaults
@@ -262,14 +263,14 @@ workflows:
   build-and-release:
     jobs:
       - checkout:
-          context:
+          context: 
           - Globality-Common
           filters:
             # run for all branches and tags
             tags:
               only: /.*/
       - build_docker:
-          context:
+          context: 
           - Globality-Common
           requires:
             - checkout
@@ -278,7 +279,7 @@ workflows:
             tags:
               only: /.*/
       - lint:
-          context:
+          context: 
           - Globality-Common
           requires:
             - build_docker
@@ -287,7 +288,7 @@ workflows:
             tags:
               only: /.*/
       - test:
-          context:
+          context: 
           - Globality-Common
           requires:
             - build_docker
@@ -296,14 +297,14 @@ workflows:
             tags:
               only: /.*/
       - deploy_jfrog_rc:
-          context:
+          context: 
           - Globality-Common
           requires:
             - test
             - lint
             - typehinting
       - typehinting:
-          context:
+          context: 
           - Globality-Common
           requires:
             - build_docker
@@ -312,7 +313,7 @@ workflows:
             tags:
               only: /.*/
       - publish_library:
-          context:
+          context: 
           - Globality-Common
           - Python-Context
           requires:
