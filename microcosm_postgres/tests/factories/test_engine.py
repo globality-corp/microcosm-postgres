@@ -12,8 +12,8 @@ from hamcrest import (
     starts_with,
 )
 from microcosm.api import create_object_graph
-from sqlalchemy.sql import text
 from sqlalchemy.engine.base import Engine
+from sqlalchemy.sql import text
 
 
 def test_configure_engine():

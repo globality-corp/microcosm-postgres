@@ -5,8 +5,9 @@ Session context management.
 from contextlib import contextmanager
 from functools import wraps
 
-from microcosm_postgres.operations import new_session, recreate_all
 from sqlalchemy.orm import scoped_session
+
+from microcosm_postgres.operations import new_session, recreate_all
 
 
 class SessionContext:

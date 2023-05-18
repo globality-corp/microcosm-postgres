@@ -22,7 +22,7 @@ class Company(EntityMixin, Model):
     __tablename__ = "company"
 
     name = Column(String(255), unique=True)
-    type = Column(EnumType(CompanyType))
+    type = Column(EnumType(CompanyType))  # type: ignore[var-annotated]
 
 
 @binding("company_store")

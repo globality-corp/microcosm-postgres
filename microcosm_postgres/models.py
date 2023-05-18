@@ -68,7 +68,7 @@ class PrimaryKeyMixin:
     Define a model with a randomized UUID primary key and tracking created/updated times.
 
     """
-    id = Column(UUIDType(), primary_key=True, default=uuid4)
+    id = Column(UUIDType(), primary_key=True, default=uuid4)  # type: ignore
     created_at = Column(UTCDateTime, default=utcnow, nullable=False)
     updated_at = Column(UTCDateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
@@ -89,7 +89,7 @@ class UnixTimestampPrimaryKeyMixin:
     Define a model with a randomized UUID primary key and tracking created/updated times.
 
     """
-    id = Column(UUIDType(), primary_key=True, default=uuid4)
+    id = Column(UUIDType(), primary_key=True, default=uuid4)  # type: ignore
     created_at = Column(Float, default=time, nullable=False)
     updated_at = Column(Float, default=time, onupdate=time, nullable=False)
 
