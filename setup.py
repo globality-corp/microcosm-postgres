@@ -24,7 +24,7 @@ setup(
         "psycopg2-binary>=2.7.5",
         "python-dateutil>=2.7.3",
         "pytz>=2018.5",
-        "SQLAlchemy>=1.4.10",
+        "SQLAlchemy>=1.4.10,<2.0.0",
         "SQLAlchemy-Utils>=0.37.0",
     ],
     setup_requires=[
