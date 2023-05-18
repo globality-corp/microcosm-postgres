@@ -68,7 +68,7 @@ class SubEncryptable(Parent, EncryptableMixin):
     __encrypted_identifier__ = "sub_encrypted_id"
 
     @property
-    def ciphertext(self) -> Tuple[bytes, Sequence[str]]:
+    def ciphertext(self):
         return (self.sub_encrypted.ciphertext, self.sub_encrypted.key_ids)
 
     @ciphertext.setter

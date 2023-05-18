@@ -51,7 +51,7 @@ class Encryptable(EntityMixin, EncryptableMixin, Model):
     )
 
     @property
-    def ciphertext(self) -> Tuple[bytes, Sequence[str]]:
+    def ciphertext(self):
         return (self.encrypted.ciphertext, self.encrypted.key_ids)
 
     @ciphertext.setter
