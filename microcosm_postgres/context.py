@@ -26,7 +26,6 @@ class SessionContext:
             lambda: new_session(self.graph, self.expire_on_commit)
         )
 
-
     def open(self):
         SessionContext.session = self.session_cls()
         return self

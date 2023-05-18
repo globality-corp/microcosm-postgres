@@ -22,7 +22,6 @@ class Model(DeclarativeBase):
     pass
 
 
-
 def utcnow():
     """
     Create a non-naive UTC datetime for the current time.
