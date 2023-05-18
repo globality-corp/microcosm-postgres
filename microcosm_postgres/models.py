@@ -9,10 +9,10 @@ from enum import Enum
 from time import time
 from uuid import uuid4
 
+import sqlalchemy
 from dateutil.tz import tzutc
 from pytz import utc
 from sqlalchemy import Column, Float, types
-import sqlalchemy
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy_utils import UUIDType
 
