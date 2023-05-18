@@ -12,6 +12,7 @@ from hamcrest import (
     starts_with,
 )
 from microcosm.api import create_object_graph
+from sqlalchemy.sql import text
 from sqlalchemy.engine.base import Engine
 
 
@@ -27,12 +28,11 @@ def test_configure_engine():
 
     # engine has expected configuration
     user = environ.get("EXAMPLE__POSTGRES__USER", "example")
-    password = environ.get("EXAMPLE__POSTGRES__PASSWORD", "")
 
-    assert_that(str(engine.url), starts_with(f"postgresql://{user}:{password}@"))
+    assert_that(str(engine.url), starts_with(f"postgresql://{user}:***@"))
     assert_that(str(engine.url), ends_with(":5432/example_test_db"))
 
     # engine supports connections
     with engine.connect() as connection:
-        row = connection.execute("SELECT 1;").fetchone()
+        row = connection.execute(text("SELECT 1;")).fetchone()
         assert_that(row[0], is_(equal_to(1)))

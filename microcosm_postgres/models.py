@@ -11,13 +11,16 @@ from uuid import uuid4
 from dateutil.tz import tzutc
 from pytz import utc
 from sqlalchemy import Column, Float, types
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy_utils import UUIDType
 
 
 EPOCH = datetime(1970, 1, 1)
 
-Model = declarative_base()
+
+class Model(DeclarativeBase):
+    pass
+
 
 
 def utcnow():
@@ -119,7 +122,7 @@ class IdentityMixin:
             key: value
             for key, value in self.__dict__.items()
             # NB: ignore internal SQLAlchemy state and nested relationships
-            if not key.startswith("_") and not isinstance(value, Model)
+            if not key.startswith("_") and not isinstance(value, DeclarativeBase)
         }
 
     def __eq__(self, other):

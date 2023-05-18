@@ -28,7 +28,7 @@ def insert_many(self, items):
 
     """
     return SessionContext.session.execute(
-        self.insert(values=[
+        self.insert().values([
             to_dict(item, self.c)
             for item in items
         ]),

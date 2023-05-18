@@ -6,26 +6,33 @@ from contextlib import contextmanager
 from functools import wraps
 
 from microcosm_postgres.operations import new_session, recreate_all
+from sqlalchemy.orm import scoped_session
 
 
 class SessionContext:
     """
     Save current session in well-known location and provide context management.
 
+    New in version 3.0.0:
+        Now thread safe using a `scoped_session`.
     """
     session = None
 
     def __init__(self, graph, expire_on_commit=False):
         self.graph = graph
         self.expire_on_commit = expire_on_commit
+        self.session_cls = scoped_session(
+            lambda: new_session(self.graph, self.expire_on_commit)
+        )
+
 
     def open(self):
-        SessionContext.session = new_session(self.graph, self.expire_on_commit)
+        SessionContext.session = self.session_cls()
         return self
 
     def close(self):
         if SessionContext.session:
-            SessionContext.session.close()
+            self.session_cls.remove()
             SessionContext.session = None
 
     def recreate_all(self):
