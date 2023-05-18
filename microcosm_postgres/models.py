@@ -7,7 +7,6 @@ Every model must inherit from `Model` and should inherit from the `EntityMixin`.
 from datetime import datetime
 from enum import Enum
 from time import time
-from typing import Literal
 from uuid import uuid4
 
 from dateutil.tz import tzutc
@@ -24,7 +23,6 @@ EPOCH = datetime(1970, 1, 1)
 class Model(DeclarativeBase):
     type_annotation_map = {
         Enum: sqlalchemy.Enum(Enum, native_enum=False, length=255),
-        Literal: sqlalchemy.Enum(Enum, native_enum=False, length=255),
     }
 
 
