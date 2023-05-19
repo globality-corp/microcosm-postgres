@@ -2,7 +2,7 @@
 Common database operations.
 
 """
-from sqlalchemy import MetaData
+from sqlalchemy import MetaData, text
 from sqlalchemy.exc import ProgrammingError
 
 from microcosm_postgres.migrate import main
@@ -24,7 +24,7 @@ def get_current_head(graph):
     """
     session = new_session(graph)
     try:
-        result = session.execute("SELECT version_num FROM alembic_version")
+        result = session.execute(text("SELECT version_num FROM alembic_version"))
     except ProgrammingError:
         return None
     else:
@@ -33,23 +33,23 @@ def get_current_head(graph):
         session.close()
 
 
-def create_all(graph):
+def create_all(graph, model_cls=Model):
     """
     Create all database tables.
 
     """
     head = get_current_head(graph)
     if head is None:
-        Model.metadata.create_all(graph.postgres)
+        model_cls.metadata.create_all(graph.postgres)
         stamp_head(graph)
 
 
-def drop_all(graph):
+def drop_all(graph, model_cls=Model):
     """
     Drop all database tables.
 
     """
-    Model.metadata.drop_all(graph.postgres)
+    model_cls.metadata.drop_all(graph.postgres)
     drop_alembic_table(graph)
 
 
@@ -59,7 +59,10 @@ def drop_alembic_table(graph):
 
     """
     try:
-        graph.postgres.execute("DROP TABLE alembic_version;")
+        with graph.postgres.connect() as connection:
+            connection.execute(text("DROP TABLE alembic_version"))
+            connection.commit()
+
     except ProgrammingError:
         return False
     else:
@@ -70,7 +73,7 @@ def drop_alembic_table(graph):
 _metadata = None
 
 
-def recreate_all(graph):
+def recreate_all(graph, model_cls=Model):
     """
     Drop and add back all database tables, or reset all data associated with a database.
     Intended mainly for testing, where a test database may either need to be re-initialized
@@ -82,11 +85,11 @@ def recreate_all(graph):
 
     if _metadata is None:
         # First-run, the test database/metadata needs to be initialized
-        drop_all(graph)
-        create_all(graph)
+        drop_all(graph, model_cls)
+        create_all(graph, model_cls)
+        _metadata = MetaData()
+        _metadata.reflect(graph.postgres)
 
-        _metadata = MetaData(bind=graph.postgres)
-        _metadata.reflect()
         return
 
     # Otherwise, truncate all existing tables

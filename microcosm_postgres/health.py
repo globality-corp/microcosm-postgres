@@ -3,6 +3,7 @@ Simple Postgres health check.
 
 """
 from alembic.script import ScriptDirectory
+from sqlalchemy import text
 
 from microcosm_postgres.context import SessionContext
 
@@ -12,7 +13,7 @@ def check_health(graph):
     Basic database health check.
 
     """
-    SessionContext.session.execute("SELECT 1;")
+    SessionContext.session.execute(text("SELECT 1;"))
 
 
 def check_alembic(graph):
@@ -23,7 +24,9 @@ def check_alembic(graph):
 
     """
     return SessionContext.session.execute(
-        "SELECT version_num FROM alembic_version LIMIT 1;",
+        text(
+            "SELECT version_num FROM alembic_version LIMIT 1;",
+        )
     ).scalar()
 
 

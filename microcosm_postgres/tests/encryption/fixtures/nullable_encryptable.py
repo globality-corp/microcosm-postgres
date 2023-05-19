@@ -32,7 +32,7 @@ class NullableEncryptable(EntityMixin, EncryptableMixin, Model):
     # value is not encrypted
     value = Column(String, nullable=True)
     # foreign key to encrypted data
-    encrypted_id = Column(UUIDType, ForeignKey("nullable_encrypted.id"), nullable=True)
+    encrypted_id = Column(UUIDType, ForeignKey("nullable_encrypted.id"), nullable=True)  # type: ignore[var-annotated]
     # load and update encrypted relationship automatically
     encrypted = relationship(
         NullableEncrypted,

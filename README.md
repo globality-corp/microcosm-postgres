@@ -64,7 +64,7 @@ To change the database password:
 
 ## Test Setup
 
-Tests (and automated builds) act as the "example" microservice and need a cooresponding database
+Tests (and automated builds) act as the "example" microservice and need a corresponding database
 and user:
 
     createuser example

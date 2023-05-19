@@ -32,7 +32,7 @@ class Encryptable(EntityMixin, EncryptableMixin, Model):
     # value is not encrypted
     value = Column(String, nullable=True)
     # foreign key to encrypted data
-    encrypted_id = Column(UUIDType, ForeignKey("encrypted.id"), nullable=True)
+    encrypted_id = Column(UUIDType, ForeignKey("encrypted.id"), nullable=True)  # type: ignore[var-annotated]
     # load and update encrypted relationship automatically
     encrypted = relationship(
         Encrypted,
@@ -51,7 +51,7 @@ class Encryptable(EntityMixin, EncryptableMixin, Model):
     )
 
     @property
-    def ciphertext(self) -> Tuple[bytes, Sequence[str]]:
+    def ciphertext(self):
         return (self.encrypted.ciphertext, self.encrypted.key_ids)
 
     @ciphertext.setter
