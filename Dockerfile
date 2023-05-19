@@ -12,8 +12,8 @@
 #
 
 # ----------- deps -----------
-# Install from Debian Stretch with modern Python support
-FROM python:slim-stretch as deps
+# Install from Debian bullseye with modern Python support
+FROM python:3.7-slim-bullseye as deps
 
 #
 # Most services will use the same set of packages here, though a few will install

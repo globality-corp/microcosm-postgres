@@ -95,7 +95,7 @@ def get_alembic_environment_options(graph):
         return dict()
 
 
-def run_online_migration(self):
+def run_online_migration(self, model_cls=Model):
     """
     Run an online migration using microcosm configuration.
 
@@ -108,7 +108,7 @@ def run_online_migration(self):
         context.configure(
             connection=connection,
             # assumes that all models extend our base
-            target_metadata=Model.metadata,
+            target_metadata=model_cls.metadata,
             **get_alembic_environment_options(self.graph),
         )
 
@@ -153,7 +153,7 @@ def make_script_py_mako():
 
 
 @contextmanager
-def patch_script_directory(graph):
+def patch_script_directory(graph, model_cls=Model):
     """
     Monkey patch the `ScriptDirectory` class, working around configuration assumptions.
 
@@ -175,7 +175,11 @@ def patch_script_directory(graph):
 
     # monkey patch our script directory and migration logic
     setattr(ScriptDirectory, "from_config", classmethod(make_script_directory))
-    setattr(ScriptDirectory, "run_env", run_online_migration)
+    setattr(
+        ScriptDirectory,
+        "run_env",
+        lambda self: run_online_migration(self, model_cls),
+    )
     setattr(ScriptDirectory, "graph", graph)
     try:
         yield temporary_dir
@@ -205,7 +209,7 @@ def get_migrations_dir(graph):
     return migrations_dir
 
 
-def main(graph, *args):
+def main(graph, *args, model_cls=Model):
     """
     Entry point for invoking Alembic's `CommandLine`.
 
@@ -226,6 +230,6 @@ def main(graph, *args):
     if options.cmd[0].__name__ == "init":
         cli.parser.error("Alembic 'init' command should not be used in the microcosm!")
 
-    with patch_script_directory(graph) as temporary_dir:
+    with patch_script_directory(graph, model_cls) as temporary_dir:
         config = make_alembic_config(temporary_dir, migrations_dir)
         cli.run_cmd(config, options)

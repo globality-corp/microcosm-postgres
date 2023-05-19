@@ -16,7 +16,7 @@ class Employee(EntityMixin, Model):
     first = Column(String(255), nullable=False)
     last = Column(String(255), nullable=False)
     other = Column(String(255), nullable=True)
-    company_id = Column(UUIDType, ForeignKey("company.id"), nullable=False)
+    company_id = Column(UUIDType, ForeignKey("company.id"), nullable=False)  # type: ignore[var-annotated]
 
     @property
     def edges(self):
@@ -31,7 +31,7 @@ class EmployeeData(EntityMixin, Model):
     __tablename__ = "employee_data"
     __engine__ = "secret"
 
-    employee_id = Column(UUIDType, ForeignKey("employee.id"), nullable=False)
+    employee_id = Column(UUIDType, ForeignKey("employee.id"), nullable=False)  # type: ignore[var-annotated]
     password = Column(String(255), nullable=False)
 
 

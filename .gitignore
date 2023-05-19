@@ -42,6 +42,7 @@ __pycache__/
 *.so
 
 # Distribution / packaging
+.venv
 .Python
 env/
 build/
@@ -97,3 +98,7 @@ target/
 /entrypoint.sh
 
 .mypy_cache
+
+
+junit.xml
+cov.xml

@@ -44,7 +44,7 @@ class SubEncryptable(Parent, EncryptableMixin):
     # value is not encrypted
     value = Column(String, nullable=True)
     # foreign key to encrypted data
-    sub_encrypted_id = Column(UUIDType, ForeignKey("sub_encrypted.id"), nullable=True)
+    sub_encrypted_id = Column(UUIDType, ForeignKey("sub_encrypted.id"), nullable=True)  # type: ignore[var-annotated]
     # load and update encrypted relationship automatically
     sub_encrypted = relationship(
         SubEncrypted,
@@ -68,7 +68,7 @@ class SubEncryptable(Parent, EncryptableMixin):
     __encrypted_identifier__ = "sub_encrypted_id"
 
     @property
-    def ciphertext(self) -> Tuple[bytes, Sequence[str]]:
+    def ciphertext(self):
         return (self.sub_encrypted.ciphertext, self.sub_encrypted.key_ids)
 
     @ciphertext.setter

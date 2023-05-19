@@ -5,19 +5,25 @@ Every model must inherit from `Model` and should inherit from the `EntityMixin`.
 
 """
 from datetime import datetime
+from enum import Enum
 from time import time
 from uuid import uuid4
 
+import sqlalchemy
 from dateutil.tz import tzutc
 from pytz import utc
 from sqlalchemy import Column, Float, types
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy_utils import UUIDType
 
 
 EPOCH = datetime(1970, 1, 1)
 
-Model = declarative_base()
+
+class Model(DeclarativeBase):
+    type_annotation_map = {
+        Enum: sqlalchemy.Enum(Enum, native_enum=False, length=255),
+    }
 
 
 def utcnow():
@@ -65,7 +71,7 @@ class PrimaryKeyMixin:
     Define a model with a randomized UUID primary key and tracking created/updated times.
 
     """
-    id = Column(UUIDType(), primary_key=True, default=uuid4)
+    id = Column(UUIDType(), primary_key=True, default=uuid4)  # type: ignore
     created_at = Column(UTCDateTime, default=utcnow, nullable=False)
     updated_at = Column(UTCDateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
@@ -86,7 +92,7 @@ class UnixTimestampPrimaryKeyMixin:
     Define a model with a randomized UUID primary key and tracking created/updated times.
 
     """
-    id = Column(UUIDType(), primary_key=True, default=uuid4)
+    id = Column(UUIDType(), primary_key=True, default=uuid4)  # type: ignore
     created_at = Column(Float, default=time, nullable=False)
     updated_at = Column(Float, default=time, onupdate=time, nullable=False)
 
@@ -119,7 +125,7 @@ class IdentityMixin:
             key: value
             for key, value in self.__dict__.items()
             # NB: ignore internal SQLAlchemy state and nested relationships
-            if not key.startswith("_") and not isinstance(value, Model)
+            if not key.startswith("_") and not isinstance(value, DeclarativeBase)
         }
 
     def __eq__(self, other):

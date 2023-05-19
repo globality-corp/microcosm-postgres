@@ -2,7 +2,13 @@
 Encryption-related models.
 
 """
-from typing import Optional, Sequence, Tuple
+from typing import (
+    Callable,
+    Dict,
+    Optional,
+    Sequence,
+    Tuple,
+)
 
 from sqlalchemy import Column, LargeBinary, String
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -149,7 +155,7 @@ class EncryptableMixin:
         # NB: we cannot use the before_insert listener in conjunction with a foreign key relationship
         # for encrypted data; SQLAlchemy will warn about using 'related attribute set' operation so
         # late in its insert/flush process.
-        listeners = dict(
+        listeners: Dict[str, Callable] = dict(
             init=on_init,
             load=on_load,
         )
@@ -175,4 +181,4 @@ class EncryptedMixin:
     # save the encrypted data as unindexed binary
     ciphertext = Column(LargeBinary, nullable=False)
     # save the encryption key ids in an indexed column for future re-keying
-    key_ids = Column(ARRAY(String), nullable=False, index=True)
+    key_ids = Column(ARRAY(String), nullable=False, index=True)  # type: ignore

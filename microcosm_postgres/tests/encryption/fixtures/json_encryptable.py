@@ -31,9 +31,9 @@ class JsonEncryptable(EntityMixin, EncryptableMixin, Model):
     # key used for encryption context
     key = Column(String, nullable=False)
     # value is not encrypted
-    value = Column(JSONType, nullable=False)
+    value = Column(JSONType, nullable=False)  # type: ignore[var-annotated]
     # foreign key to encrypted data
-    json_encrypted_id = Column(UUIDType, ForeignKey("json_encrypted.id"), nullable=True)
+    json_encrypted_id = Column(UUIDType, ForeignKey("json_encrypted.id"), nullable=True)  # type: ignore[var-annotated]
     # load and update encrypted relationship automatically
     encrypted = relationship(
         JsonEncrypted,
@@ -52,7 +52,7 @@ class JsonEncryptable(EntityMixin, EncryptableMixin, Model):
     )
 
     @property
-    def ciphertext(self) -> Tuple[bytes, Sequence[str]]:
+    def ciphertext(self):
         return (self.encrypted.ciphertext, self.encrypted.key_ids)
 
     @ciphertext.setter
