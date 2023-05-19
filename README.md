@@ -103,3 +103,11 @@ Full configuration may thus look something like this:
 
 For more information, see the "Discovery Mode" section in:
 https://docs.aws.amazon.com/encryption-sdk/latest/developer-guide/migrate-mkps-v2.html
+
+
+## Migration guide: 2.x => 3.x
+Version 3.x uses sqlalchemy 2.x, any breaking changes are introduced by sqlalchemy 2.
+
+The official [sqlalchemy 2 migration guide](https://docs.sqlalchemy.org/en/20/changelog/migration_20.html) contains step to ensure your application is compatible with sqlalchemy 2.
+
+Additionally, follow https://docs.sqlalchemy.org/en/20/changelog/whatsnew_20.html#orm-declarative-models to update your models to use the new declarative styles.
