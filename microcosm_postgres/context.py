@@ -10,30 +10,38 @@ from sqlalchemy.orm import scoped_session
 from microcosm_postgres.operations import new_session, recreate_all
 
 
-class SessionContext:
-    """
-    Save current session in well-known location and provide context management.
+class SessionContextFactory:
+    def __init__(self) -> None:
+        self.session_cls = None
+        self.expire_on_commit = False
 
-    New in version 3.0.0:
-        Now thread safe using a `scoped_session`.
-    """
-    session = None
+    @property
+    def session(self):
+        assert self.session_cls is not None, "Session not initialized"
+        return self.session_cls()
 
-    def __init__(self, graph, expire_on_commit=False):
-        self.graph = graph
-        self.expire_on_commit = expire_on_commit
+    def __call__(self, graph, expire_on_commit=False):
         self.session_cls = scoped_session(
-            lambda: new_session(self.graph, self.expire_on_commit)
+            lambda: new_session(graph, expire_on_commit)
         )
+        self.expire_on_commit = expire_on_commit
+        return Context(graph, self.session_cls)
+
+    def make(self, graph, expire_on_commit=False):
+        return self(graph).open()
+
+
+class Context:
+    def __init__(self, graph, session_cls):
+        self.graph = graph
+        self.session_cls = session_cls
 
     def open(self):
-        SessionContext.session = self.session_cls()
+        self.session = self.session_cls()
         return self
 
     def close(self):
-        if SessionContext.session:
-            self.session_cls.remove()
-            SessionContext.session = None
+        self.session_cls.remove()
 
     def recreate_all(self):
         """
@@ -42,21 +50,14 @@ class SessionContext:
         if self.graph.metadata.testing:
             recreate_all(self.graph)
 
-    @classmethod
-    def make(cls, graph, expire_on_commit=False):
-        """
-        Create an opened context.
-
-        """
-        return cls(graph, expire_on_commit).open()
-
-    # context manager
-
     def __enter__(self):
         return self.open()
 
     def __exit__(self, *args, **kwargs):
         self.close()
+
+
+SessionContext = SessionContextFactory()
 
 
 @contextmanager
