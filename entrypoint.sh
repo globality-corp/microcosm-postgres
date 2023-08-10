@@ -24,10 +24,9 @@
 
 
 if [ "$1" = "test" ]; then
-   # Install standard test dependencies; YMMV
-   pip --quiet install \
-       .[test] nose PyHamcrest coverage
-   exec nosetests
+   pip install --no-cache-dir --upgrade --extra-index-url ${EXTRA_INDEX_URL} -e .\[test\]
+   shift
+   exec pytest "$@"
 elif [ "$1" = "lint" ]; then
    # Install standard linting dependencies; YMMV
    pip --quiet install \

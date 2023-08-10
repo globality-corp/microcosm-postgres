@@ -2,10 +2,12 @@
 Create a SQL alchemy postgres engine.
 
 """
+import time
+
 from microcosm.api import binding, defaults
 from microcosm.config.types import boolean
 from microcosm.config.validation import typed
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 
 
 def choose_database_name(metadata, config):
@@ -100,13 +102,67 @@ def choose_args(metadata, config):
     )
 
 
+def reconnecting_engine(engine, num_retries, retry_interval):
+    def _run_with_retries(fn, context, cursor_obj, statement, *arg, **kw):
+        for retry in range(num_retries + 1):
+            try:
+                fn(cursor_obj, statement, context=context, *arg)
+            except engine.dialect.dbapi.Error as raw_dbapi_err:
+                connection = context.root_connection
+                if engine.dialect.is_disconnect(raw_dbapi_err, connection, cursor_obj):
+                    if retry > num_retries:
+                        raise
+                    engine.logger.exception(
+                        "disconnection error, retrying operation",
+                        extra=raw_dbapi_err,
+                    )
+                    connection.invalidate()
+
+                    # use SQLAlchemy 2.0 API if available
+                    if hasattr(connection, "rollback"):
+                        connection.rollback()
+                    else:
+                        trans = connection.get_transaction()
+                        if trans:
+                            trans.rollback()
+
+                    time.sleep(retry_interval)
+                    context.cursor = cursor_obj = connection.connection.cursor()
+                else:
+                    raise
+            else:
+                return True
+
+    @event.listens_for(engine, "do_execute_no_params")
+    def do_execute_no_params(cursor_obj, statement, context):
+        return _run_with_retries(
+            context.dialect.do_execute_no_params, context, cursor_obj, statement
+        )
+
+    @event.listens_for(engine, "do_execute")
+    def do_execute(cursor_obj, statement, parameters, context):
+        return _run_with_retries(
+            context.dialect.do_execute, context, cursor_obj, statement, parameters
+        )
+
+    return engine
+
+
 def make_engine(metadata, config):
     uri = choose_uri(metadata, config.postgres)
     args = choose_args(metadata, config.postgres)
-    return create_engine(
+    engine = create_engine(
         uri,
         **args,
     )
+    retries = 10
+    retry_interval = .1
+    if config.postgres.engine_retries:
+        retries = config.postgres.engine_retries
+    if config.postgres.engine_retry_interval:
+        retry_interval = config.postgres.engine_retry_interval / 1000
+
+    return reconnecting_engine(engine, retries, retry_interval)
 
 
 @binding("postgres")
@@ -143,6 +199,10 @@ def make_engine(metadata, config):
     verify_ssl=typed(boolean, default_value=False),
     # SSL certificate path (used with `verify_ssl`)
     ssl_cert_path=None,
+    # Engine retries if disconnects occur
+    engine_retries=typed(int, default_value=10),
+    # Engine retry interval in milliseconds
+    engine_retry_interval=typed(int, default_value=100),
 )
 def configure_engine(graph):
     return make_engine(graph.metadata, graph.config)

@@ -11,7 +11,7 @@ from microcosm_postgres.tests.fixtures import Company, Employee, EmployeeData
 
 class TestEmployeeDataStore:
 
-    def setup(self):
+    def setup_method(self):
         self.graph = create_object_graph(
             name="example",
             testing=True,

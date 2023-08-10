@@ -20,7 +20,7 @@ from microcosm_postgres.tests.fixtures import Company, Employee
 
 class TestEmployeeStore:
 
-    def setup(self):
+    def setup_method(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
         self.company_store = self.graph.company_store
         self.employee_store = self.graph.employee_store

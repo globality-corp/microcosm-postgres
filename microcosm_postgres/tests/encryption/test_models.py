@@ -26,7 +26,7 @@ from microcosm_postgres.tests.encryption.fixtures.sub_encryptable import SubEncr
 
 class TestEncryptable:
 
-    def setup(self):
+    def setup_method(self):
         loaders = load_each(
             load_from_dict(
                 multi_tenant_key_registry=dict(

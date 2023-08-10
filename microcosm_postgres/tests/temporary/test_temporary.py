@@ -17,7 +17,7 @@ from microcosm_postgres.tests.fixtures.company import Company, CompanyType
 
 class TestTransient:
 
-    def setup(self):
+    def setup_method(self):
         self.graph = create_object_graph(
             name="example",
             testing=True,

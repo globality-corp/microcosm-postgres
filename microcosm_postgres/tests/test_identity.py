@@ -16,7 +16,7 @@ from microcosm_postgres.tests.fixtures import Company, CompanyType
 
 class TestIdentity:
 
-    def setup(self):
+    def setup_method(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
         self.graph.use("company_store")
 
