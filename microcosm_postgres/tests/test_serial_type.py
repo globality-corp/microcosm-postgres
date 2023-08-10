@@ -25,7 +25,7 @@ class WithSerial(EntityMixin, Model):
 
 class TestSerialType:
 
-    def setup(self):
+    def setup_method(self):
         self.graph = create_object_graph(name="example", testing=True, import_name="microcosm_postgres")
         self.store = Store(self.graph, WithSerial)
 

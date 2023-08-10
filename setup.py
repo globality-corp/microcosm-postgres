@@ -15,7 +15,7 @@ setup(
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     include_package_data=True,
     zip_safe=False,
-    python_requires=">=3.6",
+    python_requires=">=3.9",
     keywords="microcosm",
     install_requires=[
         "alembic>=1.0.0",
@@ -28,7 +28,6 @@ setup(
         "SQLAlchemy-Utils>=0.37.0",
     ],
     setup_requires=[
-        "nose>=1.3.6",
     ],
     dependency_links=[
     ],
@@ -39,6 +38,8 @@ setup(
             "aws-encryption-sdk>=2.0.0",
             "coverage>=3.7.1",
             "PyHamcrest>=1.8.5",
+            "pytest-cov>=3.0.0",
+            "pytest>=6.2.5",
         ],
     },
     entry_points={
