@@ -130,9 +130,10 @@ jobs:
             aws ecr get-login-password --region ${AWS_DEFAULT_REGION} | docker login --username AWS --password-stdin ${AWS_ECR_DOMAIN}
 
       - run:
-          name: Create Postgres Container
+          name: Create Postgres Containers
           command: |
             docker run -d --name microcosm_postgres_db -e POSTGRES_DB=example_test_db -e POSTGRES_PASSWORD=test -e POSTGRES_USER=example postgres:11.7
+            docker run -d --name microcosm_postgres_db_secondary -e POSTGRES_DB=example_test_db -e POSTGRES_PASSWORD=test -e POSTGRES_USER=example postgres:11.7
 
       - run:
           name: Copy service tests to volume
@@ -144,8 +145,19 @@ jobs:
       - run:
           name: Run Test
           command: |
-            docker run -it   --link microcosm_postgres_db:postgres -e EXAMPLE__POSTGRES__PASSWORD=test -e EXAMPLE__POSTGRES__HOST=postgres --volumes-from service_tests ${AWS_ECR_DOMAIN}/python-library:${CIRCLE_SHA1} test
-
+            docker run -it \
+              --link microcosm_postgres_db:postgres1 \
+              --link microcosm_postgres_db_secondary:postgres2 \
+              -e EXAMPLE__POSTGRES__HOST=postgres1 \
+              -e EXAMPLE__POSTGRES__PASSWORD=test \
+              -e EXAMPLE__SHARDS__GLOBAL__POSTGRES__HOST=postgres1 \
+              -e EXAMPLE__SHARDS__GLOBAL__POSTGRES__PASSWORD=test \
+              -e EXAMPLE__SHARDS__SECONDARY__POSTGRES__HOST=postgres2 \
+              -e EXAMPLE__SHARDS__SECONDARY__POSTGRES__DATABASE_NAME=example_test_db \
+              -e EXAMPLE__SHARDS__SECONDARY__POSTGRES__PASSWORD=test \
+              --volumes-from service_tests \
+              ${AWS_ECR_DOMAIN}/python-library:${CIRCLE_SHA1} \
+              test
 
 
 

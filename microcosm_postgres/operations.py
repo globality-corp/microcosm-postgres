@@ -2,6 +2,8 @@
 Common database operations.
 
 """
+from typing import Dict
+
 from sqlalchemy import MetaData
 from sqlalchemy.exc import ProgrammingError
 
@@ -67,7 +69,7 @@ def drop_alembic_table(graph):
 
 
 # Cached database metadata instance
-_metadata = None
+_metadata: Dict[str, MetaData] = {}
 
 
 def recreate_all(graph):
@@ -77,22 +79,20 @@ def recreate_all(graph):
     or cleared out between tests
 
     """
-
-    global _metadata
-
-    if _metadata is None:
+    cache_key = str(graph.postgres.url)
+    metadata = _metadata.get(cache_key)
+    if metadata is None:
         # First-run, the test database/metadata needs to be initialized
         drop_all(graph)
         create_all(graph)
-
-        _metadata = MetaData(bind=graph.postgres)
-        _metadata.reflect()
+        metadata = _metadata[cache_key] = MetaData(bind=graph.postgres)
+        metadata.reflect()
         return
 
     # Otherwise, truncate all existing tables
     connection = graph.postgres.connect()
     transaction = connection.begin()
-    for table in reversed(_metadata.sorted_tables):
+    for table in reversed(metadata.sorted_tables):
         connection.execute(table.delete())
     transaction.commit()
 

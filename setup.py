@@ -51,6 +51,8 @@ setup(
             "postgres = microcosm_postgres.factories.engine:configure_engine",
             "postgres_store_metrics = microcosm_postgres.metrics:PostgresStoreMetrics",
             "sessionmaker = microcosm_postgres.factories.sessionmaker:configure_sessionmaker",
+            "sessionmakers = microcosm_postgres.factories.sessionmakers:configure_sessionmakers",
+            "shards = microcosm_postgres.factories.shards:configure_shards",
         ],
     },
 )
