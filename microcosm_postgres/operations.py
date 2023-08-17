@@ -3,6 +3,7 @@ Common database operations.
 
 """
 from typing import Dict
+
 from sqlalchemy import MetaData, text
 from sqlalchemy.exc import ProgrammingError
 
