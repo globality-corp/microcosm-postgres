@@ -72,7 +72,7 @@ def drop_alembic_table(graph):
 
 
 # Cached database metadata instance
-_metadata = {}
+_metadata: Dict[str, MetaData] = {}
 
 
 def recreate_all(graph, model_cls=Model):
