@@ -15,6 +15,11 @@ from sqlalchemy import func, literal_column
 from sqlalchemy.ext.horizontal_shard import ShardedQuery, ShardedSession
 from sqlalchemy.orm import sessionmaker
 
+from microcosm_postgres.constants import (
+    GLOBAL_SHARD_NAME,
+    X_REQUEST_CLIENT_HEADER,
+    X_REQUEST_SHARD_HEADER,
+)
 from microcosm_postgres.factories.engine import make_engine
 
 
@@ -73,7 +78,7 @@ def configure_client_shard_map(graph):
 @binding("shards")
 def configure_shards(graph):
     if not graph.config.shards:
-        return {"global": graph.postgres.engine}
+        return {GLOBAL_SHARD_NAME: graph.postgres.engine}
 
     for shard in graph.config.shards.values():
         load_shard_defaults(shard.postgres, graph.metadata)
@@ -116,12 +121,12 @@ def configure_sharded_sessionmaker(graph):
 
     def select_shard():
         context = normalise(graph.opaque)
-        if shard_name := context.get("x-request-shard"):
+        if shard_name := context.get(X_REQUEST_SHARD_HEADER):
             return shard_name
 
-        if client_id := context.get("x-request-client"):
-            return graph.client_shard.get(client_id, "global")
-        return "global"
+        if client_id := context.get(X_REQUEST_CLIENT_HEADER):
+            return graph.client_shard.get(client_id, GLOBAL_SHARD_NAME)
+        return GLOBAL_SHARD_NAME
 
     def shard_chooser(mapper, instance, clause=None):
         """Choose which shard to send the object instance to for mutations"""

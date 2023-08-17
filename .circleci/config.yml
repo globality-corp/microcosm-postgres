@@ -144,8 +144,16 @@ jobs:
       - run:
           name: Run Test
           command: |
-            docker run -it   --link microcosm_postgres_db:postgres -e EXAMPLE__POSTGRES__PASSWORD=test -e EXAMPLE__POSTGRES__HOST=postgres --volumes-from service_tests ${AWS_ECR_DOMAIN}/python-library:${CIRCLE_SHA1} test
-
+            docker run -it --link microcosm_postgres_db:postgres \
+              -e EXAMPLE__POSTGRES__HOST=postgres \
+              -e EXAMPLE__POSTGRES__PASSWORD=test \
+              -e EXAMPLE__SHARDS__GLOBAL__POSTGRES__HOST=postgres \
+              -e EXAMPLE__SHARDS__GLOBAL__POSTGRES__PASSWORD=test \
+              -e EXAMPLE__SHARDS__SECONDARY__POSTGRES__HOST=postgres \
+              -e EXAMPLE__SHARDS__SECONDARY__POSTGRES__PASSWORD=test \
+              --volumes-from service_tests \
+              ${AWS_ECR_DOMAIN}/python-library:${CIRCLE_SHA1} \
+              test
 
 
 
