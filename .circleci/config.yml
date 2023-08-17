@@ -147,7 +147,7 @@ jobs:
           command: |
             docker run -it \
               --link microcosm_postgres_db:postgres1 \
-              --list microcosm_postgres_db_secondary:postgres2 \
+              --link microcosm_postgres_db_secondary:postgres2 \
               -e EXAMPLE__POSTGRES__HOST=postgres1 \
               -e EXAMPLE__POSTGRES__PASSWORD=test \
               -e EXAMPLE__SHARDS__GLOBAL__POSTGRES__HOST=postgres1 \
