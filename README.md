@@ -69,6 +69,7 @@ and user:
 
     createuser example
     createdb -O example example_test_db
+    createdb -O example example_test_secondary_db
 
 Note that production usage should always create the user with a password. For example:
 
