@@ -13,7 +13,7 @@
 
 # ----------- deps -----------
 # Install from Debian bullseye with modern Python support
-FROM python:3.7-slim-bullseye as deps
+FROM python:3.10-slim-bullseye as deps
 
 #
 # Most services will use the same set of packages here, though a few will install
@@ -61,7 +61,7 @@ FROM deps as base
 # Work in /src
 #
 # We'll copy local source code here for development.
-WORKDIR src
+WORKDIR /src
 
 # Set a proper locale
 #
