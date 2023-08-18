@@ -28,7 +28,6 @@ setup(
         "SQLAlchemy-Utils>=0.37.0",
     ],
     setup_requires=[
-        "nose>=1.3.6",
     ],
     dependency_links=[
     ],
@@ -39,6 +38,8 @@ setup(
             "aws-encryption-sdk>=2.0.0",
             "coverage>=3.7.1",
             "PyHamcrest>=1.8.5",
+            "pytest-cov>=3.0.0",
+            "pytest>=6.2.5",
         ],
     },
     entry_points={
