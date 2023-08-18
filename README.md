@@ -114,3 +114,5 @@ The official [sqlalchemy 2 migration guide](https://docs.sqlalchemy.org/en/20/ch
 Additionally, follow https://docs.sqlalchemy.org/en/20/changelog/whatsnew_20.html#orm-declarative-models to update your models to use the new declarative styles.
 
 Version 3.1.x also introduced auto retry on disconnect, which is enabled by default. If you want to disable it, set `config.postgres.engine_retries` to `0`.
+
+Version 3.2.x introduces horizontal-sharding support
