@@ -2,7 +2,7 @@ from datetime import datetime
 
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     equal_to,
     greater_than,
     has_properties,
@@ -109,7 +109,7 @@ class TestTransient:
             with transient(Company) as transient_company:
                 assert_that(
                     transient_company.select_from(Company),
-                    contains(),
+                    contains_exactly(),
                 )
 
     def test_select_from_partial(self):
@@ -118,11 +118,11 @@ class TestTransient:
                 with transient(Company) as transient_company:
                     transient_company.insert_many(self.companies)
                     self.companies[0].create()
-                    transient_company.upsert_into(Company)
+                    transient_company.upsert_into_on_conflict_do_nothing(Company)
 
                 assert_that(
                     transient_company.select_from(Company),
-                    contains(
+                    contains_exactly(
                         has_properties(
                             name="name2",
                         ),

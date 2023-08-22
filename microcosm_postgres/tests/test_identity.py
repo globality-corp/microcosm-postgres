@@ -23,7 +23,7 @@ class TestIdentity:
         context = SessionContext(self.graph)
         context.recreate_all()
 
-    def teardown(self):
+    def teardown_method(self):
         self.graph.postgres.dispose()
 
     def _make_company(self):

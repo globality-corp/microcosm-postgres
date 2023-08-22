@@ -36,7 +36,7 @@ class TestEmployeeDataStore:
                     company_id=self.company.id,
                 ).create()
 
-    def teardown(self):
+    def teardown_method(self):
         self.graph.postgres.dispose()
 
     def test_create(self):

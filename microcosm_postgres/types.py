@@ -16,6 +16,7 @@ class EnumType(TypeDecorator):
 
     """
     impl = Unicode(255)
+    cache_ok = True
 
     def __init__(self, enum_class):
         self.enum_class = enum_class
@@ -48,6 +49,8 @@ class Serial(UserDefinedType):
         mycolumn = Column(Serial, server_default=FetchedValue(), nullable=False)
 
     """
+    cache_ok = True
+
     def __init__(self, big=False):
         self.big = big
 

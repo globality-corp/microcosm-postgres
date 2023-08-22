@@ -4,7 +4,7 @@ Test DAG.
 """
 from hamcrest import (
     assert_that,
-    contains,
+    contains_exactly,
     has_entries,
     has_length,
 )
@@ -36,7 +36,7 @@ class TestDAG:
                     company_id=self.company.id,
                 ).create()
 
-    def teardown(self):
+    def teardown_method(self):
         self.graph.postgres.dispose()
 
     def test_explain(self):
@@ -46,10 +46,10 @@ class TestDAG:
                 self.company.id: self.company,
                 self.employee.id: self.employee,
             }))
-            assert_that(dag.edges, contains(
+            assert_that(dag.edges, contains_exactly(
                 Edge(self.company.id, self.employee.id),
             ))
-            assert_that(dag.ordered_nodes, contains(
+            assert_that(dag.ordered_nodes, contains_exactly(
                 self.company,
                 self.employee,
             ))

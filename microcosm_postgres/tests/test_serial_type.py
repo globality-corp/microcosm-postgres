@@ -32,7 +32,7 @@ class TestSerialType:
         with SessionContext(self.graph) as context:
             context.recreate_all()
 
-    def teardown(self):
+    def teardown_method(self):
         self.graph.postgres.dispose()
 
     def test_create_sequence_values(self):

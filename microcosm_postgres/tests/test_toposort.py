@@ -2,7 +2,7 @@
 Test topological sort.
 
 """
-from hamcrest import assert_that, contains
+from hamcrest import assert_that, contains_exactly
 
 from microcosm_postgres.dag import Edge
 from microcosm_postgres.toposort import toposorted
@@ -29,7 +29,7 @@ def test_toposort():
 
     assert_that(
         toposorted(nodes, edges),
-        contains(
+        contains_exactly(
             nodes["one"],
             nodes["two"],
             nodes["three"],
