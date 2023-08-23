@@ -46,6 +46,7 @@ class UTCDateTime(types.TypeDecorator):
     """
 
     impl = types.DateTime
+    cache_ok = True
 
     def process_bind_param(self, value, engine):
         if value is not None:

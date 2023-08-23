@@ -7,7 +7,7 @@ from unittest.mock import patch
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     empty,
     equal_to,
@@ -35,7 +35,7 @@ class TestCompany:
         self.context.recreate_all()
         self.context.open()
 
-    def teardown(self):
+    def teardown_method(self):
         self.context.close()
         self.graph.postgres.dispose()
 
@@ -65,11 +65,11 @@ class TestCompany:
                 type=CompanyType.private,
             ).create()
 
-        assert_that(Company.search(), contains(company))
+        assert_that(Company.search(), contains_exactly(company))
         assert_that(Company.search(name="whatever"), is_(empty()))
-        assert_that(Company.search(name=company.name), contains(company))
+        assert_that(Company.search(name=company.name), contains_exactly(company))
         # NB: filtering is skipped if None
-        assert_that(Company.search(name=None), contains(company))
+        assert_that(Company.search(name=None), contains_exactly(company))
 
     def test_create_duplicate_company(self):
         """

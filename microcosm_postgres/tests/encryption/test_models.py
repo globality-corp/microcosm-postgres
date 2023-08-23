@@ -65,7 +65,7 @@ class TestEncryptable:
         with SessionContext(self.graph) as context:
             context.recreate_all()
 
-    def teardown(self):
+    def teardown_method(self):
         self.graph.postgres.dispose()
 
     def test_not_encrypted(self):

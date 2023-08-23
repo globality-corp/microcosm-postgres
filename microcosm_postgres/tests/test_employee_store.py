@@ -5,7 +5,7 @@ Persistence tests for employee store.
 from hamcrest import (
     assert_that,
     calling,
-    contains,
+    contains_exactly,
     contains_inanyorder,
     equal_to,
     is_,
@@ -34,7 +34,7 @@ class TestEmployeeStore:
                 name="name"
             ).create()
 
-    def teardown(self):
+    def teardown_method(self):
         self.context.close()
         self.graph.postgres.dispose()
 
@@ -207,7 +207,7 @@ class TestEmployeeStore:
         assert_that(Employee.count(), is_(equal_to(3)))
         assert_that(
             [employee.last for employee in self.employee_store.search_by_company(self.company.id)],
-            contains("Doe", "last"),
+            contains_exactly("Doe", "last"),
         )
         assert_that(
             [employee.id for employee in self.employee_store.search_by_company(self.company.id)],

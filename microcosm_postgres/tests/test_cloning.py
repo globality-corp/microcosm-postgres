@@ -26,7 +26,7 @@ class TestCloning:
         self.context.recreate_all()
         self.context.open()
 
-    def teardown(self):
+    def teardown_method(self):
         self.context.close()
         self.graph.postgres.dispose()
 

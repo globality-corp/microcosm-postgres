@@ -12,7 +12,7 @@ def copy_column(column, schema):
     Safely create a copy of a column.
 
     """
-    return column.copy(schema=schema)
+    return column._copy(schema=schema)
 
 
 def should_copy(column):
