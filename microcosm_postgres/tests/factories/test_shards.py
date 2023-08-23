@@ -27,8 +27,7 @@ from microcosm_postgres.constants import (
     X_REQUEST_SHARD_HEADER,
 )
 from microcosm_postgres.factories.shards import configure_sharded_sessionmaker
-from microcosm_postgres.operations import recreate_all
-from microcosm_postgres.shards import create_shard_specific_graph
+from microcosm_postgres.shards import recreate_all
 from microcosm_postgres.tests.fixtures import Company
 from microcosm_postgres.tests.fixtures.company import CompanyType
 
@@ -89,8 +88,7 @@ def graph(loader: Any) -> ObjectGraph:
 
 @fixture(autouse=True)
 def setup_db(graph: ObjectGraph) -> None:
-    recreate_all(create_shard_specific_graph(graph, GLOBAL_SHARD_NAME))
-    recreate_all(create_shard_specific_graph(graph, "secondary"))
+    recreate_all(graph)
 
 
 @fixture
