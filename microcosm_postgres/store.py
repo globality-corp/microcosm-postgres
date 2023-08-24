@@ -16,7 +16,6 @@ CRUD conventions as much as possible.
 
 """
 from contextlib import contextmanager
-from warnings import warn
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import FlushError, NoResultFound
@@ -268,20 +267,22 @@ class Store:
                 error,
             )
 
-    def _delete(self, *criterion, synchronize_session=None):
+    def _delete(self, *criterion, synchronize_session="evaluate"):
         """
         Delete a model by some criterion.
 
         Avoids race-condition check-then-delete logic by checking the count of affected rows.
 
+        NB: The `synchronize_session` keyword param is inherited from
+        sqlalchemy.delete to control how sqlalchemy computes the set of rows to
+        delete. This can be important for efficiency as well as flexibility. For more details see:
+        https://docs.sqlalchemy.org/en/13/orm/query.html?highlight=delete#sqlalchemy.orm.query.Query.delete
+
         :raises `ResourceNotFound` if the row cannot be deleted.
 
         """
-        if synchronize_session is not None:
-            warn("synchronize_session is deprecated", DeprecationWarning)
-
         with self.flushing():
-            count = self._query(*criterion).delete(synchronize_session="evaluate")
+            count = self._query(*criterion).delete(synchronize_session=synchronize_session)
         if count == 0:
             raise ModelNotFoundError
         return True

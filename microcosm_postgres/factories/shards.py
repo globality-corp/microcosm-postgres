@@ -11,8 +11,7 @@ from microcosm.config.model import Configuration
 from microcosm.config.types import boolean
 from microcosm.config.validation import typed, validate
 from microcosm.metadata import Metadata
-from sqlalchemy.ext.horizontal_shard import ShardedSession
-from sqlalchemy.orm.session import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from microcosm_postgres.constants import (
     GLOBAL_SHARD_NAME,
@@ -119,25 +118,14 @@ def configure_sharded_sessionmaker(graph):
             return graph.client_shard.get(client_id, GLOBAL_SHARD_NAME)
         return GLOBAL_SHARD_NAME
 
-    def shard_chooser(mapper, instance, clause=None):
-        """Choose which shard to send the object instance to for mutations"""
-        return select_shard()
+    class SingleShardedSession(Session):
+        """
+        A session that always uses the same shard.
 
-    def execute_chooser(context):
-        """Choose which shard to query."""
-        return [select_shard()]
+        This is useful for read-only sessions.
+        """
 
-    def id_chooser(query, ident):
-        """Choose which shard to select the server generated id from."""
-        return [select_shard()]
+        def get_bind(self, *args, **kwargs):
+            return graph.shards[select_shard()]
 
-    sm = sessionmaker(
-        class_=ShardedSession,
-        shards=graph.shards,
-    )
-    sm.configure(
-        execute_chooser=execute_chooser,
-        shard_chooser=shard_chooser,
-        id_chooser=id_chooser,
-    )
-    return sm
+    return sessionmaker(class_=SingleShardedSession)
