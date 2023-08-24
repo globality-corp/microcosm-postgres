@@ -102,6 +102,11 @@ def configure_sharded_sessionmaker(graph):
     ```
     """
 
+    graph.use(
+        "client_shard",
+        "sessionmakers",
+    )  # Automatically bind shard related resources
+
     def normalise(opaque: Dict[str, Any]) -> Dict[str, Any]:
         return {k.lower(): v for k, v in opaque.items()}
 
