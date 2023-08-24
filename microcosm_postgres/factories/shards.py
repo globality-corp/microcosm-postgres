@@ -11,9 +11,7 @@ from microcosm.config.model import Configuration
 from microcosm.config.types import boolean
 from microcosm.config.validation import typed, validate
 from microcosm.metadata import Metadata
-from sqlalchemy import func, literal_column
-from sqlalchemy.ext.horizontal_shard import ShardedQuery, ShardedSession
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import Session, sessionmaker
 
 from microcosm_postgres.constants import (
     GLOBAL_SHARD_NAME,
@@ -89,19 +87,6 @@ def configure_shards(graph):
     }
 
 
-class FixShardedQuery(ShardedQuery):
-    """Legacy Query.count will not work on sharded queries.
-
-    This is due to the fact that the query will not alway return a single count
-    """
-
-    def count(self):
-        col = func.count(literal_column("1"))
-        return sum(
-            r[0] for r in self._legacy_from_self(col).enable_eagerloads(False).all()
-        )
-
-
 def configure_sharded_sessionmaker(graph):
     """
     Create the SQLAlchemy sharded sessionmaker.
@@ -116,6 +101,11 @@ def configure_sharded_sessionmaker(graph):
     ```
     """
 
+    graph.use(
+        "client_shard",
+        "sessionmakers",
+    )  # Automatically bind shard related resources
+
     def normalise(opaque: Dict[str, Any]) -> Dict[str, Any]:
         return {k.lower(): v for k, v in opaque.items()}
 
@@ -128,26 +118,14 @@ def configure_sharded_sessionmaker(graph):
             return graph.client_shard.get(client_id, GLOBAL_SHARD_NAME)
         return GLOBAL_SHARD_NAME
 
-    def shard_chooser(mapper, instance, clause=None):
-        """Choose which shard to send the object instance to for mutations"""
-        return select_shard()
+    class SingleShardedSession(Session):
+        """
+        A session that always uses the same shard.
 
-    def execute_chooser(context):
-        """Choose which shard to query."""
-        return [select_shard()]
+        This is useful for read-only sessions.
+        """
 
-    def identity_chooser(mapper, primary_key, *, lazy_loaded_from, **kw):
-        """Choose which shard to select the server generated id from."""
-        return [select_shard()]
+        def get_bind(self, *args, **kwargs):
+            return graph.shards[select_shard()]
 
-    sm = sessionmaker(
-        class_=ShardedSession,
-        shards=graph.shards,
-        query_cls=FixShardedQuery,
-    )
-    sm.configure(
-        execute_chooser=execute_chooser,
-        shard_chooser=shard_chooser,
-        identity_chooser=identity_chooser,
-    )
-    return sm
+    return sessionmaker(class_=SingleShardedSession)

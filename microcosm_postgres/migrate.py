@@ -46,6 +46,7 @@ from alembic.script import ScriptDirectory
 from microcosm.errors import LockedGraphError, NotBoundError
 
 from microcosm_postgres.models import Model
+from microcosm_postgres.sharded_subgraph import subgraphs
 
 
 def make_alembic_config(temporary_dir, migrations_dir):
@@ -123,7 +124,8 @@ def make_script_py_mako():
     This function takes the place of the `script.py.mako` file in the alembic directory.
 
     """
-    return dedent('''\
+    return dedent(
+        '''\
     """
     ${message}
 
@@ -149,7 +151,8 @@ def make_script_py_mako():
 
     def downgrade():
         ${downgrades if downgrades else "pass"}
-    ''')
+    '''
+    )
 
 
 @contextmanager
@@ -209,6 +212,14 @@ def get_migrations_dir(graph):
     return migrations_dir
 
 
+def run_command(graph, cli, options, model_cls=Model):
+    migrations_dir = get_migrations_dir(graph)
+
+    with patch_script_directory(graph, model_cls) as temporary_dir:
+        config = make_alembic_config(temporary_dir, migrations_dir)
+        cli.run_cmd(config, options)
+
+
 def main(graph, *args, model_cls=Model):
     """
     Entry point for invoking Alembic's `CommandLine`.
@@ -221,7 +232,6 @@ def main(graph, *args, model_cls=Model):
     :param migration_dir: the path to the migrations directory
 
     """
-    migrations_dir = get_migrations_dir(graph)
 
     cli = CommandLine()
     options = cli.parser.parse_args(args if args else argv[1:])
@@ -230,6 +240,10 @@ def main(graph, *args, model_cls=Model):
     if options.cmd[0].__name__ == "init":
         cli.parser.error("Alembic 'init' command should not be used in the microcosm!")
 
-    with patch_script_directory(graph, model_cls) as temporary_dir:
-        config = make_alembic_config(temporary_dir, migrations_dir)
-        cli.run_cmd(config, options)
+    if graph.config.shards and options.cmd[0].__name__ != "revision":
+        # Run the command for each shard except when setting up a revision
+        for subgraph in subgraphs(graph):
+            run_command(subgraph, cli, options)
+        return
+
+    run_command(graph, cli, options, model_cls)
