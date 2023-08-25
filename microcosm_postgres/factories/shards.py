@@ -9,7 +9,7 @@ from typing import Any, Dict
 from microcosm.api import binding, defaults
 from microcosm.config.model import Configuration
 from microcosm.config.types import boolean
-from microcosm.config.validation import typed, required, validate
+from microcosm.config.validation import required, typed, validate
 from microcosm.errors import ValidationError
 from microcosm.metadata import Metadata
 from sqlalchemy.orm import Session, sessionmaker
@@ -81,7 +81,10 @@ def connect_shards(graph):
         try:
             load_shard_defaults(shard.postgres, graph.metadata)
         except ValidationError:
-            graph.logger.warning(f"Configuration for {shard = } is incomplete")
+            graph.logger.warning(
+                "Configuration for {shard} is incomplete",
+                extra=dict(shard=shard),
+            )
             continue
         valid_shards.append(name)
 
