@@ -9,7 +9,8 @@ from typing import Any, Dict
 from microcosm.api import binding, defaults
 from microcosm.config.model import Configuration
 from microcosm.config.types import boolean
-from microcosm.config.validation import typed, validate
+from microcosm.config.validation import required, typed, validate
+from microcosm.errors import ValidationError
 from microcosm.metadata import Metadata
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -30,11 +31,11 @@ def load_shard_defaults(config: Configuration, metadata: Metadata) -> None:
         # enable SQL echoing (verbose; only use for narrow debugging)
         echo=typed(boolean, default_value=False),
         # connection host; will usually need to be overridden (except for local dev)
-        host="localhost",
+        host=required(str),
         # the number of extra connections over/above the pool size; 10 is the default
         max_overflow=typed(int, default_value=10),
         # password; will usually need to be overridden (except for local development)
-        password="",
+        password=required(str),
         # the default size of the connection pool
         pool_size=typed(int, default_value=5),
         # the timeout waiting for a connection from the pool; default 30 is too large
@@ -73,18 +74,37 @@ def configure_client_shard_map(graph):
     return json.loads(graph.config.client_shard.mapping)
 
 
-@binding("shards")
-def configure_shards(graph):
-    if not graph.config.shards:
-        return {GLOBAL_SHARD_NAME: graph.postgres.engine}
+def connect_shards(graph):
+    valid_shards = []
 
-    for shard in graph.config.shards.values():
-        load_shard_defaults(shard.postgres, graph.metadata)
+    for name, shard in graph.config.shards.items():
+        try:
+            load_shard_defaults(shard.postgres, graph.metadata)
+        except ValidationError:
+            graph.logger.warning(
+                "Configuration for {shard} is incomplete",
+                extra=dict(shard=shard),
+            )
+            continue
+        valid_shards.append(name)
 
     return {
-        name: make_engine(graph.metadata, shard)
-        for name, shard in graph.config.shards.items()
+        name: make_engine(graph.metadata, graph.config.shards[name])
+        for name in valid_shards
     }
+
+
+@binding("shards")
+def configure_shards(graph):
+    shards = connect_shards(graph)
+
+    if GLOBAL_SHARD_NAME not in shards:
+        graph.logger.warning(
+            "Global shard not explicitly defined, using single shard postgres"
+        )
+        return {GLOBAL_SHARD_NAME: graph.postgres.engine}
+
+    return shards
 
 
 def configure_sharded_sessionmaker(graph):

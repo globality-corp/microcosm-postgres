@@ -52,12 +52,16 @@ def loader():
                 GLOBAL_SHARD_NAME: dict(
                     postgres=dict(
                         host="127.0.0.1",
+                        username="example",
+                        password="",
                     )
                 ),
                 "secondary": dict(
                     postgres=dict(
                         host="127.0.0.1",
                         database_name="example_test_secondary_db",
+                        username="example",
+                        password="",
                     )
                 ),
             },
@@ -84,6 +88,68 @@ def graph(loader: Any) -> ObjectGraph:
         loader=loader,
         import_name="microcosm_postgres",
     )
+
+
+def test_load_bad_shard_configuration():
+    loader = load_from_dict(
+        secret=dict(
+            postgres=dict(
+                host="127.0.0.1",
+            ),
+        ),
+        shards={
+            GLOBAL_SHARD_NAME: dict(
+                postgres=dict(
+                    host="127.0.0.1",
+                    username="example",
+                    password="",
+                )
+            ),
+            "secondary": dict(
+                postgres=dict(
+                    host="127.0.0.1",
+                    database_name="example_test_secondary_db",
+                )
+            ),
+        },
+        client_shard=dict(mapping=json.dumps({SHARDED_CLIENT: "secondary"})),
+    )
+    graph = create_object_graph(
+        name="example",
+        testing=True,
+        loader=loader,
+        import_name="microcosm_postgres",
+    )
+    assert graph.shards.keys() == {GLOBAL_SHARD_NAME}
+
+
+def test_load_bad_global_shard_configuration():
+    loader = load_from_dict(
+        secret=dict(
+            postgres=dict(
+                host="127.0.0.1",
+            ),
+        ),
+        shards={
+            GLOBAL_SHARD_NAME: dict(postgres=dict()),
+            "secondary": dict(
+                postgres=dict(
+                    host="127.0.0.1",
+                    database_name="example_test_secondary_db",
+                    username="example",
+                    password="",
+                )
+            ),
+        },
+        client_shard=dict(mapping=json.dumps({SHARDED_CLIENT: "secondary"})),
+    )
+    graph = create_object_graph(
+        name="example",
+        testing=True,
+        loader=loader,
+        import_name="microcosm_postgres",
+    )
+    assert graph.shards.keys() == {GLOBAL_SHARD_NAME}
 
 
 @fixture(autouse=True)
