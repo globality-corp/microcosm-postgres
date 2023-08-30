@@ -16,9 +16,9 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from microcosm_postgres.constants import (
     GLOBAL_SHARD_NAME,
+    SHARD_OVERRIDE_NAME,
     X_REQUEST_CLIENT_HEADER,
     X_REQUEST_SHARD_HEADER,
-    SHARD_OVERRIDE_NAME,
 )
 from microcosm_postgres.factories.engine import make_engine
 
