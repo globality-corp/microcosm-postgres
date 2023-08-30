@@ -18,6 +18,7 @@ from microcosm_postgres.constants import (
     GLOBAL_SHARD_NAME,
     X_REQUEST_CLIENT_HEADER,
     X_REQUEST_SHARD_HEADER,
+    SHARD_OVERRIDE_NAME,
 )
 from microcosm_postgres.factories.engine import make_engine
 
@@ -144,8 +145,16 @@ def configure_sharded_sessionmaker(graph):
 
         This is useful for read-only sessions.
         """
+        def _find_shard_override(self, mapper):
+            if not mapper or not mapper.class_:
+                return None
 
-        def get_bind(self, *args, **kwargs):
-            return graph.shards[select_shard()]
+            return getattr(mapper.class_, SHARD_OVERRIDE_NAME, None)
+
+        def get_bind(self, *args, mapper=None, **kwargs):
+            shard_override = self._find_shard_override(mapper)
+
+            shard_key = shard_override or select_shard()
+            return graph.shards[shard_key]
 
     return sessionmaker(class_=SingleShardedSession)

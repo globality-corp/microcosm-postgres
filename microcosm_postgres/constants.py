@@ -1,3 +1,4 @@
 GLOBAL_SHARD_NAME = "global"
+SHARD_OVERRIDE_NAME = "SHARD_OVERRIDE"
 X_REQUEST_CLIENT_HEADER = "x-request-client"
 X_REQUEST_SHARD_HEADER = "x-request-shard"
