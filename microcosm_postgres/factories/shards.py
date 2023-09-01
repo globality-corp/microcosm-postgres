@@ -151,7 +151,7 @@ def configure_sharded_sessionmaker(graph):
 
             return getattr(mapper.class_, SHARD_OVERRIDE_NAME, None)
 
-        def get_bind(self, *args, mapper=None, **kwargs):
+        def get_bind(self, mapper=None, clause=None):
             shard_override = self._find_shard_override(mapper)
 
             shard_key = shard_override or select_shard()
