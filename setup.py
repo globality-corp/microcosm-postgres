@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 
 project = "microcosm-postgres"
-version = "2.6.0"
+version = "2.7.0"
 
 setup(
     name=project,
@@ -54,6 +54,7 @@ setup(
             "sessionmaker = microcosm_postgres.factories.sessionmaker:configure_sessionmaker",
             "sessionmakers = microcosm_postgres.factories.sessionmakers:configure_sessionmakers",
             "shards = microcosm_postgres.factories.shards:configure_shards",
+            "register_flask_context = microcosm_postgres.encryption.v2.encryptors:AwsKmsEncryptor.register_flask_context [encryption]",  # noqa: E501
         ],
     },
 )
