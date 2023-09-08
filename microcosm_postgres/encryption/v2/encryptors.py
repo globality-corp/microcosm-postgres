@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from typing import (
     Any,
@@ -84,7 +84,7 @@ class AwsKmsEncryptor(Encryptor):
         return _token_wrapper()
 
     @classmethod
-    def set_context_from_graph(cls, graph: ObjectGraph) -> None:
+    def set_context_from_graph(cls, graph: ObjectGraph) -> ContextManager[None]:
         encryptors = graph.multi_tenant_encryptor
 
         def normalise(opaque: dict[str, Any]) -> dict[str, Any]:
@@ -92,8 +92,8 @@ class AwsKmsEncryptor(Encryptor):
 
         client_id = normalise(graph.opaque).get(X_REQUEST_CLIENT_HEADER)
         if client_id is None:
-            return
-        cls.set_encryptor_context(client_id, encryptors[client_id])
+            return nullcontext()
+        return cls.set_encryptor_context(client_id, encryptors[client_id])
 
     @classmethod
     def register_flask_context(cls, graph: ObjectGraph) -> None:
