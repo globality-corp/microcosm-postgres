@@ -1,6 +1,4 @@
-from contextvars import ContextVar
 from typing import TypeVar
-from uuid import UUID
 
 from sqlalchemy import ColumnElement
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -10,52 +8,39 @@ from .encryptors import Encryptor
 
 
 T = TypeVar("T")
-CLIENT_ID: ContextVar[UUID | None] = ContextVar("CLIENT_ID", default=None)
 
 
 def encryption(
-    key: str,
-    encryptor: Encryptor,
-    encoder: Encoder[T],
-    client_id_field: str = "client_id",
+    key: str, encryptor: Encryptor, encoder: Encoder[T]
 ) -> hybrid_property[T]:
     """
     Switches between encrypted and plaintext values based on the client_id.
 
     Queries on the encryption field will only be performed on the unencrypted rows.
     """
+    encrypted_field = f"{key}_encrypted"
+    unencrypted_field = f"{key}_unencrypted"
 
     @hybrid_property
     def _prop(self) -> T:
-        client_id: UUID | None = getattr(self, client_id_field)
-        if client_id is not None and encryptor.should_encrypt(client_id):
-            return encoder.decode(
-                encryptor.decrypt(
-                    client_id,
-                    getattr(self, f"{key}_encrypted"),
-                )
-            )
+        encrypted = getattr(self, encrypted_field)
 
-        return getattr(self, f"{key}_unencrypted")
+        if encrypted is None:
+            return getattr(self, unencrypted_field)
+
+        return encoder.decode(encryptor.decrypt(encrypted))
 
     @_prop.inplace.setter
     def _prop_setter(self, value: T) -> None:
-        client_id: UUID | None = getattr(self, client_id_field)
-        if client_id is None:
-            setattr(self, client_id_field, client_id := CLIENT_ID.get())
-
-        if client_id is not None and encryptor.should_encrypt(client_id):
-            setattr(
-                self,
-                f"{key}_encrypted",
-                encryptor.encrypt(client_id, encoder.encode(value)),
-            )
+        encrypted = encryptor.encrypt(encoder.encode(value))
+        if encrypted is None:
+            setattr(self, unencrypted_field, value)
             return
 
-        setattr(self, f"{key}_unencrypted", value)
+        setattr(self, encrypted_field, encrypted)
 
     @_prop.inplace.expression
     def _prop_expression(cls) -> ColumnElement[T]:
-        return getattr(cls, f"{key}_unencrypted")
+        return getattr(cls, unencrypted_field)
 
     return _prop

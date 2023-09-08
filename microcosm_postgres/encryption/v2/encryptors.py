@@ -1,86 +1,89 @@
+from __future__ import annotations
+
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import ContextManager, Iterator, Protocol
-from uuid import UUID
+from typing import ContextManager, Iterator, Protocol, TypeAlias
 
-from microcosm.api import binding
-
-from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor
+from microcosm_postgres.encryption.encryptor import SingleTenantEncryptor
 
 
 class Encryptor(Protocol):
-    def encrypt(self, client_id: UUID, value: str) -> bytes:
+    def encrypt(self, value: str) -> bytes | None:
+        """Encrypt a value.
+
+        Return None if the value should not be encrypted.
+        """
         ...
 
-    def decrypt(self, client_id: UUID, value: bytes) -> str:
-        ...
-
-    def should_encrypt(self, client_id: UUID) -> bool:
+    def decrypt(self, value: bytes) -> str:
+        """Decrypt a value key identified from the ciphertext."""
         ...
 
 
 class PlainTextEncryptor(Encryptor):
-    def encrypt(self, client_id: UUID, value: str) -> bytes:
-        return value.encode()
+    def encrypt(self, value: str) -> bytes | None:
+        return None
 
-    def decrypt(self, client_id: UUID, value: bytes) -> str:
+    def decrypt(self, value: bytes) -> str:
         return value.decode()
 
-    def should_encrypt(self, client_id: UUID) -> bool:
-        return False
+
+EncryptorContext: TypeAlias = "tuple[str, SingleTenantEncryptor]"
 
 
 class AwsKmsEncryptor(Encryptor):
-    _encryptor: ContextVar[MultiTenantEncryptor] = ContextVar("_encryptor")
+    _encryptor_context: ContextVar[EncryptorContext] = ContextVar("_encryptor_context")
 
-    class NotBound(Exception):
+    class EncryptorNotBound(Exception):
         ...
 
     @property
-    def encryptor(self) -> MultiTenantEncryptor:
-        try:
-            return self._encryptor.get()
-        except LookupError:
-            raise AwsKmsEncryptor.NotBound("No encryptor bound to context")
-
-    @binding("configure_aws_kms_encryptor")
-    def configure_aws_kms_encryptor(cls, graph) -> None:
-        cls.set_encryptor(graph.multi_tenant_encryptor)
+    def encryptor_context(self) -> tuple[str, SingleTenantEncryptor] | None:
+        return self._encryptor_context.get(None)
 
     @classmethod
-    def set_encryptor(cls, encryptor: MultiTenantEncryptor) -> ContextManager[None]:
+    def set_encryptor_context(
+        cls,
+        context: str,
+        encryptor: SingleTenantEncryptor,
+    ) -> ContextManager[None]:
         """
         Hook to set the encryptor for the current context.
 
         Usage:
             Either, set the context at the start of the request and forget:
             ```python
-                AwsKmsEncryptor.set_encryptor(encryptor)
+                AwsKmsEncryptor.set_encryptor("context", encryptor)
             ```
 
             Or, set the context in a scope to ensure reset:
             ```python
-                with AwsKmsEncryptor.set_encryptor(encryptor):
+                with AwsKmsEncryptor.set_encryptor("context", encryptor):
                     # use it
                     ...
             ```
         """
-        token = cls._encryptor.set(encryptor)
+        token = cls._encryptor_context.set((context, encryptor))
 
         @contextmanager
         def _token_wrapper() -> Iterator[None]:
             try:
                 yield
             finally:
-                cls._encryptor.reset(token)
+                cls._encryptor_context.reset(token)
 
         return _token_wrapper()
 
-    def encrypt(self, client_id: UUID, value: str) -> bytes:
-        return self.encryptor.encrypt(str(client_id), value)[0]
+    def encrypt(self, value: str) -> bytes | None:
+        if self.encryptor_context is None:
+            return None
 
-    def decrypt(self, client_id: UUID, value: bytes) -> str:
-        return self.encryptor.decrypt(str(client_id), value)
+        context, encryptor = self.encryptor_context
+        return encryptor.encrypt(context, value)[0]
 
-    def should_encrypt(self, client_id: UUID) -> bool:
-        return str(client_id) in self.encryptor
+    def decrypt(self, value: bytes) -> str:
+        if self.encryptor_context is None:
+            raise self.EncryptorNotBound()
+
+        context, encryptor = self.encryptor_context
+        return encryptor.decrypt(context, value)
