@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterator
+from typing import TYPE_CHECKING, ClassVar, Iterator
 from uuid import uuid4
 
 from microcosm.api import (
@@ -18,11 +18,8 @@ from sqlalchemy import (
     Table,
 )
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
-from microcosm_postgres.encryption.encryptor import (
-    MultiTenantEncryptor,
-    SingleTenantEncryptor,
-)
 
+from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
@@ -32,7 +29,7 @@ from microcosm_postgres.models import Model
 class Employee(Model):
     __tablename__ = "test_encryption_employee"
     if TYPE_CHECKING:
-        __table__: Table
+        __table__: ClassVar[Table]
 
     id = mapped_column(UUID, primary_key=True, default=uuid4)
 

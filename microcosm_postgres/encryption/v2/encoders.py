@@ -1,6 +1,12 @@
 import json
 from decimal import Decimal
-from typing import Generic, Protocol, TypeAlias, TypeVar
+from typing import (
+    Generic,
+    Protocol,
+    TypeAlias,
+    TypeVar,
+)
+
 
 T = TypeVar("T")
 JSONType: TypeAlias = (
