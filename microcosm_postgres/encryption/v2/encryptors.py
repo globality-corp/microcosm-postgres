@@ -2,8 +2,17 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from contextvars import ContextVar
-from typing import ContextManager, Iterator, Protocol, TypeAlias
+from typing import (
+    Any,
+    ContextManager,
+    Iterator,
+    Protocol,
+    TypeAlias,
+)
 
+from microcosm.object_graph import ObjectGraph
+
+from microcosm_postgres.constants import X_REQUEST_CLIENT_HEADER
 from microcosm_postgres.encryption.encryptor import SingleTenantEncryptor
 
 
@@ -73,6 +82,26 @@ class AwsKmsEncryptor(Encryptor):
                 cls._encryptor_context.reset(token)
 
         return _token_wrapper()
+
+    @classmethod
+    def set_context_from_graph(cls, graph: ObjectGraph) -> None:
+        encryptors = graph.multi_tenant_encryptor
+
+        def normalise(opaque: dict[str, Any]) -> dict[str, Any]:
+            return {k.lower(): v for k, v in opaque.items()}
+
+        client_id = normalise(graph.opaque).get(X_REQUEST_CLIENT_HEADER)
+        if client_id is None:
+            return
+        cls.set_encryptor_context(client_id, encryptors[client_id])
+
+    @classmethod
+    def register_flask_context(cls, graph: ObjectGraph) -> None:
+        graph.use("multi_tenant_encryptor")
+
+        @graph.flask.before_request
+        def _register_encryptor():
+            cls.set_context_from_graph(graph)
 
     def encrypt(self, value: str) -> bytes | None:
         if self.encryptor_context is None:
