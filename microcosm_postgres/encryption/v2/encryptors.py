@@ -90,7 +90,7 @@ class AwsKmsEncryptor(Encryptor):
         def normalise(opaque: dict[str, Any]) -> dict[str, Any]:
             return {k.lower(): v for k, v in opaque.items()}
 
-        client_id = normalise(graph.opaque).get(X_REQUEST_CLIENT_HEADER)
+        client_id = normalise(graph.request_context()).get(X_REQUEST_CLIENT_HEADER)
         if client_id is None:
             return nullcontext()
         return cls.set_encryptor_context(client_id, encryptors[client_id])
@@ -101,6 +101,7 @@ class AwsKmsEncryptor(Encryptor):
 
         @graph.flask.before_request
         def _register_encryptor():
+
             cls.set_context_from_graph(graph)
 
     def encrypt(self, value: str) -> bytes | None:
