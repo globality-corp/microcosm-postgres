@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 import pytest
 
 from microcosm_postgres.encryption.v2 import encoders
