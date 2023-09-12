@@ -13,7 +13,7 @@ from typing import (
 from microcosm.object_graph import ObjectGraph
 
 from microcosm_postgres.constants import X_REQUEST_CLIENT_HEADER
-from microcosm_postgres.encryption.encryptor import SingleTenantEncryptor
+from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 
 
 class Encryptor(Protocol):
@@ -85,13 +85,13 @@ class AwsKmsEncryptor(Encryptor):
 
     @classmethod
     def set_context_from_graph(cls, graph: ObjectGraph) -> ContextManager[None]:
-        encryptors = graph.multi_tenant_encryptor
+        encryptors: MultiTenantEncryptor = graph.multi_tenant_encryptor
 
         def normalise(opaque: dict[str, Any]) -> dict[str, Any]:
             return {k.lower(): v for k, v in opaque.items()}
 
         client_id = normalise(graph.request_context()).get(X_REQUEST_CLIENT_HEADER)
-        if client_id is None:
+        if client_id is None or client_id not in encryptors.encryptors:
             return nullcontext()
         return cls.set_encryptor_context(client_id, encryptors[client_id])
 
