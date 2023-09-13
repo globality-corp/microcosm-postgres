@@ -84,14 +84,6 @@ class AwsKmsEncryptor(Encryptor):
         return _token_wrapper()
 
     @classmethod
-    def reset_encryptor_context(cls) -> ContextManager[None]:
-        """
-        Hook to reset the encryptor for the current context.
-        """
-        cls._encryptor_context.set(None)
-        return nullcontext()
-
-    @classmethod
     def set_context_from_graph(cls, graph: ObjectGraph) -> ContextManager[None]:
         encryptors: MultiTenantEncryptor = graph.multi_tenant_encryptor
 
@@ -100,7 +92,7 @@ class AwsKmsEncryptor(Encryptor):
 
         client_id = normalise(graph.request_context()).get(X_REQUEST_CLIENT_HEADER)
         if client_id is None or client_id not in encryptors.encryptors:
-            return cls.reset_encryptor_context()
+            return nullcontext()
         return cls.set_encryptor_context(client_id, encryptors[client_id])
 
     @classmethod
@@ -110,6 +102,11 @@ class AwsKmsEncryptor(Encryptor):
         @graph.flask.before_request
         def _register_encryptor():
             cls.set_context_from_graph(graph)
+
+        @graph.flask.after_request
+        def _reset_encryptor(response):
+            cls._encryptor_context.set(None)
+            return response
 
     def encrypt(self, value: str) -> bytes | None:
         if self.encryptor_context is None:
