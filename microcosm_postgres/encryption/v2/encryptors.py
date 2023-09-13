@@ -13,7 +13,10 @@ from typing import (
 from microcosm.object_graph import ObjectGraph
 
 from microcosm_postgres.constants import X_REQUEST_CLIENT_HEADER
-from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
+from microcosm_postgres.encryption.encryptor import (
+    MultiTenantEncryptor,
+    SingleTenantEncryptor,
+)
 
 
 class Encryptor(Protocol):
@@ -44,7 +47,7 @@ class AwsKmsEncryptor(Encryptor):
     _encryptor_context: ContextVar[EncryptorContext] = ContextVar("_encryptor_context")
 
     class EncryptorNotBound(Exception):
-        ...
+        status_code = 403
 
     @property
     def encryptor_context(self) -> tuple[str, SingleTenantEncryptor] | None:
