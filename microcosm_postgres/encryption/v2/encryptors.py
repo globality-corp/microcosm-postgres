@@ -37,7 +37,7 @@ class PlainTextEncryptor(Encryptor):
         return value.decode()
 
 
-EncryptorContext: TypeAlias = "tuple[str, SingleTenantEncryptor]"
+EncryptorContext: TypeAlias = "tuple[str, SingleTenantEncryptor] | None"
 
 
 class AwsKmsEncryptor(Encryptor):
@@ -101,8 +101,12 @@ class AwsKmsEncryptor(Encryptor):
 
         @graph.flask.before_request
         def _register_encryptor():
-
             cls.set_context_from_graph(graph)
+
+        @graph.flask.after_request
+        def _reset_encryptor(response):
+            cls._encryptor_context.set(None)
+            return response
 
     def encrypt(self, value: str) -> bytes | None:
         if self.encryptor_context is None:
