@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 
 project = "microcosm-postgres"
-version = "3.5.1"
+version = "3.5.2"
 
 setup(
     name=project,
