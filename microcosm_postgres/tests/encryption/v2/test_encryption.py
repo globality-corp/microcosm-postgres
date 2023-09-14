@@ -20,10 +20,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import Session, sessionmaker as SessionMaker
 from sqlalchemy_utils import UUIDType
 
-from microcosm_postgres.encryption.encryptor import (
-    MultiTenantEncryptor,
-    SingleTenantEncryptor,
-)
+from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
