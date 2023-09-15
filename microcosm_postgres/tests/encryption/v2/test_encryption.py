@@ -11,16 +11,11 @@ from microcosm.api import (
 )
 from microcosm.object_graph import ObjectGraph
 from pytest import fixture
-from sqlalchemy import (
-    UUID,
-    LargeBinary,
-    String,
-    Table,
-)
+from sqlalchemy import UUID, String, Table
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
-from microcosm_postgres.encryption.v2.column import encryption
+from microcosm_postgres.encryption.v2.column import encryption_property
 from microcosm_postgres.encryption.v2.encoders import StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
@@ -33,9 +28,9 @@ class Employee(Model):
 
     id = mapped_column(UUID, primary_key=True, default=uuid4)
 
-    name_unencrypted = mapped_column("name", String, nullable=True)
-    name_encrypted = mapped_column(LargeBinary, nullable=True)
-    name = encryption("name", AwsKmsEncryptor(), StringEncoder())
+    name = encryption_property("name", String, AwsKmsEncryptor(), StringEncoder())
+    name_encrypted = name.encrypted()
+    name_unencrypted = name.unencrypted(index=True)
 
 
 client_id = uuid4()
