@@ -35,9 +35,11 @@ def encryption(
         encrypted = encryptor.encrypt(encoder.encode(value))
         if encrypted is None:
             setattr(self, unencrypted_field, value)
+            setattr(self, encrypted_field, None)
             return
 
         setattr(self, encrypted_field, encrypted)
+        setattr(self, unencrypted_field, None)
 
     @_prop.inplace.expression
     def _prop_expression(cls) -> ColumnElement[T]:

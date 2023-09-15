@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from decimal import Decimal
 
 import pytest
@@ -16,6 +17,8 @@ from microcosm_postgres.encryption.v2 import encoders
         (encoders.JSONEncoder(), {"foo": "bar", "something_else": []}),
         (encoders.Nullable(encoders.StringEncoder()), "foo"),
         (encoders.Nullable(encoders.StringEncoder()), None),
+        (encoders.DatetimeEncoder(), datetime.now()),
+        (encoders.DatetimeEncoder(), datetime.now(timezone.utc)),
     ],
 )
 def test_encode_decode(encoder, value):

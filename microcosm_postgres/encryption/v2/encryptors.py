@@ -44,7 +44,7 @@ class AwsKmsEncryptor(Encryptor):
     _encryptor_context: ContextVar[EncryptorContext] = ContextVar("_encryptor_context")
 
     class EncryptorNotBound(Exception):
-        ...
+        status_code = 403
 
     @property
     def encryptor_context(self) -> tuple[str, SingleTenantEncryptor] | None:
