@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from decimal import Decimal
 from typing import (
     Generic,
@@ -44,6 +45,14 @@ class DecimalEncoder(Encoder[Decimal]):
 
     def decode(self, value: str) -> Decimal:
         return Decimal(value)
+
+
+class DatetimeEncoder(Encoder[datetime]):
+    def encode(self, value: datetime) -> str:
+        return value.isoformat()
+
+    def decode(self, value: str) -> datetime:
+        return datetime.fromisoformat(value)
 
 
 class ArrayEncoder(Encoder[list[T]], Generic[T]):
