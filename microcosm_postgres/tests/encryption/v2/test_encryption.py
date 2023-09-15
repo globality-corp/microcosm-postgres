@@ -122,3 +122,34 @@ def test_encrypt_with_client(
         assert employee.name_unencrypted is None
         assert employee.name_encrypted is not None
         assert employee.name == "foo"
+
+
+def test_add_encryption_to_existing(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    session.add(employee := Employee())
+    employee.name = "foo"
+    assert employee.name_encrypted is None
+    assert employee.name_unencrypted == "foo"
+
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        employee.name = "foo"
+        assert employee.name_unencrypted is None
+        assert employee.name_encrypted is not None
+
+
+def test_remove_encryption_from_existing(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    session.add(employee := Employee())
+
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        employee.name = "foo"
+        assert employee.name_unencrypted is None
+        assert employee.name_encrypted is not None
+
+    employee.name = "foo"
+    assert employee.name_encrypted is None
+    assert employee.name_unencrypted == "foo"
