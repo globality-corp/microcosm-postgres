@@ -8,9 +8,9 @@ from typing import (
     Iterator,
     Protocol,
 )
-from typing_extensions import TypeAlias
 
 from microcosm.object_graph import ObjectGraph
+from typing_extensions import TypeAlias
 
 from microcosm_postgres.constants import X_REQUEST_CLIENT_HEADER
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor

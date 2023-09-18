@@ -1,13 +1,10 @@
 import json
 from datetime import datetime
 from decimal import Decimal
-from typing import (
-    Generic,
-    Protocol,
-    TypeVar,
-)
+from typing import Generic, Protocol, TypeVar
 
 from typing_extensions import TypeAlias
+
 
 T = TypeVar("T")
 JSONType: TypeAlias = (
