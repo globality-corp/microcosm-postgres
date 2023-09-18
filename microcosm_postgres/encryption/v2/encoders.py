@@ -4,10 +4,10 @@ from decimal import Decimal
 from typing import (
     Generic,
     Protocol,
-    TypeAlias,
     TypeVar,
 )
 
+from typing_extensions import TypeAlias
 
 T = TypeVar("T")
 JSONType: TypeAlias = (

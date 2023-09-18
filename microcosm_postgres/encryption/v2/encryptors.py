@@ -7,8 +7,8 @@ from typing import (
     ContextManager,
     Iterator,
     Protocol,
-    TypeAlias,
 )
+from typing_extensions import TypeAlias
 
 from microcosm.object_graph import ObjectGraph
 
