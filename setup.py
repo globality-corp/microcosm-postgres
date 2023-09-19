@@ -33,7 +33,10 @@ setup(
     ],
     extras_require={
         "metrics": "microcosm-metrics>=2.5.0",
-        "encryption": "aws-encryption-sdk>=2.0.0",
+        "encryption": [
+            "aws-encryption-sdk>=2.0.0",
+            "cryptography>=41",
+        ],
         "test": [
             "aws-encryption-sdk>=2.0.0",
             "coverage>=3.7.1",

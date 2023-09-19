@@ -20,6 +20,7 @@ def encryption(
     """
     encrypted_field = f"{key}_encrypted"
     unencrypted_field = f"{key}_unencrypted"
+    beacon_field = f"{key}_beacon"
 
     @hybrid_property
     def _prop(self) -> T:
@@ -32,17 +33,25 @@ def encryption(
 
     @_prop.inplace.setter
     def _prop_setter(self, value: T) -> None:
-        encrypted = encryptor.encrypt(encoder.encode(value))
+        encoded = encoder.encode(value)
+        encrypted = encryptor.encrypt(encoded)
         if encrypted is None:
             setattr(self, unencrypted_field, value)
             setattr(self, encrypted_field, None)
+            if hasattr(self, beacon_field):
+                setattr(self, beacon_field, None)
             return
 
         setattr(self, encrypted_field, encrypted)
         setattr(self, unencrypted_field, None)
+        if hasattr(self, beacon_field):
+            setattr(self, beacon_field, encryptor.beacon(encoded))
 
     @_prop.inplace.expression
     def _prop_expression(cls) -> ColumnElement[T]:
+        if beacon := getattr(cls, beacon_field, None):
+            return beacon
+
         return getattr(cls, unencrypted_field)
 
     return _prop

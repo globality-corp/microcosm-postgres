@@ -28,6 +28,10 @@ class Encryptor(Protocol):
         """Decrypt a value key identified from the ciphertext."""
         ...
 
+    def beacon(self, value: str) -> str:
+        """Hash value using the beacon key."""
+        ...
+
 
 class PlainTextEncryptor(Encryptor):
     def encrypt(self, value: str) -> bytes | None:
@@ -44,6 +48,9 @@ class AwsKmsEncryptor(Encryptor):
     _encryptor_context: ContextVar[EncryptorContext] = ContextVar("_encryptor_context")
 
     class EncryptorNotBound(Exception):
+        status_code = 403
+
+    class BeaconKeyNotSet(Exception):
         status_code = 403
 
     @property
@@ -121,3 +128,14 @@ class AwsKmsEncryptor(Encryptor):
 
         context, encryptor = self.encryptor_context
         return encryptor.decrypt(context, value)
+
+    def beacon(self, value: str) -> str:
+        if self.encryptor_context is None:
+            raise self.EncryptorNotBound()
+
+        _, encryptor = self.encryptor_context
+        beacon = encryptor.beacon(value)
+        if beacon is None:
+            raise self.BeaconKeyNotSet()
+
+        return beacon

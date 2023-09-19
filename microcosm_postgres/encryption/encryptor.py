@@ -11,6 +11,7 @@ from typing import (
 
 from aws_encryption_sdk import CommitmentPolicy, EncryptionSDKClient
 from aws_encryption_sdk.materials_managers.base import CryptoMaterialsManager
+from cryptography.hazmat.primitives import hashes, hmac
 
 
 class SingleTenantEncryptor:
@@ -22,12 +23,14 @@ class SingleTenantEncryptor:
         self,
         encrypting_materials_manager: CryptoMaterialsManager,
         decrypting_materials_manager: CryptoMaterialsManager,
+        beacon_key: str | None = None
     ):
         self.encrypting_materials_manager = encrypting_materials_manager
         self.decrypting_materials_manager = decrypting_materials_manager
         self.encryption_client = EncryptionSDKClient(
             commitment_policy=CommitmentPolicy.FORBID_ENCRYPT_ALLOW_DECRYPT,
         )
+        self._beacon_key = beacon_key.encode("utf-8") if beacon_key else None
 
     def __contains__(self, encryption_context_key: str) -> bool:
         return True
@@ -66,6 +69,14 @@ class SingleTenantEncryptor:
         )
         return plaintext.decode("utf-8")
 
+    def beacon(self, value: str) -> str | None:
+        if self._beacon_key is None:
+            return None
+
+        h = hmac.HMAC(self._beacon_key, hashes.SHA256())
+        h.update(value.encode("utf-8"))
+        return h.finalize().hex()
+
     def unpack_key_id(self, key_provider):
         key_info = key_provider.key_info
         try:
@@ -103,6 +114,10 @@ class MultiTenantEncryptor:
     def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
         encryptor = self[encryption_context_key]
         return encryptor.decrypt(encryption_context_key, ciphertext)
+
+    def beacon(self, encryption_context_key: str, value: str) -> str | None:
+        encryptor = self[encryption_context_key]
+        return encryptor.beacon(value)
 
 
 Encryptor = Union[
