@@ -37,4 +37,4 @@ def encryption(key: str, encryptor: Encryptor, encoder: Encoder) -> hybrid_prope
     def _prop_expression(cls):
         return getattr(cls, unencrypted_field)
 
-    return _prop_setter
+    return _prop_expression

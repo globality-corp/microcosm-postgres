@@ -80,6 +80,9 @@ coverage.xml
 *,cover
 cover
 
+microcosm_postgres/tests/coverage/
+microcosm_postgres/tests/test-results/pytest/*.xml
+
 # Translations
 *.mo
 *.pot
