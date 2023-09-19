@@ -11,17 +11,12 @@ from microcosm.api import (
 )
 from microcosm.object_graph import ObjectGraph
 from pytest import fixture
-from sqlalchemy import (
-    UUID,
-    LargeBinary,
-    String,
-    Table,
-)
+from sqlalchemy import UUID, Table
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
-from microcosm_postgres.encryption.v2.encoders import StringEncoder
+from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, Nullable, StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
 
@@ -33,9 +28,27 @@ class Employee(Model):
 
     id = mapped_column(UUID, primary_key=True, default=uuid4)
 
-    name_unencrypted = mapped_column("name", String, nullable=True)
-    name_encrypted = mapped_column(LargeBinary, nullable=True)
     name = encryption("name", AwsKmsEncryptor(), StringEncoder())
+    name_encrypted = name.encrypted()
+    name_unencrypted = name.unencrypted(index=True)
+
+    description = encryption(
+        "description",
+        AwsKmsEncryptor(),
+        Nullable(StringEncoder()),
+        default=None,
+    )
+    description_encrypted = description.encrypted()
+    description_unencrypted = description.unencrypted()
+
+    roles = encryption(
+        "roles",
+        AwsKmsEncryptor(),
+        ArrayEncoder(StringEncoder()),
+        default=list,
+    )
+    roles_encrypted = roles.encrypted()
+    roles_unencrypted = roles.unencrypted()
 
 
 client_id = uuid4()
@@ -122,6 +135,38 @@ def test_encrypt_with_client(
         assert employee.name_unencrypted is None
         assert employee.name_encrypted is not None
         assert employee.name == "foo"
+
+
+def test_encrypt_with_client_default(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee(name="foo"))
+        session.flush()  # Defaults are applied post flush
+        assert employee.description is None
+        assert employee.description_unencrypted is None
+        assert employee.description_encrypted is not None
+
+
+def test_unencrypted_client_default(session: Session) -> None:
+    session.add(employee := Employee(name="foo"))
+    session.flush()  # Defaults are applied post flush
+    assert employee.description is None
+    assert employee.description_unencrypted is None
+    assert employee.description_encrypted is None
+
+
+def test_encrypt_with_client_default_factory(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee(name="foo"))
+        session.flush()  # Defaults are applied post flush
+        assert employee.roles == []
+        assert employee.roles_unencrypted is None
+        assert employee.roles_encrypted is not None
 
 
 def test_add_encryption_to_existing(

@@ -17,6 +17,9 @@ from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, Single
 
 
 class Encryptor(Protocol):
+    def should_encrypt(self) -> bool:
+        ...
+
     def encrypt(self, value: str) -> bytes | None:
         """Encrypt a value.
 
@@ -30,6 +33,9 @@ class Encryptor(Protocol):
 
 
 class PlainTextEncryptor(Encryptor):
+    def should_encrypt(self) -> bool:
+        return False
+
     def encrypt(self, value: str) -> bytes | None:
         return None
 
@@ -108,10 +114,14 @@ class AwsKmsEncryptor(Encryptor):
             cls._encryptor_context.set(None)
             return response
 
+    def should_encrypt(self) -> bool:
+        return self.encryptor_context is not None
+
     def encrypt(self, value: str) -> bytes | None:
-        if self.encryptor_context is None:
+        if not self.should_encrypt():
             return None
 
+        assert self.encryptor_context is not None
         context, encryptor = self.encryptor_context
         return encryptor.encrypt(context, value)[0]
 
