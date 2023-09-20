@@ -21,8 +21,8 @@ from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
-from microcosm_postgres.encryption.v2.column import encryption, BeaconNotDefinedError
-from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, Nullable, StringEncoder, IntEncoder
+from microcosm_postgres.encryption.v2.column import encryption
+from microcosm_postgres.encryption.v2.encoders import StringEncoder, IntEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
 from microcosm_postgres.store import Store
@@ -86,6 +86,9 @@ def config() -> dict:
             account_ids=[
                 "12345",
             ],
+            beacon_keys=[
+                "beacon_key",
+            ]
         ),
     )
 
@@ -237,7 +240,6 @@ def test_searching_on_encrypted_field_with_no_beacon(
         session.add(Employee(name="bar", salary=1000))
         session.commit()
 
-    # query = session.query(Employee).order_by(Employee.name.asc())
     query = select(Employee).filter(Employee.salary == 1000).order_by(Employee.name.asc())
     results = session.execute(query).scalars().all()
 
