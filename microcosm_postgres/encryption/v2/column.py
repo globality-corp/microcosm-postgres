@@ -22,20 +22,13 @@ NOT_SET = object()
 
 def beaconise(word):
     """
-    No op for now
-
-    :param word:
-    :return:
+    Mock implementation of beaconisation.
     """
     return f"{word} beaconised"
 
 
 class BeaconComparator(Comparator[str]):
     def __init__(self, name, beacon_name: Any = None):
-
-
-
-        # breakpoint()
         if isinstance(name, str):
             self.name = beaconise(name)
         elif isinstance(name, BeaconComparator):

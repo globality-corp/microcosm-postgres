@@ -146,7 +146,7 @@ def test_encrypt_and_search(
             retrieved_employees = graph.employee_store_with_encryption.search_by_name("foo")
             assert len(retrieved_employees) == 1
             retrieved_employee = retrieved_employees[0]
-            # assert retrieved_employee.name == "foo"
+            assert retrieved_employee.name == "foo"
             assert retrieved_employee.id == employee.id
 
 
