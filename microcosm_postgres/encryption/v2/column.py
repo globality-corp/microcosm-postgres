@@ -6,8 +6,8 @@ from typing import (
     overload,
 )
 
-from sqlalchemy import LargeBinary, String, ColumnElement
-from sqlalchemy.ext.hybrid import hybrid_property, Comparator
+from sqlalchemy import ColumnElement, LargeBinary, String
+from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
 
 from .encoders import Encoder

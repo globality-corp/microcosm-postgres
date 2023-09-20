@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import re
-
-from sqlalchemy import select
 from typing import TYPE_CHECKING, ClassVar, Iterator
 from uuid import uuid4
 
@@ -16,13 +14,13 @@ from microcosm.api import (
 from microcosm.decorators import binding
 from microcosm.object_graph import ObjectGraph
 from pytest import fixture
-from sqlalchemy import UUID, Table
+from sqlalchemy import UUID, Table, select
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
-from microcosm_postgres.encryption.v2.encoders import StringEncoder, IntEncoder
+from microcosm_postgres.encryption.v2.encoders import IntEncoder, StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
 from microcosm_postgres.store import Store
