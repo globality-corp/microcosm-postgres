@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import re
+
+from sqlalchemy import select
 from typing import TYPE_CHECKING, ClassVar, Iterator
 from uuid import uuid4
 
+import pytest
 from microcosm.api import (
     create_object_graph,
     load_each,
@@ -18,7 +22,7 @@ from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
-from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, Nullable, StringEncoder
+from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, Nullable, StringEncoder, IntEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
 from microcosm_postgres.store import Store
@@ -51,10 +55,16 @@ class Employee(Model):
 
     id = mapped_column(UUID, primary_key=True, default=uuid4)
 
+    # Name requires beacon value for search
     name = encryption("name", AwsKmsEncryptor(), StringEncoder())
     name_encrypted = name.encrypted()
     name_unencrypted = name.unencrypted(index=True)
     name_beacon = name.beacon()
+
+    # Salary does not require beacon value for search
+    salary = encryption("salary", AwsKmsEncryptor(), IntEncoder())
+    salary_encrypted = salary.encrypted()
+    salary_unencrypted = salary.unencrypted()
 
 
 client_id = uuid4()
@@ -89,6 +99,7 @@ def graph(config: dict) -> ObjectGraph:
             load_from_dict(config),
             load_from_environ,
         ),
+        import_name="microcosm_postgres",
     )
 
 
@@ -126,7 +137,7 @@ def session(sessionmaker: SessionMaker) -> Iterator[Session]:
         session.close()
 
 
-def test_encrypt_and_search(
+def test_encrypt_and_search_using_beacon(
     session: Session,
     single_tenant_encryptor: SingleTenantEncryptor,
     graph: ObjectGraph,
@@ -150,4 +161,87 @@ def test_encrypt_and_search(
             assert retrieved_employee.id == employee.id
 
 
+def test_encrypt_no_beacon_used(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee(name="foo", salary=100))
+        assert employee.salary_unencrypted is None
+        assert employee.salary_encrypted is not None
+        with pytest.raises(AttributeError):
+            assert employee.salary_beacon is None
 
+        assert employee.name == "foo"
+        assert employee.salary == 100
+
+
+def test_order_by_with_beacon(
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
+    """
+    Test that when we order by with the beaconised field, then it
+    doesn't error.
+
+    Note that if you try to order with a beaconised field it will
+    be essentially random.
+
+    """
+    with SessionContext(graph) as context:
+        context.recreate_all()
+
+        session = context.session
+        with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+            session.add(Employee(name="foo", salary=1000))
+            session.add(Employee(name="bar", salary=1000))
+            # session.add(Employee(name="baz", salary=2000))
+            session.commit()
+
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        query = select(Employee).order_by(Employee.name.asc())
+        # Use regex to match the compiled sql
+        regex = re.compile(r"ORDER BY .*?name_beacon ASC")
+        assert regex.search(str(query))
+
+        results = session.execute(query).scalars().all()
+        assert len(results) == 2
+        for r in results:
+            assert r.salary == 1000
+
+        # Same for desc
+        query = select(Employee).order_by(Employee.name.desc())
+        regex = re.compile(r"ORDER BY .*?name_beacon DESC")
+        assert regex.search(str(query))
+
+        results = session.execute(query).scalars().all()
+        assert len(results) == 2
+        for r in results:
+            assert r.salary == 1000
+
+
+def test_searching_on_encrypted_field_with_no_beacon(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+):
+    """
+    This test checks that it doesn't break if you try to search for a field
+    which is encrypted but with no beacon field defined.
+
+    We post a warning log message to let the engineer know that
+    they might want to consider adding a beacon to actually enable the search?
+
+    """
+
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(Employee(name="foo", salary=1000))
+        session.add(Employee(name="bar", salary=1000))
+        session.commit()
+
+    # query = session.query(Employee).order_by(Employee.name.asc())
+    query = select(Employee).filter(Employee.salary == 1000).order_by(Employee.name.asc())
+    results = session.execute(query).scalars().all()
+
+    assert len(results) == 0

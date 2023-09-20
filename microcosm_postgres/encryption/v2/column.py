@@ -28,34 +28,37 @@ def beaconise(word):
 
 
 class BeaconComparator(Comparator[str]):
-    def __init__(self, name, beacon_name: Any = None):
-        if isinstance(name, str):
-            self.name = beaconise(name)
-        elif isinstance(name, BeaconComparator):
-            self.name = name.name
+    def __init__(self, val, beacon_val: Any = None):
+        if isinstance(val, str):
+            self.val = beaconise(val)
+        elif isinstance(val, BeaconComparator):
+            self.val = val.val
         else:
-            self.name = name
+            self.val = val
 
-        # Note that we only store beacon name when we are instantiating as part of
+        # Note that we only store beacon val when we are instantiating as part of
         # the sqlalchemy model setup
-        self.beacon_name = beacon_name
+        self.beacon_val = beacon_val
 
-    def operate(self, op, other, **kwargs):
+    def operate(self, op, other: Any = NOT_SET, **kwargs: Any):
+        # This first condition might happen when we are doing an order by ACS / DESC
+        if other is NOT_SET:
+            return op(self.beacon_val)
         if not isinstance(other, BeaconComparator):
             other = BeaconComparator(other)
-        return op(self.name, other.name, **kwargs)
+        return op(self.val, other.val, **kwargs)
 
     def __clause_element__(self):
-        return self.beacon_name
+        return self.beacon_val
 
     def __str__(self):
-        return self.name
+        return self.val
 
     def __eq__(self, other: Any) -> ColumnElement[bool]:  # type: ignore[override]  # noqa: E501
         # Here we would beaconise the "other" value
         return self.__clause_element__() == beaconise(other)
 
-    key = 'name'
+    key = 'beacon'
 
 
 class encryption(hybrid_property[T], Generic[T]):
@@ -124,7 +127,10 @@ class encryption(hybrid_property[T], Generic[T]):
             setattr(self, unencrypted_field, None)
 
         def _prop_comparator(cls):
-            return BeaconComparator(getattr(cls, unencrypted_field), getattr(cls, beacon_field))
+            if beacon := getattr(cls, beacon_field, None):
+                return BeaconComparator(getattr(cls, unencrypted_field), beacon)
+
+            return getattr(cls, unencrypted_field)
 
         super().__init__(_prop, _prop_setter, custom_comparator=_prop_comparator)
 
