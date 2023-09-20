@@ -3,6 +3,7 @@ from typing import (
     Callable,
     Generic,
     TypeVar,
+    cast,
     overload,
 )
 
@@ -20,7 +21,7 @@ T = TypeVar("T")
 NOT_SET = object()
 
 
-class BeaconComparator(Comparator[str]):
+class BeaconComparator(Comparator):
     def __init__(
         self,
         val,
@@ -36,7 +37,7 @@ class BeaconComparator(Comparator[str]):
         self.beacon_fn = beacon_fn
         self.val = val
 
-    def operate(self, op, other: Any = NOT_SET, **kwargs: Any):
+    def operate(self, op, other: Any = NOT_SET, **kwargs: Any) -> ColumnElement[Any]:  # type: ignore[override]  # noqa: E501
         # This first condition might happen when we are doing an order by ACS / DESC
         if other is NOT_SET:
             return op(self.beacon_val)
@@ -50,7 +51,7 @@ class BeaconComparator(Comparator[str]):
     def __str__(self):
         return self.val
 
-    def __eq__(self, other: Any) -> ColumnElement[bool]:
+    def __eq__(self, other: Any) -> ColumnElement[bool]:  # type: ignore[override]  # noqa: E501
         return self.__clause_element__() == self._beaconise(other)
 
     def _beaconise(self, value):
@@ -131,7 +132,7 @@ class encryption(hybrid_property[T], Generic[T]):
             if hasattr(self, beacon_field):
                 setattr(self, beacon_field, encryptor.beacon(encoded))
 
-        def _prop_comparator(cls):
+        def _prop_comparator(cls) -> BeaconComparator | None:
             if beacon := getattr(cls, beacon_field, None):
                 return BeaconComparator(
                     val=getattr(cls, unencrypted_field),
@@ -142,7 +143,7 @@ class encryption(hybrid_property[T], Generic[T]):
 
             return getattr(cls, unencrypted_field)
 
-        super().__init__(_prop, _prop_setter, custom_comparator=_prop_comparator)
+        super().__init__(_prop, _prop_setter, custom_comparator=cast(Comparator[T], _prop_comparator))
 
     def encrypted(self) -> Mapped[bytes | None]:
         if self.default is NOT_SET:
