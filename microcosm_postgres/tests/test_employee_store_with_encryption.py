@@ -38,7 +38,6 @@ class EmployeeStore(Store):
         return self.search(Employee.name == name)
 
     def _order_by(self, query, **kwargs):
-        # What if the order by order is on the name_encrypted column?
         return query.order_by(Employee.id.asc())
 
     def _filter(self, query, **kwargs):
@@ -138,6 +137,14 @@ def session(sessionmaker: SessionMaker) -> Iterator[Session]:
     finally:
         session.rollback()
         session.close()
+
+
+def test_beacon_value_generation():
+    """
+    Test that checks that the beacon value is generated as expected
+
+    """
+    pass
 
 
 def test_encrypt_and_search_using_beacon(

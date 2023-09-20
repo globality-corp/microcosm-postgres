@@ -20,25 +20,21 @@ T = TypeVar("T")
 NOT_SET = object()
 
 
-def beaconise(word):
-    """
-    Mock implementation of beaconisation.
-    """
-    return f"{word} beaconised"
-
-
 class BeaconComparator(Comparator[str]):
-    def __init__(self, val, beacon_val: Any = None):
-        if isinstance(val, str):
-            self.val = beaconise(val)
-        elif isinstance(val, BeaconComparator):
-            self.val = val.val
-        else:
-            self.val = val
-
+    def __init__(
+        self,
+        val,
+        encoder_fn: Callable | None = None,
+        beacon_fn: Callable | None = None,
+        beacon_val: Any = None,
+    ):
         # Note that we only store beacon val when we are instantiating as part of
         # the sqlalchemy model setup
         self.beacon_val = beacon_val
+
+        self.encoder_fn = encoder_fn
+        self.beacon_fn = beacon_fn
+        self.val = val
 
     def operate(self, op, other: Any = NOT_SET, **kwargs: Any):
         # This first condition might happen when we are doing an order by ACS / DESC
@@ -54,9 +50,13 @@ class BeaconComparator(Comparator[str]):
     def __str__(self):
         return self.val
 
-    def __eq__(self, other: Any) -> ColumnElement[bool]:  # type: ignore[override]  # noqa: E501
-        # Here we would beaconise the "other" value
-        return self.__clause_element__() == beaconise(other)
+    def __eq__(self, other: Any) -> ColumnElement[bool]:
+        return self.__clause_element__() == self._beaconise(other)
+
+    def _beaconise(self, value):
+        encoded = self.encoder_fn(value)
+        beaconised = self.beacon_fn(encoded)
+        return beaconised
 
     key = 'beacon'
 
@@ -117,21 +117,28 @@ class encryption(hybrid_property[T], Generic[T]):
             return encoder.decode(encryptor.decrypt(encrypted))
 
         def _prop_setter(self, value) -> None:
-            encrypted = encryptor.encrypt(encoder.encode(value))
+            encoded = encoder.encode(value)
+            encrypted = encryptor.encrypt(encoded)
             if encrypted is None:
                 setattr(self, unencrypted_field, value)
                 setattr(self, encrypted_field, None)
+                if hasattr(self, beacon_field):
+                    setattr(self, beacon_field, None)
                 return
-
-            if hasattr(self, beacon_field):
-                setattr(self, beacon_field, beaconise(value))
 
             setattr(self, encrypted_field, encrypted)
             setattr(self, unencrypted_field, None)
+            if hasattr(self, beacon_field):
+                setattr(self, beacon_field, encryptor.beacon(encoded))
 
         def _prop_comparator(cls):
             if beacon := getattr(cls, beacon_field, None):
-                return BeaconComparator(getattr(cls, unencrypted_field), beacon)
+                return BeaconComparator(
+                    val=getattr(cls, unencrypted_field),
+                    beacon_val=beacon,
+                    encoder_fn=encoder.encode,
+                    beacon_fn=encryptor.beacon,
+                )
 
             return getattr(cls, unencrypted_field)
 
