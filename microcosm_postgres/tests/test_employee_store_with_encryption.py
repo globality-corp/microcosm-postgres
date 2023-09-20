@@ -62,7 +62,7 @@ class Employee(Model):
     name_beacon = name.beacon()
 
     # Salary does not require beacon value
-    salary = encryption("salary", AwsKmsEncryptor(), IntEncoder(), opt_out_beacon=True)
+    salary = encryption("salary", AwsKmsEncryptor(), IntEncoder())
     salary_encrypted = salary.encrypted()
     salary_unencrypted = salary.unencrypted()
 
