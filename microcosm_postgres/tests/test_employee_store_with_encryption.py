@@ -179,7 +179,7 @@ def test_encrypt_no_beacon_used(
         assert employee.salary_unencrypted is None
         assert employee.salary_encrypted is not None
         with pytest.raises(AttributeError):
-            assert employee.salary_beacon is None
+            assert employee.salary_beacon is None  # type: ignore[attr-defined]
 
         assert employee.name == "foo"
         assert employee.salary == 100
