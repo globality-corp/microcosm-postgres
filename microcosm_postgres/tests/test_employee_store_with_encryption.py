@@ -21,7 +21,7 @@ from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
-from microcosm_postgres.encryption.v2.column import encryption
+from microcosm_postgres.encryption.v2.column import encryption, BeaconNotDefinedError
 from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, Nullable, StringEncoder, IntEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
@@ -61,8 +61,8 @@ class Employee(Model):
     name_unencrypted = name.unencrypted(index=True)
     name_beacon = name.beacon()
 
-    # Salary does not require beacon value for search
-    salary = encryption("salary", AwsKmsEncryptor(), IntEncoder())
+    # Salary does not require beacon value
+    salary = encryption("salary", AwsKmsEncryptor(), IntEncoder(), opt_out_beacon=True)
     salary_encrypted = salary.encrypted()
     salary_unencrypted = salary.unencrypted()
 
@@ -229,9 +229,6 @@ def test_searching_on_encrypted_field_with_no_beacon(
     """
     This test checks that it doesn't break if you try to search for a field
     which is encrypted but with no beacon field defined.
-
-    We post a warning log message to let the engineer know that
-    they might want to consider adding a beacon to actually enable the search?
 
     """
 

@@ -61,6 +61,10 @@ class BeaconComparator(Comparator[str]):
     key = 'beacon'
 
 
+class BeaconNotDefinedError(Exception):
+    pass
+
+
 class encryption(hybrid_property[T], Generic[T]):
     @overload
     def __init__(
@@ -117,7 +121,6 @@ class encryption(hybrid_property[T], Generic[T]):
             if encrypted is None:
                 setattr(self, unencrypted_field, value)
                 setattr(self, encrypted_field, None)
-                setattr(self, beacon_field, None)
                 return
 
             if hasattr(self, beacon_field):
