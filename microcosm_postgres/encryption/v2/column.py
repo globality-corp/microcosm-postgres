@@ -38,7 +38,7 @@ class BeaconComparator(Comparator):
         self.beacon_fn = beacon_fn
         self.val = val
 
-    def operate(self, op, other: Any = NOT_SET, **kwargs: Any) -> ColumnElement[Any]:  # type: ignore[override]  # noqa: E501
+    def operate(self, op: Callable, other: Any = NOT_SET, **kwargs: Any) -> ColumnElement[Any]:  # type: ignore[override]  # noqa: E501
         # This first condition might happen when we are doing an order by ACS / DESC
         if other is NOT_SET:
             return op(self.beacon_val)
@@ -48,6 +48,7 @@ class BeaconComparator(Comparator):
             # e.g [1,2,3] -> [beacon(1), beacon(2), beacon(3)]
             return op(self.beacon_val, [self._beaconise(v) for v in other], **kwargs)
         elif not isinstance(other, BeaconComparator):
+            breakpoint()
             other = BeaconComparator(other)
         return op(self.val, other.val, **kwargs)
 

@@ -169,6 +169,47 @@ def test_encrypt_and_search_using_beacon(
             assert retrieved_employee.id == employee.id
 
 
+def test_encrypt_and_search_using_beacon_with_no_beacon_key():
+    # No beacon key is defined in the config
+    config = dict(
+        multi_tenant_key_registry=dict(
+            context_keys=[
+                str(client_id),
+            ],
+            key_ids=[
+                "key_id",
+            ],
+            partitions=[
+                "aws",
+            ],
+            account_ids=[
+                "12345",
+            ],
+        ),
+    )
+
+    graph = create_object_graph(
+        "example",
+        testing=True,
+        loader=load_each(
+            load_from_dict(config),
+            load_from_environ,
+        ),
+        import_name="microcosm_postgres",
+    )
+
+    with graph.sessionmaker() as session:
+        single_tenant_encryptor = graph.multi_tenant_encryptor.encryptors[str(client_id)]
+        with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+            with pytest.raises(AwsKmsEncryptor.BeaconKeyNotSet):
+                session.add(employee := Employee(name="foo"))
+                assert employee.name_unencrypted is None
+                assert employee.name_encrypted is not None
+                assert employee.name_beacon is None
+                assert employee.name == "foo"
+                session.commit()
+
+
 def test_encrypt_no_beacon_used(
     session: Session,
     single_tenant_encryptor: SingleTenantEncryptor,
