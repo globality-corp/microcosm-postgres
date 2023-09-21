@@ -28,29 +28,35 @@ class BeaconComparator(Comparator):
         val,
         encoder_fn: Callable | None = None,
         beacon_fn: Callable[[str], str] | None = None,
+        encrypt_fn: Callable[[str], bytes | None] | None = None,
         beacon_val: Any = None,
     ):
+        self.val = val
+
         # Note that we only store beacon val when we are instantiating as part of
         # the sqlalchemy model setup
         self.beacon_val = beacon_val
 
         self.encoder_fn = encoder_fn
         self.beacon_fn = beacon_fn
-        self.val = val
+        self.encrypt_fn = encrypt_fn
 
     def operate(self, op: Callable, other: Any = NOT_SET, **kwargs: Any) -> ColumnElement[Any]:  # type: ignore[override]  # noqa: E501
         # This first condition might happen when we are doing an order by ACS / DESC
         if other is NOT_SET:
-            return op(self.beacon_val)
+            if self._check_if_should_use_beacon():
+                return op(self.beacon_val)
+            else:
+                return op(self.val)
         elif op == in_op:
             # e.g in_([1,2,3])
             # So we beaconise each of the values in the list
             # e.g [1,2,3] -> [beacon(1), beacon(2), beacon(3)]
-            return op(self.beacon_val, [self._beaconise(v) for v in other], **kwargs)
-        elif not isinstance(other, BeaconComparator):
-            breakpoint()
-            other = BeaconComparator(other)
-        return op(self.val, other.val, **kwargs)
+            if self._check_if_should_use_beacon():
+                return op(self.beacon_val, [self._beaconise(v) for v in other], **kwargs)
+            else:
+                return op(self.val, other, **kwargs)
+        return op(self.val, other, **kwargs)
 
     def __clause_element__(self):
         return self.beacon_val
@@ -59,12 +65,25 @@ class BeaconComparator(Comparator):
         return self.val
 
     def __eq__(self, other: Any) -> ColumnElement[bool]:  # type: ignore[override]  # noqa: E501
+        if not self._check_if_should_use_beacon():
+            return self.val == other
+
         return self.__clause_element__() == self._beaconise(other)
 
     def _beaconise(self, value):
         encoded = self.encoder_fn(value)
         beaconised = self.beacon_fn(encoded)
         return beaconised
+
+    def _check_if_should_use_beacon(self):
+        # If the encrypt_fn returns `None` we know not use the beacon
+        # and just use the normal flow (without beacons)
+        if self.encrypt_fn is None:
+            return False
+
+        test_val_to_encrypt = "test"
+        encrypted_val = self.encrypt_fn(test_val_to_encrypt)
+        return encrypted_val is not None
 
     key = 'beacon'
 
@@ -146,6 +165,7 @@ class encryption(hybrid_property[T], Generic[T]):
                     beacon_val=beacon,
                     encoder_fn=encoder.encode,
                     beacon_fn=encryptor.beacon,
+                    encrypt_fn=encryptor.encrypt,
                 )
 
             return getattr(cls, unencrypted_field)

@@ -42,7 +42,7 @@ class EmployeeStore(Store):
         name = kwargs.get("name")
         if name is not None:
             query = query.filter(Employee.name == name)
-        return super(EmployeeStore, self)._filter(query, **kwargs)
+        return super()._filter(query, **kwargs)
 
 
 class Employee(Model):
@@ -160,13 +160,15 @@ def test_encrypt_and_search_using_beacon(
 
     # Now we test that we can search for the employee
     # Note that this should use the defined beacon under the hood
-    with SessionContext(graph):
-        with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
-            retrieved_employees = graph.employee_store_with_encryption.search_by_name("foo")
-            assert len(retrieved_employees) == 1
-            retrieved_employee = retrieved_employees[0]
-            assert retrieved_employee.name == "foo"
-            assert retrieved_employee.id == employee.id
+    with (
+        SessionContext(graph),
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
+    ):
+        retrieved_employees = graph.employee_store_with_encryption.search_by_name("foo")
+        assert len(retrieved_employees) == 1
+        retrieved_employee = retrieved_employees[0]
+        assert retrieved_employee.name == "foo"
+        assert retrieved_employee.id == employee.id
 
 
 def test_encrypt_and_search_using_beacon_with_no_beacon_key():
@@ -215,11 +217,12 @@ def test_encryptor_not_bound_when_beacon_used_without_context(
     single_tenant_encryptor: SingleTenantEncryptor,
     graph: ObjectGraph,
 ) -> None:
-    with pytest.raises(AwsKmsEncryptor.EncryptorNotBound):
-        session.add(Employee(name="foo"))
+    session.add(Employee(name="baz1"))
+    session.add(Employee(name="baz2"))
 
-        query = session.query(Employee).filter(Employee.name == "foo")
-        query.all()
+    query = session.query(Employee).filter(Employee.name == "baz1")
+    results = query.all()
+    assert len(results) == 1
 
 
 def test_encrypt_no_beacon_used(
@@ -236,6 +239,30 @@ def test_encrypt_no_beacon_used(
 
         assert employee.name == "foo"
         assert employee.salary == 100
+
+
+def test_search_by_beaconised_field_with_no_encryption(
+    graph: ObjectGraph,
+):
+    """
+    Test that checks that the normal searches remain unaffected by
+    the addition of beacons i.e for clients that don't have encryption enabled
+
+    """
+    with SessionContext(graph) as context:
+        context.recreate_all()
+
+        session = context.session
+        session.add(employee1 := Employee(name="foo", salary=1000))
+        session.add(Employee(name="bar", salary=1000))
+        session.commit()
+
+    with SessionContext(graph):
+        retrieved_employees = graph.employee_store_with_encryption.search_by_name("foo")
+        assert len(retrieved_employees) == 1
+        retrieved_employee = retrieved_employees[0]
+        assert retrieved_employee.name == "foo"
+        assert retrieved_employee.id == employee1.id
 
 
 def test_order_by_with_beacon(
