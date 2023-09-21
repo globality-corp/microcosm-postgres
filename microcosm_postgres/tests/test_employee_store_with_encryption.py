@@ -210,6 +210,18 @@ def test_encrypt_and_search_using_beacon_with_no_beacon_key():
                 session.commit()
 
 
+def test_encryptor_not_bound_when_beacon_used_without_context(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
+    with pytest.raises(AwsKmsEncryptor.EncryptorNotBound):
+        session.add(Employee(name="foo"))
+
+        query = session.query(Employee).filter(Employee.name == "foo")
+        query.all()
+
+
 def test_encrypt_no_beacon_used(
     session: Session,
     single_tenant_encryptor: SingleTenantEncryptor,
