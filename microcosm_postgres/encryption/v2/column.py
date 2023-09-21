@@ -10,6 +10,7 @@ from typing import (
 from sqlalchemy import ColumnElement, LargeBinary, String
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.sql.operators import in_op
 
 from .encoders import Encoder
 from .encryptors import Encryptor
@@ -26,7 +27,7 @@ class BeaconComparator(Comparator):
         self,
         val,
         encoder_fn: Callable | None = None,
-        beacon_fn: Callable | None = None,
+        beacon_fn: Callable[[str], str] | None = None,
         beacon_val: Any = None,
     ):
         # Note that we only store beacon val when we are instantiating as part of
@@ -41,7 +42,12 @@ class BeaconComparator(Comparator):
         # This first condition might happen when we are doing an order by ACS / DESC
         if other is NOT_SET:
             return op(self.beacon_val)
-        if not isinstance(other, BeaconComparator):
+        elif op == in_op:
+            # e.g in_([1,2,3])
+            # So we beaconise each of the values in the list
+            # e.g [1,2,3] -> [beacon(1), beacon(2), beacon(3)]
+            return op(self.beacon_val, [self._beaconise(v) for v in other], **kwargs)
+        elif not isinstance(other, BeaconComparator):
             other = BeaconComparator(other)
         return op(self.val, other.val, **kwargs)
 
@@ -183,5 +189,4 @@ class encryption(hybrid_property[T], Generic[T]):
         )
 
     def beacon(self, **kwargs: Any):
-        # TODO - assume all encrypted fields need to use beacons
         return mapped_column(String, nullable=True, **kwargs)

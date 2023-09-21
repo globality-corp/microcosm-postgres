@@ -85,7 +85,7 @@ def config() -> dict:
             ],
             beacon_keys=[
                 "beacon_key",
-            ]
+            ],
         ),
     )
 
@@ -204,7 +204,6 @@ def test_order_by_with_beacon(
         with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
             session.add(Employee(name="foo", salary=1000))
             session.add(Employee(name="bar", salary=1000))
-            # session.add(Employee(name="baz", salary=2000))
             session.commit()
 
     with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
@@ -249,3 +248,29 @@ def test_searching_on_encrypted_field_with_no_beacon(
     results = session.execute(query).scalars().all()
 
     assert len(results) == 0
+
+
+def test_search_with_array_of_beacons(
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
+    """
+
+    """
+    with SessionContext(graph) as context:
+        context.recreate_all()
+
+        session = context.session
+        with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+            session.add(Employee(name="foo", salary=1000))
+            session.add(Employee(name="bar", salary=1000))
+            session.commit()
+
+            query = select(Employee).filter(Employee.name.in_(["foo", "bar"]))
+
+            regex = re.compile(r"WHERE test_encryption_employee_v2.name_beacon IN .*?name_beacon_1")
+            assert regex.search(str(query))
+
+            results = session.execute(query).scalars().all()
+
+        assert len(results) == 2
