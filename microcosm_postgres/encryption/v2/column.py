@@ -9,7 +9,7 @@ from typing import (
 
 from sqlalchemy import ColumnElement, LargeBinary, String
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import InstrumentedAttribute, Mapped, mapped_column
 from sqlalchemy.sql.operators import in_op
 
 from .encoders import Encoder
@@ -158,7 +158,7 @@ class encryption(hybrid_property[T], Generic[T]):
             if hasattr(self, beacon_field):
                 setattr(self, beacon_field, encryptor.beacon(encoded))
 
-        def _prop_comparator(cls) -> BeaconComparator | None:
+        def _prop_comparator(cls) -> Comparator[T] | InstrumentedAttribute:
             if beacon := getattr(cls, beacon_field, None):
                 return BeaconComparator(
                     val=getattr(cls, unencrypted_field),
@@ -170,7 +170,11 @@ class encryption(hybrid_property[T], Generic[T]):
 
             return getattr(cls, unencrypted_field)
 
-        super().__init__(_prop, _prop_setter, custom_comparator=cast(Comparator[T], _prop_comparator))
+        super().__init__(
+            _prop,
+            _prop_setter,
+            custom_comparator=cast(Comparator[T] | None, _prop_comparator),
+        )
 
     def encrypted(self) -> Mapped[bytes | None]:
         if self.default is NOT_SET:
