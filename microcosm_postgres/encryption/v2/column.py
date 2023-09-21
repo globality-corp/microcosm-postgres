@@ -209,5 +209,5 @@ class encryption(hybrid_property[T], Generic[T]):
             **kwargs,
         )
 
-    def beacon(self, **kwargs: Any):
+    def beacon(self, **kwargs: Any) -> Mapped[str | None]:
         return mapped_column(String, nullable=True, **kwargs)
