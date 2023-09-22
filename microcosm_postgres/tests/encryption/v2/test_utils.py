@@ -14,7 +14,7 @@ from microcosm_postgres.models import Model
 
 
 class Employee(Model):
-    __tablename__ = "test_encryption_employee_v2"
+    __tablename__ = "test_encryption_employee_v3"
     if TYPE_CHECKING:
         __table__: ClassVar[Table]
 
