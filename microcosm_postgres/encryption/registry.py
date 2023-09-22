@@ -22,8 +22,9 @@ def parse_config(
     key_ids: Sequence[Union[str, Sequence[str]]],
     account_ids: Sequence[Union[str, Sequence[str]]],
     partitions: Sequence[Union[str, Sequence[str]]],
+    restricted_kms_policy: Sequence[str],
     beacon_keys: Sequence[str] | None = None,
-) -> Mapping[str, Mapping[str, Union[str, Sequence[str], None]]]:
+) -> Mapping[str, Mapping[str, Union[str, Sequence[str], bool, None]]]:
     _beacon_keys: Sequence[str] = [] if beacon_keys is None else beacon_keys
     config = {}
 
@@ -35,6 +36,7 @@ def parse_config(
             "account_ids": account_id.split(";") if isinstance(account_id, str) else account_id,
             "partition": partition,
             "beacon_key": _beacon_keys[ix] if ix < len(_beacon_keys) and _beacon_keys[ix] else None,
+            "restricted": restricted_kms_policy[ix] == "true" if ix < len(restricted_kms_policy) else False,
         }
 
     return config
@@ -46,6 +48,7 @@ def parse_config(
     partitions=typed(comma_separated_list, default_value=""),
     account_ids=typed(comma_separated_list, default_value=""),
     beacon_keys=typed(comma_separated_list, default_value=""),
+    restricted_kms_policy=typed(comma_separated_list, default_value=""),
 )
 @logger
 class MultiTenantKeyRegistry:
@@ -60,6 +63,7 @@ class MultiTenantKeyRegistry:
             key_ids=graph.config.multi_tenant_key_registry.key_ids,
             partitions=graph.config.multi_tenant_key_registry.partitions,
             beacon_keys=graph.config.multi_tenant_key_registry.beacon_keys,
+            restricted_kms_policy=graph.config.multi_tenant_key_registry.restricted_kms_policy,
         )
 
         for context_key, key_ids in self.keys.items():
@@ -77,7 +81,11 @@ class MultiTenantKeyRegistry:
                 context_key: SingleTenantEncryptor(
                     encrypting_materials_manager=configure_materials_manager(
                         graph,
-                        key_provider=configure_encrypting_key_provider(graph, context_data["key_ids"]),
+                        key_provider=configure_encrypting_key_provider(
+                            graph,
+                            key_ids=context_data["key_ids"],
+                            restricted=context_data["restricted"],
+                        ),
                     ),
                     decrypting_materials_manager=configure_materials_manager(
                         graph,

@@ -9,17 +9,64 @@ from aws_encryption_sdk import (
     DefaultCryptoMaterialsManager,
     LocalCryptoMaterialsCache,
 )
+from aws_encryption_sdk.exceptions import GenerateKeyError
 from aws_encryption_sdk.identifiers import EncryptionKeyType, WrappingAlgorithm
 from aws_encryption_sdk.internal.crypto.wrapping_keys import WrappingKey
 from aws_encryption_sdk.key_providers.kms import (
     DiscoveryAwsKmsMasterKeyProvider,
     DiscoveryFilter,
+    KMSMasterKey,
     StrictAwsKmsMasterKeyProvider,
 )
 from aws_encryption_sdk.key_providers.raw import RawMasterKeyProvider
+from aws_encryption_sdk.structures import DataKey, MasterKeyInfo
+from botocore.exceptions import ClientError
 from microcosm.api import defaults
 from microcosm.config.types import boolean
 from microcosm.config.validation import typed
+
+
+class RestrictedKMSMasterKey(KMSMasterKey):
+    """
+    Customized KMS master key provider, to work with restriced KMS policy:
+
+        kms:GenerateDataKeyWithoutPlaintext
+        kms:Decrypt
+        kms:Encrypt
+
+    """
+    def _generate_data_key(self, algorithm, encryption_context=None):
+        kms_params = self._build_generate_data_key_request(algorithm, encryption_context)
+        try:
+            response = self.config.client.generate_data_key_without_plaintext(**kms_params)
+            key_id = response["KeyId"]
+            ciphertext = response["CiphertextBlob"]
+        except (ClientError, KeyError):
+            raise GenerateKeyError(f"Master Key {self._key_id} unable to generate data key")
+
+        try:
+            response = self.config.client.decrypt(
+                CiphertextBlob=ciphertext,
+                EncryptionContext=encryption_context,
+                GrantTokens=self.config.grant_tokens,
+            )
+            plaintext = response["Plaintext"]
+        except (ClientError, KeyError):
+            raise GenerateKeyError(f"Master Key {key_id} unable to decrypt data key.")
+
+        return DataKey(
+            key_provider=MasterKeyInfo(
+                provider_id=self.provider_id,
+                key_info=key_id
+            ),
+            data_key=plaintext,
+            encrypted_data_key=ciphertext,
+        )
+
+
+class RestrictedStrictAwsKmsMasterKeyProvider(StrictAwsKmsMasterKeyProvider):
+
+    master_key_class = RestrictedKMSMasterKey
 
 
 class StaticMasterKeyProvider(RawMasterKeyProvider):
@@ -45,7 +92,7 @@ class StaticMasterKeyProvider(RawMasterKeyProvider):
         )
 
 
-def configure_encrypting_key_provider(graph, key_ids):
+def configure_encrypting_key_provider(graph, key_ids, restricted=False):
     """
     Configure a key provider.
 
@@ -59,6 +106,9 @@ def configure_encrypting_key_provider(graph, key_ids):
         return provider
 
     # use AWS provider
+    if restricted:
+        return RestrictedStrictAwsKmsMasterKeyProvider(key_ids=key_ids)
+
     return StrictAwsKmsMasterKeyProvider(key_ids=key_ids)
 
 
