@@ -7,6 +7,7 @@ from typing import (
     ContextManager,
     Iterator,
     Protocol,
+    Union,
 )
 
 from microcosm.object_graph import ObjectGraph
@@ -20,7 +21,7 @@ class Encryptor(Protocol):
     def should_encrypt(self) -> bool:
         ...
 
-    def encrypt(self, value: str) -> bytes | None:
+    def encrypt(self, value: str) -> Union[bytes, None]:
         """Encrypt a value.
 
         Return None if the value should not be encrypted.
@@ -40,14 +41,14 @@ class PlainTextEncryptor(Encryptor):
     def should_encrypt(self) -> bool:
         return False
 
-    def encrypt(self, value: str) -> bytes | None:
+    def encrypt(self, value: str) -> Union[bytes, None]:
         return None
 
     def decrypt(self, value: bytes) -> str:
         return value.decode()
 
 
-EncryptorContext: TypeAlias = "tuple[str, SingleTenantEncryptor] | None"
+EncryptorContext: TypeAlias = "Union[tuple[str, SingleTenantEncryptor], None]"
 
 
 class AwsKmsEncryptor(Encryptor):
@@ -60,7 +61,7 @@ class AwsKmsEncryptor(Encryptor):
         status_code = 403
 
     @property
-    def encryptor_context(self) -> tuple[str, SingleTenantEncryptor] | None:
+    def encryptor_context(self) -> Union[tuple[str, SingleTenantEncryptor], None]:
         return self._encryptor_context.get(None)
 
     @classmethod
@@ -124,7 +125,7 @@ class AwsKmsEncryptor(Encryptor):
     def should_encrypt(self) -> bool:
         return self.encryptor_context is not None
 
-    def encrypt(self, value: str) -> bytes | None:
+    def encrypt(self, value: str) -> Union[bytes, None]:
         if not self.should_encrypt():
             return None
 

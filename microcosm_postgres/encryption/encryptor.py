@@ -23,7 +23,7 @@ class SingleTenantEncryptor:
         self,
         encrypting_materials_manager: CryptoMaterialsManager,
         decrypting_materials_manager: CryptoMaterialsManager,
-        beacon_key: str | None = None
+        beacon_key: Union[str, None] = None
     ):
         self.encrypting_materials_manager = encrypting_materials_manager
         self.decrypting_materials_manager = decrypting_materials_manager
@@ -69,7 +69,7 @@ class SingleTenantEncryptor:
         )
         return plaintext.decode("utf-8")
 
-    def beacon(self, value: str) -> str | None:
+    def beacon(self, value: str) -> Union[str, None]:
         if self._beacon_key is None:
             return None
 
@@ -115,7 +115,7 @@ class MultiTenantEncryptor:
         encryptor = self[encryption_context_key]
         return encryptor.decrypt(encryption_context_key, ciphertext)
 
-    def beacon(self, encryption_context_key: str, value: str) -> str | None:
+    def beacon(self, encryption_context_key: str, value: str) -> Union[str, None]:
         encryptor = self[encryption_context_key]
         return encryptor.beacon(value)
 
