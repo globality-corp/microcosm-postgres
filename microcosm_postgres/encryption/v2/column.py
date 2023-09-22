@@ -74,9 +74,6 @@ class encryption(hybrid_property, Generic[T]):
             return encoder.decode(encryptor.decrypt(encrypted))
 
         def _prop_setter(self, value) -> None:
-            nonlocal default
-            nonlocal encoder
-
             if all([
                 value is None,
                 default is not NOT_SET,
