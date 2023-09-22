@@ -3,7 +3,7 @@ from setuptools import find_packages, setup
 
 
 project = "microcosm-postgres"
-version = "3.7.0"
+version = "3.7.1"
 
 setup(
     name=project,
@@ -35,7 +35,7 @@ setup(
         "metrics": "microcosm-metrics>=2.5.0",
         "encryption": [
             "aws-encryption-sdk>=2.0.0",
-            "cryptography>=41",
+            "cryptography>=35",
         ],
         "test": [
             "aws-encryption-sdk>=2.0.0",
