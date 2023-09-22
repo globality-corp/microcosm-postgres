@@ -14,7 +14,12 @@ from microcosm.api import (
 from microcosm.decorators import binding
 from microcosm.object_graph import ObjectGraph
 from pytest import fixture
-from sqlalchemy import UUID, Table, select
+from sqlalchemy import (
+    UUID,
+    String,
+    Table,
+    select,
+)
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.context import SessionContext
@@ -30,7 +35,14 @@ from microcosm_postgres.store import Store
 class EmployeeStore(Store):
 
     def __init__(self, graph):
-        super().__init__(graph, Employee)
+        super().__init__(
+            graph,
+            Employee,
+            auto_filter_fields=(
+                Employee.age,
+                Employee.department,
+            )
+        )
 
     def search_by_name(self, name):
         return self.search(Employee.name == name)
@@ -62,6 +74,14 @@ class Employee(Model):
     salary = encryption("salary", AwsKmsEncryptor(), IntEncoder())
     salary_encrypted = salary.encrypted()
     salary_unencrypted = salary.unencrypted()
+
+    age = encryption("age", AwsKmsEncryptor(), IntEncoder())
+    age_encrypted = age.encrypted()
+    age_unencrypted = age.unencrypted()
+    age_beacon = age.beacon()
+
+    # Non encrypted field
+    department = mapped_column(String())
 
 
 client_id = uuid4()
@@ -137,12 +157,17 @@ def session(sessionmaker: SessionMaker) -> Iterator[Session]:
         session.close()
 
 
-def test_beacon_value_generation():
+def test_beacon_value_generation(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
     """
     Test that checks that the beacon value is generated as expected
 
     """
-    pass
+    beacon = single_tenant_encryptor.beacon("test")
+    assert beacon == "6fadab32a97ee7ee93eef7ff537cf4b977e7e736d8a2fea7023c3cca59573096"
 
 
 def test_encrypt_and_search_using_beacon(
@@ -354,3 +379,37 @@ def test_search_with_array_of_beacons(
             results = session.execute(query).scalars().all()
 
         assert len(results) == 2
+
+
+def test_search_with_auto_filter_field(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee(name="foo", age=100, department="bar"))
+        session.add(employee2 := Employee(name="foo2", age=101, department="bar2"))
+        session.commit()
+
+    # Now we test that we can search for the employee
+    # Note that this should use the defined beacon under the hood
+    with (
+        SessionContext(graph),
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
+    ):
+        retrieved_employees = graph.employee_store_with_encryption.search(age=100)
+        assert len(retrieved_employees) == 1
+        retrieved_employee = retrieved_employees[0]
+        assert retrieved_employee.id == employee.id
+        assert retrieved_employee.name == "foo"
+        assert retrieved_employee.age == 100
+        assert retrieved_employee.department == "bar"
+
+        # Search with department - non encrypted field
+        retrieved_employees = graph.employee_store_with_encryption.search(department="bar2")
+        assert len(retrieved_employees) == 1
+        retrieved_employee2 = retrieved_employees[0]
+        assert retrieved_employee2.id == employee2.id
+        assert retrieved_employee2.name == "foo2"
+        assert retrieved_employee2.age == 101
+        assert retrieved_employee2.department == "bar2"
