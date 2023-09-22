@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Generic,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -29,9 +30,9 @@ class BeaconComparator(Comparator):
     def __init__(
         self,
         val,
-        encoder_fn: Callable | None = None,
-        beacon_fn: Callable[[str], str] | None = None,
-        encrypt_fn: Callable[[str], bytes | None] | None = None,
+        encoder_fn: Union[Callable, None] = None,
+        beacon_fn: Union[Callable[[str], str], None] = None,
+        encrypt_fn: Union[Callable[[str], Union[bytes, None]], None] = None,
         beacon_val: Any = None,
     ):
         self.val = val
@@ -114,7 +115,7 @@ class encryption(hybrid_property, Generic[T]):
         encryptor: Encryptor,
         encoder: Encoder[T],
         *,
-        default: T | Callable[[], T],
+        default: Union[T, Callable[[], T]],
         column_type: Any = NOT_SET,
     ):
         ...
@@ -161,7 +162,7 @@ class encryption(hybrid_property, Generic[T]):
             if hasattr(self, beacon_field):
                 setattr(self, beacon_field, encryptor.beacon(encoded))
 
-        def _prop_comparator(cls) -> Comparator | InstrumentedAttribute:
+        def _prop_comparator(cls) -> Union[Comparator, InstrumentedAttribute]:
             if beacon := getattr(cls, beacon_field, None):
                 return BeaconComparator(
                     val=getattr(cls, unencrypted_field),
@@ -176,7 +177,7 @@ class encryption(hybrid_property, Generic[T]):
         super().__init__(
             _prop,
             _prop_setter,
-            custom_comparator=cast(Comparator | None, _prop_comparator),
+            custom_comparator=cast(Union[Comparator, None], _prop_comparator),
         )
 
     if TYPE_CHECKING:
@@ -224,5 +225,5 @@ class encryption(hybrid_property, Generic[T]):
             **kwargs,
         )
 
-    def beacon(self, **kwargs: Any) -> Mapped[str | None]:
+    def beacon(self, **kwargs: Any) -> Mapped[Union[str, None]]:
         return Column(String, nullable=True, **kwargs)

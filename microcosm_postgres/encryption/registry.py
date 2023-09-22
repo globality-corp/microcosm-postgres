@@ -23,7 +23,7 @@ def parse_config(
     account_ids: Sequence[Union[str, Sequence[str]]],
     partitions: Sequence[Union[str, Sequence[str]]],
     restricted_kms_policy: Sequence[str],
-    beacon_keys: Sequence[str] | None = None,
+    beacon_keys: Union[Sequence[str], None] = None,
 ) -> Mapping[str, Mapping[str, Union[str, Sequence[str], bool, None]]]:
     _beacon_keys: Sequence[str] = [] if beacon_keys is None else beacon_keys
     config = {}

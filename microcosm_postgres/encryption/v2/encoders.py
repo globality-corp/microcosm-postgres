@@ -7,6 +7,7 @@ from typing import (
     Generic,
     Protocol,
     TypeVar,
+    Union,
 )
 
 import sqlalchemy
@@ -16,7 +17,7 @@ from typing_extensions import TypeAlias
 
 T = TypeVar("T")
 JSONType: TypeAlias = (
-    "dict[str, JSONType] | list[JSONType] | str | int | float | bool | None"
+    "Union[dict[str, JSONType], list[JSONType], str, int, float, bool, None]"
 )
 
 
@@ -92,19 +93,19 @@ class JSONEncoder(Encoder[JSONType]):
         return json.loads(value)
 
 
-class Nullable(Encoder["T | None"], Generic[T]):
+class Nullable(Encoder["Union[T, None]"], Generic[T]):
     def __init__(self, inner_encoder: Encoder[T]) -> None:
         self.inner_encoder = inner_encoder
         # Nullable encoder does not affect the sa_type
         self.sa_type = inner_encoder.sa_type
 
-    def encode(self, value: "T | None") -> str:
+    def encode(self, value: "Union[T, None]") -> str:
         if value is None:
             return json.dumps(value)
 
         return json.dumps(self.inner_encoder.encode(value))
 
-    def decode(self, value: str) -> "T | None":
+    def decode(self, value: str) -> "Union[T, None]":
         if (loaded_value := json.loads(value)) is None:
             return None
 
