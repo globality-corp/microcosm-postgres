@@ -11,7 +11,7 @@ from microcosm.api import (
     load_from_environ,
 )
 from microcosm.object_graph import ObjectGraph
-from pytest import fixture
+from pytest import fixture, raises
 from sqlalchemy import UUID, CheckConstraint, Table
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
@@ -19,6 +19,7 @@ from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, Single
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import (
     ArrayEncoder,
+    Encoder,
     EnumEncoder,
     JSONEncoder,
     Nullable,
@@ -236,3 +237,18 @@ def test_remove_encryption_from_existing(
     employee.name = "foo"
     assert employee.name_encrypted is None
     assert employee.name_unencrypted == "foo"
+
+
+def test_encode_none_on_non_nullable_raises_error(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    """
+    Checks that if you pass in `None` when there is a default defined then
+    the default is used.
+    """
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee())
+
+        with raises(Encoder.EncodeException):
+            employee.roles = None
