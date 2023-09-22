@@ -83,7 +83,8 @@ class encryption(hybrid_property, Generic[T]):
                 not isinstance(encoder, Nullable),
             ]):
                 # This means that we expect to use the default rather than
-                # the None value
+                # the None value, if the default has been set and we're using
+                # a non-nullable encoder.
                 value = default() if callable(default) else default
 
             encrypted = encryptor.encrypt(encoder.encode(value))
