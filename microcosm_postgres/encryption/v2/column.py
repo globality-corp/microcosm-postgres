@@ -135,6 +135,9 @@ class encryption(hybrid_property, Generic[T]):
         self.encoder = encoder
         self.column_type = encoder.sa_type if column_type is NOT_SET else column_type
 
+        # This is used in the store auto filters
+        self.name = key
+
         beacon_field = f"{key}_beacon"
         encrypted_field = f"{key}_encrypted"
         unencrypted_field = f"{key}_unencrypted"
