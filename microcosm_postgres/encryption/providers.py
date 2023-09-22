@@ -27,6 +27,14 @@ from microcosm.config.validation import typed
 
 
 class RestrictedKMSMasterKey(KMSMasterKey):
+    """
+    Customized KMS master key provider, to work with restriced KMS policy:
+
+        kms:GenerateDataKeyWithoutPlaintext
+        kms:Decrypt
+        kms:Encrypt
+
+    """
     def _generate_data_key(self, algorithm, encryption_context=None):
         kms_params = self._build_generate_data_key_request(algorithm, encryption_context)
         try:
