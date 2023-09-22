@@ -35,7 +35,7 @@ setup(
         "metrics": "microcosm-metrics>=2.5.0",
         "encryption": [
             "aws-encryption-sdk>=2.0.0",
-            "cryptography>=41",
+            "cryptography>=35",
         ],
         "test": [
             "aws-encryption-sdk>=2.0.0",
