@@ -1,8 +1,10 @@
 import json
 from datetime import datetime
 from decimal import Decimal
+from enum import Enum
 from typing import (
     Any,
+    Callable,
     Generic,
     Protocol,
     TypeAlias,
@@ -108,3 +110,23 @@ class Nullable(Encoder[T | None], Generic[T]):
             return None
 
         return self.inner_encoder.decode(loaded_value)
+
+
+E = TypeVar("E", bound=Enum)
+
+
+class EnumEncoder(Encoder[E], Generic[E]):
+    """
+    Encodes and decodes an enum by its name.
+
+    """
+    sa_type = sqlalchemy.String
+
+    def __init__(self, enum: type[E]):
+        self._enum = enum
+
+    def encode(self, value: E) -> str:
+        return value.name
+
+    def decode(self, value: str) -> E:
+        return self._enum[value]

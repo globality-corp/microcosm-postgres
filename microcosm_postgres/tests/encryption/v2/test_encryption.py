@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING, ClassVar, Iterator
 from uuid import uuid4
 
@@ -16,9 +17,14 @@ from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
-from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, Nullable, StringEncoder
+from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, EnumEncoder, Nullable, StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
+
+
+class EmployeeType(Enum):
+    FULL_TIME = "FULL_TIME"
+    PART_TIME = "PART_TIME"
 
 
 class Employee(Model):
@@ -49,6 +55,10 @@ class Employee(Model):
     )
     roles_encrypted = roles.encrypted()
     roles_unencrypted = roles.unencrypted()
+
+    type = encryption("type", AwsKmsEncryptor(), EnumEncoder(EmployeeType))
+    type_encrypted = type.encrypted()
+    type_unencrypted = type.unencrypted()
 
 
 client_id = uuid4()
@@ -131,10 +141,11 @@ def test_encrypt_with_client(
     single_tenant_encryptor: SingleTenantEncryptor,
 ) -> None:
     with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
-        session.add(employee := Employee(name="foo"))
+        session.add(employee := Employee(name="foo", type=EmployeeType.FULL_TIME))
         assert employee.name_unencrypted is None
         assert employee.name_encrypted is not None
         assert employee.name == "foo"
+        assert employee.type == EmployeeType.FULL_TIME
 
 
 def test_encrypt_with_client_default(
