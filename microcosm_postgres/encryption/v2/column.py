@@ -10,9 +10,9 @@ from typing import (
     overload,
 )
 
-from sqlalchemy import Column, ColumnElement, LargeBinary, String
+from sqlalchemy import Column, LargeBinary, String
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property
-from sqlalchemy.orm import InstrumentedAttribute, Mapped, mapped_column
+from sqlalchemy.orm import InstrumentedAttribute, Mapped
 from sqlalchemy.sql.operators import in_op
 
 from .encoders import Encoder
@@ -44,7 +44,7 @@ class BeaconComparator(Comparator):
         self.beacon_fn = beacon_fn
         self.encrypt_fn = encrypt_fn
 
-    def operate(self, op: Callable, other: Any = NOT_SET, **kwargs: Any) -> ColumnElement[Any]:  # type: ignore[override]  # noqa: E501
+    def operate(self, op: Callable, other: Any = NOT_SET, **kwargs: Any):  # type: ignore[override]  # noqa: E501
         # This first condition might happen when we are doing an order by ACS / DESC
         if other is NOT_SET:
             if self._check_if_should_use_beacon():
@@ -67,7 +67,7 @@ class BeaconComparator(Comparator):
     def __str__(self):
         return self.val
 
-    def __eq__(self, other: Any) -> ColumnElement[bool]:  # type: ignore[override]  # noqa: E501
+    def __eq__(self, other: Any):  # type: ignore[override]  # noqa: E501
         if not self._check_if_should_use_beacon():
             return self.val == other
 
@@ -95,7 +95,7 @@ class BeaconNotDefinedError(Exception):
     pass
 
 
-class encryption(hybrid_property[T], Generic[T]):
+class encryption(hybrid_property, Generic[T]):
     @overload
     def __init__(
         self,
@@ -161,7 +161,7 @@ class encryption(hybrid_property[T], Generic[T]):
             if hasattr(self, beacon_field):
                 setattr(self, beacon_field, encryptor.beacon(encoded))
 
-        def _prop_comparator(cls) -> Comparator[T] | InstrumentedAttribute:
+        def _prop_comparator(cls) -> Comparator | InstrumentedAttribute:
             if beacon := getattr(cls, beacon_field, None):
                 return BeaconComparator(
                     val=getattr(cls, unencrypted_field),
@@ -176,7 +176,7 @@ class encryption(hybrid_property[T], Generic[T]):
         super().__init__(
             _prop,
             _prop_setter,
-            custom_comparator=cast(Comparator[T] | None, _prop_comparator),
+            custom_comparator=cast(Comparator | None, _prop_comparator),
         )
 
     if TYPE_CHECKING:
@@ -225,4 +225,4 @@ class encryption(hybrid_property[T], Generic[T]):
         )
 
     def beacon(self, **kwargs: Any) -> Mapped[str | None]:
-        return mapped_column(String, nullable=True, **kwargs)
+        return Column(String, nullable=True, **kwargs)

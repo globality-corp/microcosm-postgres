@@ -14,8 +14,9 @@ from microcosm.api import (
 from microcosm.decorators import binding
 from microcosm.object_graph import ObjectGraph
 from pytest import fixture
-from sqlalchemy import UUID, Table, select
-from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
+from sqlalchemy import Column, Table, select
+from sqlalchemy.orm import Session, sessionmaker as SessionMaker
+from sqlalchemy_utils import UUIDType
 
 from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
@@ -50,7 +51,7 @@ class Employee(Model):
     if TYPE_CHECKING:
         __table__: ClassVar[Table]
 
-    id = mapped_column(UUID, primary_key=True, default=uuid4)
+    id = Column(UUIDType, primary_key=True, default=uuid4)
 
     # Name requires beacon value for search
     name = encryption("name", AwsKmsEncryptor(), StringEncoder())
@@ -287,7 +288,7 @@ def test_order_by_with_beacon(
             session.commit()
 
     with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
-        query = select(Employee).order_by(Employee.name.asc())
+        query = select(Employee).order_by(Employee.name.asc())  # type:ignore
         # Use regex to match the compiled sql
         regex = re.compile(r"ORDER BY .*?name_beacon ASC")
         assert regex.search(str(query))
@@ -298,7 +299,7 @@ def test_order_by_with_beacon(
             assert r.salary == 1000
 
         # Same for desc
-        query = select(Employee).order_by(Employee.name.desc())
+        query = select(Employee).order_by(Employee.name.desc())  # type:ignore
         regex = re.compile(r"ORDER BY .*?name_beacon DESC")
         assert regex.search(str(query))
 
@@ -324,7 +325,7 @@ def test_searching_on_encrypted_field_with_no_beacon(
         session.add(Employee(name="bar", salary=1000))
         session.commit()
 
-    query = select(Employee).filter(Employee.salary == 1000).order_by(Employee.name.asc())
+    query = select(Employee).filter(Employee.salary == 1000).order_by(Employee.name.asc())  # type:ignore
     results = session.execute(query).scalars().all()
 
     assert len(results) == 0
@@ -346,7 +347,7 @@ def test_search_with_array_of_beacons(
             session.add(Employee(name="bar", salary=1000))
             session.commit()
 
-            query = select(Employee).filter(Employee.name.in_(["foo", "bar"]))
+            query = select(Employee).filter(Employee.name.in_(["foo", "bar"]))  # type:ignore
 
             regex = re.compile(r"WHERE test_encryption_employee_v2.name_beacon IN .*?name_beacon_1")
             assert regex.search(str(query))

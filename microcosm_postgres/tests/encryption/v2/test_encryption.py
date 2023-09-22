@@ -12,7 +12,7 @@ from microcosm.api import (
 )
 from microcosm.object_graph import ObjectGraph
 from pytest import fixture
-from sqlalchemy import Column, CheckConstraint, Table
+from sqlalchemy import CheckConstraint, Column, Table
 from sqlalchemy.orm import Session, sessionmaker as SessionMaker
 from sqlalchemy_utils import UUIDType
 
