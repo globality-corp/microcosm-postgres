@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING, ClassVar, Iterator
 from uuid import uuid4
 
@@ -19,12 +20,18 @@ from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, Single
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import (
     ArrayEncoder,
+    EnumEncoder,
     JSONEncoder,
     Nullable,
     StringEncoder,
 )
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
+
+
+class EmployeeType(Enum):
+    FULL_TIME = "FULL_TIME"
+    PART_TIME = "PART_TIME"
 
 
 class Employee(Model):
@@ -55,6 +62,10 @@ class Employee(Model):
     )
     roles_encrypted = roles.encrypted()
     roles_unencrypted = roles.unencrypted()
+
+    type = encryption("type", AwsKmsEncryptor(), EnumEncoder(EmployeeType))
+    type_encrypted = type.encrypted()
+    type_unencrypted = type.unencrypted()
 
     extras = encryption(
         "extras",
@@ -157,10 +168,13 @@ def test_encrypt_with_client(
         session.add(employee := Employee())
         employee.name = "foo"
         employee.extras = {"foo": "bar"}
+        employee.type = EmployeeType.FULL_TIME
+
         assert employee.name_unencrypted is None
         assert employee.name_encrypted is not None
         assert employee.name == "foo"
         assert employee.extras == {"foo": "bar"}
+        assert employee.type == EmployeeType.FULL_TIME
 
 
 def test_encrypt_with_client_default(
