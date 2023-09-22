@@ -82,7 +82,7 @@ class ArrayEncoder(Encoder["list[T]"], Generic[T]):
 
 
 class JSONEncoder(Encoder[JSONType]):
-    sa_type = JSONB
+    sa_type = JSONB(none_as_null=True)
 
     def encode(self, value: JSONType) -> str:
         return json.dumps(value)
