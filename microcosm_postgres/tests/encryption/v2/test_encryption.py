@@ -201,3 +201,19 @@ def test_remove_encryption_from_existing(
     employee.name = "foo"
     assert employee.name_encrypted is None
     assert employee.name_unencrypted == "foo"
+
+
+def test_encode_none_value_with_default_set(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    """
+    Checks that if you pass in `None` when there is a default defined then
+    the default is used.
+
+    """
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee())
+        employee.roles = None
+
+        assert employee.roles == []

@@ -13,7 +13,7 @@ from sqlalchemy import Column, LargeBinary
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import Mapped
 
-from .encoders import Encoder
+from .encoders import Encoder, Nullable
 from .encryptors import Encryptor
 
 
@@ -74,6 +74,18 @@ class encryption(hybrid_property, Generic[T]):
             return encoder.decode(encryptor.decrypt(encrypted))
 
         def _prop_setter(self, value) -> None:
+            nonlocal default
+            nonlocal encoder
+
+            if all([
+                value is None,
+                default is not NOT_SET,
+                not isinstance(encoder, Nullable),
+            ]):
+                # This means that we expect to use the default rather than
+                # the None value
+                value = default() if callable(default) else default
+
             encrypted = encryptor.encrypt(encoder.encode(value))
             if encrypted is None:
                 setattr(self, unencrypted_field, value)
