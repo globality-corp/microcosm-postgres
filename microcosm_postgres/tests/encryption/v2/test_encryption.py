@@ -17,7 +17,12 @@ from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
-from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, EnumEncoder, Nullable, StringEncoder
+from microcosm_postgres.encryption.v2.encoders import (
+    ArrayEncoder,
+    EnumEncoder,
+    Nullable,
+    StringEncoder,
+)
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
 
