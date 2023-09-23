@@ -35,6 +35,19 @@ def test_encode_decode(encoder, value):
 
 
 @pytest.mark.parametrize(
+    ("input", "output"),
+    [
+        ("foo", "foo"),
+        (1, "1"),
+        (Decimal(1.0), "1"),
+        (True, "True"),
+    ],
+)
+def test_string_encoder(input, output):
+    assert encoders.StringEncoder().encode(input) == output
+
+
+@pytest.mark.parametrize(
     ("encoder", "value", "exception"),
     [
         # Decoding an invalid string to int
