@@ -7,7 +7,7 @@ from sqlalchemy_utils import UUIDType
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import IntEncoder, StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
-from microcosm_postgres.encryption.v2.utils import members_override
+from microcosm_postgres.encryption.v2.utils import _process_encryption_context, members_override
 from microcosm_postgres.identifiers import new_object_id
 from microcosm_postgres.models import Model
 
@@ -31,11 +31,41 @@ class Employee(Model):
     salary_unencrypted = salary.unencrypted()
 
 
+def test_process_encryption_context():
+    # Testing beacon value
+    sample_dict_with_beacon = {
+        "encrypted_field_beacon": "beacon value",
+    }
+
+    result_with_beacon = _process_encryption_context(sample_dict_with_beacon, ["encrypted_field"])
+    assert "encrypted_field_beacon" not in result_with_beacon
+    assert result_with_beacon["encrypted_field"] == "beacon value"
+
+    # Testing unencrypted value
+    sample_dict_with_unencrypted = {
+        "encrypted_field_unencrypted": "unencrypted value"
+    }
+
+    result_with_unencrypted = _process_encryption_context(sample_dict_with_unencrypted, ["encrypted_field"])
+    assert "encrypted_field_unencrypted" not in result_with_unencrypted
+    assert result_with_unencrypted["encrypted_field"] == "unencrypted value"
+
+
+def test_members_override_missing_unencrypted():
+    sample_dict = {
+        "encrypted_field": "this should remain as it is if there's no unencrypted counterpart",
+    }
+
+    result = members_override(sample_dict, ["encrypted_field"])
+
+    # Checking for None since that's what's expected in absence of beacon or unencrypted counterpart
+    assert result["encrypted_field"] is None
+
+
 def test_members_override():
     sample_dict = {
         "_internal": "should not be in result",
         "normal_field": "should remain unchanged",
-        "encrypted_field": "this should not be changed if no unencrypted counterpart exists",
         "encrypted_field_unencrypted": "this should become 'encrypted_field'",
         "relation": Employee(
             id=new_object_id(),
@@ -58,15 +88,46 @@ def test_members_override():
     assert result["normal_field"] == "should remain unchanged"
 
 
-def test_members_override_missing_unencrypted():
+def test_members_override_for_insert_with_encryption():
     sample_dict = {
-        "encrypted_field": "this should remain as it is if there's no unencrypted counterpart",
+        "_internal": "should not be in result",
+        "normal_field": "should remain unchanged",
+        "encrypted_field_unencrypted": "this should become 'encrypted_field'",
     }
 
-    result = members_override(sample_dict, ["encrypted_field"])
+    result = members_override(sample_dict, ["encrypted_field"], for_insert=True, using_encryption=True)
 
-    assert (
-        result["encrypted_field"]
-        == "this should remain as it is if there's no unencrypted counterpart"
-    )
+    # No internal SQLAlchemy state
+    assert "_internal" not in result
+
+    # Test unencrypted processing with encryption on
     assert "encrypted_field_unencrypted" not in result
+    assert result["encrypted_field"] == "this should become 'encrypted_field'"
+
+    # Normal field remains unchanged
+    assert result["normal_field"] == "should remain unchanged"
+
+
+def test_members_override_for_insert_without_encryption():
+    sample_dict = {
+        "_internal": "should not be in result",
+        "normal_field": "should remain unchanged",
+        "encrypted_field_beacon": "beacon value",
+        "encrypted_field_unencrypted": "unencrypted value"
+    }
+
+    result = members_override(sample_dict, ["encrypted_field"], for_insert=True, using_encryption=False)
+
+    # No internal SQLAlchemy state
+    assert "_internal" not in result
+
+    # Test beacon processing with encryption off
+    assert "encrypted_field_beacon" not in result
+    assert result["encrypted_field"] == "beacon value"
+
+    # Normal field remains unchanged
+    assert result["normal_field"] == "should remain unchanged"
+
+    # The unencrypted value still exists in the dictionary as it's not the primary focus here.
+    assert "encrypted_field_unencrypted" in result
+    assert result["encrypted_field_unencrypted"] == "unencrypted value"
