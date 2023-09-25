@@ -180,8 +180,13 @@ class encryption(hybrid_property[T], Generic[T]):
         )
 
     def encrypted(self) -> Mapped[bytes | None]:
+        info = {
+            "encryption.v2.key": self.key,
+            "encryption.v2.encrypted": True,
+        }
+
         if self.default is NOT_SET:
-            return mapped_column(self.key + "_encrypted", LargeBinary, nullable=True)
+            return mapped_column(self.key + "_encrypted", LargeBinary, nullable=True, info=info)
 
         return mapped_column(
             self.key + "_encrypted",
@@ -198,11 +203,16 @@ class encryption(hybrid_property[T], Generic[T]):
                     else None
                 )
             ),
+            info=info,
         )
 
     def unencrypted(self, **kwargs: Any) -> Mapped[T | None]:
+        info = kwargs.pop("info", {})
+        info["encryption.v2.key"] = self.key
+        info["encryption.v2.unencrypted"] = True
+
         if self.default is NOT_SET:
-            return mapped_column(self.key, self.column_type, nullable=True, **kwargs)
+            return mapped_column(self.key, self.column_type, nullable=True, info=info, **kwargs)
 
         return mapped_column(
             self.key,
@@ -213,8 +223,17 @@ class encryption(hybrid_property[T], Generic[T]):
                 if self.encryptor.should_encrypt()
                 else (self.default() if callable(self.default) else self.default)
             ),
+            info=info,
             **kwargs,
         )
 
     def beacon(self, **kwargs: Any) -> Mapped[str | None]:
-        return mapped_column(String, nullable=True, **kwargs)
+        return mapped_column(
+            String,
+            nullable=True,
+            info={
+                "encryption.v2.beacon": True,
+                "encryption.v2.key": self.key,
+            },
+            **kwargs,
+        )

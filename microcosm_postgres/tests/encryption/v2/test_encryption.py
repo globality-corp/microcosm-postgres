@@ -275,3 +275,4 @@ def test_encrypt_with_transient_table(graph, single_tenant_encryptor: SingleTena
 
         assert len(employees) == 1
         assert employees[0].extras == {"foo": "bar"}
+        assert employees[0].name == "foo"
