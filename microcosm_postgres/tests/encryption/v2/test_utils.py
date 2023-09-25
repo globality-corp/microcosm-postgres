@@ -37,16 +37,16 @@ def test_process_encryption_context():
         "encrypted_field_beacon": "beacon value",
     }
 
-    result_with_beacon = _process_encryption_context(sample_dict_with_beacon, ["encrypted_field"])
-    assert "encrypted_field_beacon" not in result_with_beacon
-    assert result_with_beacon["encrypted_field"] == "beacon value"
+    result_with_beacon = _process_encryption_context(sample_dict_with_beacon, ["encrypted_field"], using_encryption=True)
+    assert "encrypted_field_beacon" in result_with_beacon
+    assert result_with_beacon["encrypted_field_beacon"] == "beacon value"
 
     # Testing unencrypted value
     sample_dict_with_unencrypted = {
         "encrypted_field_unencrypted": "unencrypted value"
     }
 
-    result_with_unencrypted = _process_encryption_context(sample_dict_with_unencrypted, ["encrypted_field"])
+    result_with_unencrypted = _process_encryption_context(sample_dict_with_unencrypted, ["encrypted_field"], using_encryption=False)
     assert "encrypted_field_unencrypted" not in result_with_unencrypted
     assert result_with_unencrypted["encrypted_field"] == "unencrypted value"
 
@@ -117,17 +117,15 @@ def test_members_override_for_insert_without_encryption():
     }
 
     result = members_override(sample_dict, ["encrypted_field"], for_insert=True, using_encryption=False)
-
     # No internal SQLAlchemy state
     assert "_internal" not in result
 
     # Test beacon processing with encryption off
-    assert "encrypted_field_beacon" not in result
-    assert result["encrypted_field"] == "beacon value"
+    assert "encrypted_field_beacon" in result
+    assert result["encrypted_field_beacon"] == "beacon value"
 
     # Normal field remains unchanged
     assert result["normal_field"] == "should remain unchanged"
 
-    # The unencrypted value still exists in the dictionary as it's not the primary focus here.
-    assert "encrypted_field_unencrypted" in result
-    assert result["encrypted_field_unencrypted"] == "unencrypted value"
+    # The unencrypted value does not exist in the dictionary
+    assert "encrypted_field_unencrypted" not in result
