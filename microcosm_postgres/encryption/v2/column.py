@@ -2,6 +2,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    TypedDict,
     TypeVar,
     cast,
     overload,
@@ -93,6 +94,13 @@ class BeaconComparator(Comparator):
 
 class BeaconNotDefinedError(Exception):
     pass
+
+
+class EncryptionV2ColumnInfo(TypedDict, total=False):
+    encryption_v2_key: str
+    encryption_v2_encrypted: bool
+    encryption_v2_unencrypted: bool
+    encryption_v2_beacon: bool
 
 
 class encryption(hybrid_property[T], Generic[T]):
@@ -190,8 +198,13 @@ class encryption(hybrid_property[T], Generic[T]):
         )
 
     def encrypted(self) -> Mapped[bytes | None]:
+        info = EncryptionV2ColumnInfo(
+            encryption_v2_key=self.key,
+            encryption_v2_encrypted=True,
+        )
+
         if self.default is NOT_SET:
-            return mapped_column(self.key + "_encrypted", LargeBinary, nullable=True)
+            return mapped_column(self.key + "_encrypted", LargeBinary, nullable=True, info=cast(dict, info))
 
         return mapped_column(
             self.key + "_encrypted",
@@ -208,11 +221,20 @@ class encryption(hybrid_property[T], Generic[T]):
                     else None
                 )
             ),
+            info=cast(dict, info),
         )
 
     def unencrypted(self, **kwargs: Any) -> Mapped[T | None]:
+        info = {
+            **kwargs.pop("info", {}),
+            **EncryptionV2ColumnInfo(
+                encryption_v2_key=self.key,
+                encryption_v2_unencrypted=True,
+            )
+        }
+
         if self.default is NOT_SET:
-            return mapped_column(self.key, self.column_type, nullable=True, **kwargs)
+            return mapped_column(self.key, self.column_type, nullable=True, info=info, **kwargs)
 
         return mapped_column(
             self.key,
@@ -223,8 +245,17 @@ class encryption(hybrid_property[T], Generic[T]):
                 if self.encryptor.should_encrypt()
                 else (self.default() if callable(self.default) else self.default)
             ),
+            info=info,
             **kwargs,
         )
 
     def beacon(self, **kwargs: Any) -> Mapped[str | None]:
-        return mapped_column(String, nullable=True, **kwargs)
+        return mapped_column(
+            String,
+            nullable=True,
+            info=cast(dict, EncryptionV2ColumnInfo(
+                encryption_v2_key=self.key,
+                encryption_v2_beacon=True,
+            )),
+            **kwargs,
+        )

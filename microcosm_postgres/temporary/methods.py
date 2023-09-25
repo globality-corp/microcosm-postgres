@@ -10,15 +10,26 @@ from microcosm_postgres.context import SessionContext
 
 
 def to_dict(item, columns):
-    column_values = (
+    column_values = [
         (column, getattr(item, column.name))
         for column in columns
-    )
+    ]
+    encrypted_columns = {
+       column.info["encryption_v2_key"]
+       for column, value in column_values
+       if column.info.get("encryption_v2_encrypted") is True and value is not None
+    }
+
     return dict(
         (column.name, value)
         for column, value in column_values
         # discard nulls if defaulted
-        if value is not None or not column.default
+        if (value is not None or not column.default)
+        # discard unencrypted columns with encrypted counterparts
+        if not (
+            column.info.get("encryption_v2_unencrypted") and
+            column.info.get("encryption_v2_key") in encrypted_columns
+        )
     )
 
 
