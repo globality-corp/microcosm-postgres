@@ -2,6 +2,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    TypedDict,
     TypeVar,
     cast,
     overload,
@@ -92,6 +93,13 @@ class BeaconNotDefinedError(Exception):
     pass
 
 
+class EncryptionV2ColumnInfo(TypedDict, total=False):
+    encryption_v2_key: str
+    encryption_v2_encrypted: bool
+    encryption_v2_unencrypted: bool
+    encryption_v2_beacon: bool
+
+
 class encryption(hybrid_property[T], Generic[T]):
     @overload
     def __init__(
@@ -180,13 +188,13 @@ class encryption(hybrid_property[T], Generic[T]):
         )
 
     def encrypted(self) -> Mapped[bytes | None]:
-        info = {
-            "encryption.v2.key": self.key,
-            "encryption.v2.encrypted": True,
-        }
+        info = EncryptionV2ColumnInfo(
+            encryption_v2_key=self.key,
+            encryption_v2_encrypted=True,
+        )
 
         if self.default is NOT_SET:
-            return mapped_column(self.key + "_encrypted", LargeBinary, nullable=True, info=info)
+            return mapped_column(self.key + "_encrypted", LargeBinary, nullable=True, info=cast(dict, info))
 
         return mapped_column(
             self.key + "_encrypted",
@@ -203,13 +211,17 @@ class encryption(hybrid_property[T], Generic[T]):
                     else None
                 )
             ),
-            info=info,
+            info=cast(dict, info),
         )
 
     def unencrypted(self, **kwargs: Any) -> Mapped[T | None]:
-        info = kwargs.pop("info", {})
-        info["encryption.v2.key"] = self.key
-        info["encryption.v2.unencrypted"] = True
+        info = {
+            **kwargs.pop("info", {}),
+            **EncryptionV2ColumnInfo(
+                encryption_v2_key=self.key,
+                encryption_v2_unencrypted=True,
+            )
+        }
 
         if self.default is NOT_SET:
             return mapped_column(self.key, self.column_type, nullable=True, info=info, **kwargs)
@@ -231,9 +243,9 @@ class encryption(hybrid_property[T], Generic[T]):
         return mapped_column(
             String,
             nullable=True,
-            info={
-                "encryption.v2.beacon": True,
-                "encryption.v2.key": self.key,
-            },
+            info=cast(dict, EncryptionV2ColumnInfo(
+                encryption_v2_key=self.key,
+                encryption_v2_beacon=True,
+            )),
             **kwargs,
         )

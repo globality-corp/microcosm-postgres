@@ -15,9 +15,9 @@ def to_dict(item, columns):
         for column in columns
     ]
     encrypted_columns = {
-       column.info["encryption.v2.key"]
+       column.info["encryption_v2_key"]
        for column, value in column_values
-       if column.info.get("encryption.v2.encrypted") is True and value is not None
+       if column.info.get("encryption_v2_encrypted") is True and value is not None
     }
 
     return dict(
@@ -27,8 +27,8 @@ def to_dict(item, columns):
         if (value is not None or not column.default)
         # discard unencrypted columns with encrypted counterparts
         if not (
-            column.info.get("encryption.v2.unencrypted") and
-            column.info.get("encryption.v2.key") in encrypted_columns
+            column.info.get("encryption_v2_unencrypted") and
+            column.info.get("encryption_v2_key") in encrypted_columns
         )
     )
 
