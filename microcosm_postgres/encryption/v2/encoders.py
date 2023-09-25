@@ -80,6 +80,18 @@ class StringEncoder(Encoder[Any]):
         return value
 
 
+class TextEncoder(Encoder[Any]):
+    sa_type = sqlalchemy.Text
+
+    @encode_exception_wrapper
+    def encode(self, value: Any) -> str:
+        return str(value)
+
+    @decode_exception_wrapper
+    def decode(self, value: str) -> Any:
+        return value
+
+
 class IntEncoder(Encoder[int]):
     sa_type = sqlalchemy.Integer
 
