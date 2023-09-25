@@ -87,3 +87,49 @@ def test_members_override():
 
     # Test case 5
     assert result["normal_field"] == "should remain unchanged"
+
+
+def test_members_override_for_insert_with_encryption():
+    sample_dict = {
+        "_internal": "should not be in result",
+        "normal_field": "should remain unchanged",
+        "encrypted_field_unencrypted": "this should become 'encrypted_field'",
+    }
+
+    result = members_override(sample_dict, ["encrypted_field"], for_insert=True, using_encryption=True)
+
+    # No internal SQLAlchemy state
+    assert "_internal" not in result
+
+    # Test unencrypted processing with encryption on
+    assert "encrypted_field_unencrypted" not in result
+    assert result["encrypted_field"] == "this should become 'encrypted_field'"
+
+    # Normal field remains unchanged
+    assert result["normal_field"] == "should remain unchanged"
+
+
+def test_members_override_for_insert_without_encryption():
+    sample_dict = {
+        "_internal": "should not be in result",
+        "normal_field": "should remain unchanged",
+        "encrypted_field_beacon": "beacon value",
+        "encrypted_field_unencrypted": "unencrypted value"
+    }
+
+    result = members_override(sample_dict, ["encrypted_field"], for_insert=True, using_encryption=False)
+
+    # No internal SQLAlchemy state
+    assert "_internal" not in result
+
+    # Test beacon processing with encryption off
+    assert "encrypted_field_beacon" not in result
+    assert result["encrypted_field"] == "beacon value"
+
+    # Normal field remains unchanged
+    assert result["normal_field"] == "should remain unchanged"
+
+    # The unencrypted value still exists in the dictionary as it's not the primary focus here.
+    assert "encrypted_field_unencrypted" in result
+    assert result["encrypted_field_unencrypted"] == "unencrypted value"
+

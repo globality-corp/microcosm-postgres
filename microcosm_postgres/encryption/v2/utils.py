@@ -39,7 +39,7 @@ def _process_encryption_context(base_dict: dict[str, Any], encrypted_field_names
         if base_dict.get(beacon_key) is not None:
             base_dict[field] = base_dict.pop(beacon_key)
         else:
-            base_dict[field] = base_dict.pop(unencrypted_key, None)  # Use .pop() to avoid KeyError
+            base_dict[field] = base_dict.pop(unencrypted_key, None)
 
     return base_dict
 
