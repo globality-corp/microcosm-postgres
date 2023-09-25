@@ -26,6 +26,7 @@ from microcosm_postgres.encryption.v2.encoders import (
     JSONEncoder,
     Nullable,
     StringEncoder,
+    TextEncoder,
 )
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
@@ -56,6 +57,15 @@ class Employee(Model):
     )
     description_encrypted = description.encrypted()
     description_unencrypted = description.unencrypted()
+
+    notes = encryption(
+        "notes",
+        AwsKmsEncryptor(),
+        Nullable(TextEncoder()),
+        default=None,
+    )
+    notes_encrypted = notes.encrypted()
+    notes_unencrypted = notes.unencrypted()
 
     roles = encryption(
         "roles",
@@ -172,12 +182,16 @@ def test_encrypt_with_client(
         employee.name = "foo"
         employee.extras = {"foo": "bar"}
         employee.type = EmployeeType.FULL_TIME
+        employee.notes = "baz"
 
         assert employee.name_unencrypted is None
         assert employee.name_encrypted is not None
         assert employee.name == "foo"
         assert employee.extras == {"foo": "bar"}
         assert employee.type == EmployeeType.FULL_TIME
+        assert employee.notes_unencrypted is None
+        assert employee.notes_encrypted is not None
+        assert employee.notes == "baz"
 
 
 def test_encrypt_with_client_default(
@@ -258,18 +272,22 @@ def test_encode_none_on_non_nullable_raises_error(
             employee.roles = None  # type: ignore[assignment]
 
 
-def test_encrypt_with_transient_table(graph, single_tenant_encryptor: SingleTenantEncryptor):
+def test_encrypt_with_transient_table(
+    graph, single_tenant_encryptor: SingleTenantEncryptor
+):
     with (
         SessionContext(graph),
         AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor),
         transient(Employee) as transient_table,
     ):
-        transient_table.insert_many([
-            Employee(
-                name="foo",
-                extras={"foo": "bar"},
-            ),
-        ])
+        transient_table.insert_many(
+            [
+                Employee(
+                    name="foo",
+                    extras={"foo": "bar"},
+                ),
+            ]
+        )
         # NB extras column check constraint ensures that encrypted and unencrypted
         #    columns are mutually exclusive
         transient_table.upsert_into(Employee)
