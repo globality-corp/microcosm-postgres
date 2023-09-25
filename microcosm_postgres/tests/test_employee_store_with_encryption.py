@@ -19,11 +19,12 @@ from sqlalchemy import (
     String,
     Table,
     UniqueConstraint,
+    select,
 )
-from sqlalchemy.orm import Session, sessionmaker as SessionMaker
-from sqlalchemy_utils import UUIDType
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, sessionmaker as SessionMaker
+from sqlalchemy_utils import UUIDType
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
