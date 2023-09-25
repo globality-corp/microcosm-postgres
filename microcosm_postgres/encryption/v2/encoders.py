@@ -73,8 +73,6 @@ class StringEncoder(Encoder[Any]):
 
     @encode_exception_wrapper
     def encode(self, value: Any) -> str:
-        if isinstance(value, str):
-            return value
         return str(value)
 
     @decode_exception_wrapper
