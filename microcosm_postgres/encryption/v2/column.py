@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    TypedDict,
     TypeVar,
     Union,
     cast,
@@ -94,6 +95,13 @@ class BeaconComparator(Comparator):
 
 class BeaconNotDefinedError(Exception):
     pass
+
+
+class EncryptionV2ColumnInfo(TypedDict, total=False):
+    encryption_v2_key: str
+    encryption_v2_encrypted: bool
+    encryption_v2_unencrypted: bool
+    encryption_v2_beacon: bool
 
 
 class encryption(hybrid_property, Generic[T]):
@@ -192,8 +200,13 @@ class encryption(hybrid_property, Generic[T]):
             ...
 
     def encrypted(self) -> Mapped:
+        info = EncryptionV2ColumnInfo(
+            encryption_v2_key=self.key,
+            encryption_v2_encrypted=True,
+        )
+
         if self.default is NOT_SET:
-            return Column(self.key + "_encrypted", LargeBinary, nullable=True)
+            return Column(self.key + "_encrypted", LargeBinary, nullable=True, info=cast(dict, info))
 
         return Column(
             self.key + "_encrypted",
@@ -210,11 +223,20 @@ class encryption(hybrid_property, Generic[T]):
                     else None
                 )
             ),
+            info=cast(dict, info),
         )
 
     def unencrypted(self, **kwargs: Any) -> Mapped:
+        info = {
+            **kwargs.pop("info", {}),
+            **EncryptionV2ColumnInfo(
+                encryption_v2_key=self.key,
+                encryption_v2_unencrypted=True,
+            )
+        }
+
         if self.default is NOT_SET:
-            return Column(self.key, self.column_type, nullable=True, **kwargs)
+            return Column(self.key, self.column_type, nullable=True, info=info, **kwargs)
 
         return Column(
             self.key,
@@ -225,8 +247,17 @@ class encryption(hybrid_property, Generic[T]):
                 if self.encryptor.should_encrypt()
                 else (self.default() if callable(self.default) else self.default)
             ),
+            info=info,
             **kwargs,
         )
 
     def beacon(self, **kwargs: Any) -> Mapped[Union[str, None]]:
-        return Column(String, nullable=True, **kwargs)
+        return Column(
+            String,
+            nullable=True,
+            info=cast(dict, EncryptionV2ColumnInfo(
+                encryption_v2_key=self.key,
+                encryption_v2_beacon=True,
+            )),
+            **kwargs,
+        )

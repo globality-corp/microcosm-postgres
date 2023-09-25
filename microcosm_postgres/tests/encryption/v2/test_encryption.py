@@ -16,6 +16,7 @@ from sqlalchemy import CheckConstraint, Column, Table
 from sqlalchemy.orm import Session, sessionmaker as SessionMaker
 from sqlalchemy_utils import UUIDType
 
+from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import (
@@ -28,6 +29,7 @@ from microcosm_postgres.encryption.v2.encoders import (
 )
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
+from microcosm_postgres.temporary import transient
 
 
 class EmployeeType(Enum):
@@ -254,3 +256,25 @@ def test_encode_none_on_non_nullable_raises_error(
 
         with raises(Encoder.EncodeException):
             employee.roles = None  # type: ignore[assignment]
+
+
+def test_encrypt_with_transient_table(graph, single_tenant_encryptor: SingleTenantEncryptor):
+    with (
+        SessionContext(graph),
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor),
+        transient(Employee) as transient_table,
+    ):
+        transient_table.insert_many([
+            Employee(
+                name="foo",
+                extras={"foo": "bar"},
+            ),
+        ])
+        # NB extras column check constraint ensures that encrypted and unencrypted
+        #    columns are mutually exclusive
+        transient_table.upsert_into(Employee)
+        employees = transient_table.select_from(Employee)
+
+        assert len(employees) == 1
+        assert employees[0].extras == {"foo": "bar"}
+        assert employees[0].name == "foo"
