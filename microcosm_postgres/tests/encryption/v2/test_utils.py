@@ -37,7 +37,9 @@ def test_process_encryption_context():
         "encrypted_field_beacon": "beacon value",
     }
 
-    result_with_beacon = _process_encryption_context(sample_dict_with_beacon, ["encrypted_field"], using_encryption=True)
+    result_with_beacon = _process_encryption_context(
+        sample_dict_with_beacon, ["encrypted_field"], using_encryption=True
+    )
     assert "encrypted_field_beacon" in result_with_beacon
     assert result_with_beacon["encrypted_field_beacon"] == "beacon value"
 
@@ -46,7 +48,9 @@ def test_process_encryption_context():
         "encrypted_field_unencrypted": "unencrypted value"
     }
 
-    result_with_unencrypted = _process_encryption_context(sample_dict_with_unencrypted, ["encrypted_field"], using_encryption=False)
+    result_with_unencrypted = _process_encryption_context(
+        sample_dict_with_unencrypted, ["encrypted_field"], using_encryption=False
+    )
     assert "encrypted_field_unencrypted" not in result_with_unencrypted
     assert result_with_unencrypted["encrypted_field"] == "unencrypted value"
 
@@ -95,7 +99,9 @@ def test_members_override_for_insert_with_encryption():
         "encrypted_field_unencrypted": "this should become 'encrypted_field'",
     }
 
-    result = members_override(sample_dict, ["encrypted_field"], for_insert=True, using_encryption=True)
+    result = members_override(
+        sample_dict, ["encrypted_field"], for_insert=True, using_encryption=True
+    )
 
     # No internal SQLAlchemy state
     assert "_internal" not in result
@@ -116,7 +122,9 @@ def test_members_override_for_insert_without_encryption():
         "encrypted_field_unencrypted": "unencrypted value"
     }
 
-    result = members_override(sample_dict, ["encrypted_field"], for_insert=True, using_encryption=False)
+    result = members_override(
+        sample_dict, ["encrypted_field"], for_insert=True, using_encryption=False
+    )
     # No internal SQLAlchemy state
     assert "_internal" not in result
 
