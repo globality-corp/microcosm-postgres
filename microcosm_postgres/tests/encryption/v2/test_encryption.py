@@ -25,6 +25,7 @@ from microcosm_postgres.encryption.v2.encoders import (
     JSONEncoder,
     Nullable,
     StringEncoder,
+    TextEncoder,
 )
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
@@ -55,6 +56,15 @@ class Employee(Model):
     )
     description_encrypted = description.encrypted()
     description_unencrypted = description.unencrypted()
+
+    notes = encryption(
+        "notes",
+        AwsKmsEncryptor(),
+        Nullable(TextEncoder()),
+        default=None,
+    )
+    notes_encrypted = notes.encrypted()
+    notes_unencrypted = notes.unencrypted()
 
     roles = encryption(
         "roles",
@@ -170,12 +180,16 @@ def test_encrypt_with_client(
             name="foo",
             extras={"foo": "bar"},
             type=EmployeeType.FULL_TIME,
+            notes="baz"
         ))
         assert employee.name_unencrypted is None
         assert employee.name_encrypted is not None
         assert employee.name == "foo"
         assert employee.extras == {"foo": "bar"}
         assert employee.type == EmployeeType.FULL_TIME
+        assert employee.notes_unencrypted is None
+        assert employee.notes_encrypted is not None
+        assert employee.notes == "baz"
 
 
 def test_encrypt_with_client_default(
