@@ -5,10 +5,10 @@ from microcosm_postgres.models import Model
 
 
 def members_override(
-        members_dict: dict[str, Any],
-        encrypted_field_names: list[str],
-        for_insert: bool = False,
-        using_encryption: bool = False,
+    members_dict: dict[str, Any],
+    encrypted_field_names: list[str],
+    for_insert: bool = False,
+    using_encryption: bool = False,
 ) -> dict[str, Any]:
     """
     Override the base _members method to ensure no return of values for non-existing DB columns.
@@ -25,19 +25,21 @@ def members_override(
     if for_insert:
         return _members_override_for_insert(base_dict, encrypted_field_names, using_encryption)
 
-    return _process_encryption_context(base_dict, encrypted_field_names)
+    return _process_encryption_context(base_dict, encrypted_field_names, using_encryption)
 
 
-def _process_encryption_context(base_dict: dict[str, Any], encrypted_field_names: list[str]) -> dict[str, Any]:
+def _process_encryption_context(
+        base_dict: dict[str, Any],
+        encrypted_field_names: list[str],
+        using_encryption: bool
+) -> dict[str, Any]:
     """
     Process the encryption context for members dictionary.
     """
     for field in encrypted_field_names:
-        beacon_key = f"{field}_beacon"
         unencrypted_key = f"{field}_unencrypted"
-
-        if base_dict.get(beacon_key) is not None:
-            base_dict[field] = base_dict.pop(beacon_key)
+        if using_encryption:
+            base_dict.pop(unencrypted_key, None)
         else:
             base_dict[field] = base_dict.pop(unencrypted_key, None)
 
@@ -59,6 +61,6 @@ def _members_override_for_insert(
             unencrypted_key = f"{field}_unencrypted"
             base_dict[field] = base_dict.pop(unencrypted_key, None)
     else:
-        base_dict = _process_encryption_context(base_dict, encrypted_field_names)
+        base_dict = _process_encryption_context(base_dict, encrypted_field_names, using_encryption)
 
     return base_dict
