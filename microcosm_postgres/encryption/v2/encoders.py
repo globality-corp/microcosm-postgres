@@ -68,15 +68,15 @@ def decode_exception_wrapper(func: OriginalFunc[P, R]) -> DecoratedFunc[P, R]:
     return wrapper
 
 
-class StringEncoder(Encoder[str]):
+class StringEncoder(Encoder[Any]):
     sa_type = sqlalchemy.String
 
     @encode_exception_wrapper
-    def encode(self, value: str) -> str:
-        return value
+    def encode(self, value: Any) -> str:
+        return str(value)
 
     @decode_exception_wrapper
-    def decode(self, value: str) -> str:
+    def decode(self, value: str) -> Any:
         return value
 
 
