@@ -60,7 +60,10 @@ class BeaconComparator(Comparator):
         return op(self.val, other, **kwargs)
 
     def __clause_element__(self):
-        return self.beacon_val
+        if self._check_if_should_use_beacon():
+            return self.beacon_val
+        else:
+            return self.val
 
     def __str__(self):
         return self.val
@@ -146,17 +149,24 @@ class encryption(hybrid_property[T], Generic[T]):
         encrypted_field = f"{key}_encrypted"
         unencrypted_field = f"{key}_unencrypted"
 
+        # Shortcuts to the relevant functions used throughout the hybrid
+        encrypt_fn = encryptor.encrypt
+        decrypt_fn = encryptor.decrypt
+        beacon_fn = encryptor.beacon
+        encoder_fn = encoder.encode
+        decoder_fn = encoder.decode
+
         def _prop(self):
             encrypted = getattr(self, encrypted_field)
 
             if encrypted is None:
                 return getattr(self, unencrypted_field)
 
-            return encoder.decode(encryptor.decrypt(encrypted))
+            return decoder_fn(decrypt_fn(encrypted))
 
         def _prop_setter(self, value) -> None:
-            encoded = encoder.encode(value)
-            encrypted = encryptor.encrypt(encoded)
+            encoded = encoder_fn(value)
+            encrypted = encrypt_fn(encoded)
             if encrypted is None:
                 setattr(self, unencrypted_field, value)
                 setattr(self, encrypted_field, None)
@@ -167,16 +177,16 @@ class encryption(hybrid_property[T], Generic[T]):
             setattr(self, encrypted_field, encrypted)
             setattr(self, unencrypted_field, None)
             if hasattr(self, beacon_field):
-                setattr(self, beacon_field, encryptor.beacon(encoded))
+                setattr(self, beacon_field, beacon_fn(encoded))
 
         def _prop_comparator(cls) -> Comparator[T] | InstrumentedAttribute:
             if beacon := getattr(cls, beacon_field, None):
                 return BeaconComparator(
                     val=getattr(cls, unencrypted_field),
                     beacon_val=beacon,
-                    encoder_fn=encoder.encode,
-                    beacon_fn=encryptor.beacon,
-                    encrypt_fn=encryptor.encrypt,
+                    encoder_fn=encoder_fn,
+                    beacon_fn=beacon_fn,
+                    encrypt_fn=encrypt_fn,
                 )
 
             return getattr(cls, unencrypted_field)
