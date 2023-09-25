@@ -17,19 +17,29 @@ from microcosm_postgres.encryption.providers import (
 )
 
 
-def parse_config(context_keys: Sequence[str],
-                 key_ids: Sequence[Union[str, Sequence[str]]],
-                 account_ids: Sequence[Union[str, Sequence[str]]],
-                 partitions: Sequence[Union[str, Sequence[str]]]) -> Mapping[str, Mapping[str, Sequence[str]]]:
-    return {
-        # NB: split key id on non-comma to avoid confusion with config parsing
-        context_key: {
+def parse_config(
+    context_keys: Sequence[str],
+    key_ids: Sequence[Union[str, Sequence[str]]],
+    account_ids: Sequence[Union[str, Sequence[str]]],
+    partitions: Sequence[Union[str, Sequence[str]]],
+    restricted_kms_policy: Sequence[str],
+    beacon_keys: Union[Sequence[str], None] = None,
+) -> Mapping[str, Mapping[str, Union[str, Sequence[str], bool, None]]]:
+    _beacon_keys: Sequence[str] = [] if beacon_keys is None else beacon_keys
+    config = {}
+
+    for ix, context_config in enumerate(zip(context_keys, key_ids, account_ids, partitions)):
+        context_key, key_id, account_id, partition = context_config
+        config[context_key] = {
+            # NB: split key id on non-comma to avoid confusion with config parsing
             "key_ids": key_id.split(";") if isinstance(key_id, str) else key_id,
             "account_ids": account_id.split(";") if isinstance(account_id, str) else account_id,
             "partition": partition,
+            "beacon_key": _beacon_keys[ix] if ix < len(_beacon_keys) and _beacon_keys[ix] else None,
+            "restricted": restricted_kms_policy[ix] == "true" if ix < len(restricted_kms_policy) else False,
         }
-        for context_key, key_id, account_id, partition in zip(context_keys, key_ids, account_ids, partitions)
-    }
+
+    return config
 
 
 @defaults(
@@ -37,6 +47,8 @@ def parse_config(context_keys: Sequence[str],
     key_ids=typed(comma_separated_list, default_value=""),
     partitions=typed(comma_separated_list, default_value=""),
     account_ids=typed(comma_separated_list, default_value=""),
+    beacon_keys=typed(comma_separated_list, default_value=""),
+    restricted_kms_policy=typed(comma_separated_list, default_value=""),
 )
 @logger
 class MultiTenantKeyRegistry:
@@ -50,6 +62,8 @@ class MultiTenantKeyRegistry:
             context_keys=graph.config.multi_tenant_key_registry.context_keys,
             key_ids=graph.config.multi_tenant_key_registry.key_ids,
             partitions=graph.config.multi_tenant_key_registry.partitions,
+            beacon_keys=graph.config.multi_tenant_key_registry.beacon_keys,
+            restricted_kms_policy=graph.config.multi_tenant_key_registry.restricted_kms_policy,
         )
 
         for context_key, key_ids in self.keys.items():
@@ -67,7 +81,11 @@ class MultiTenantKeyRegistry:
                 context_key: SingleTenantEncryptor(
                     encrypting_materials_manager=configure_materials_manager(
                         graph,
-                        key_provider=configure_encrypting_key_provider(graph, context_data["key_ids"]),
+                        key_provider=configure_encrypting_key_provider(
+                            graph,
+                            key_ids=context_data["key_ids"],
+                            restricted=context_data["restricted"],
+                        ),
                     ),
                     decrypting_materials_manager=configure_materials_manager(
                         graph,
@@ -78,6 +96,7 @@ class MultiTenantKeyRegistry:
                             context_data["key_ids"],
                         ),
                     ),
+                    beacon_key=context_data["beacon_key"],
                 )
                 for context_key, context_data in self.keys.items()
             },

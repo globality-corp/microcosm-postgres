@@ -22,6 +22,7 @@ def test_parse_config_simple():
             key_ids=["bar"],
             account_ids=["12345"],
             partitions=["aws"],
+            restricted_kms_policy=["false"],
         ),
         has_entries(
             foo=has_entries(
@@ -40,17 +41,20 @@ def test_parse_config_key_ids():
             key_ids=["bar;baz", "quuz;corge"],
             partitions=["aws", "aws-cn"],
             account_ids=["12345;67890", "23456;78901"],
+            restricted_kms_policy=["false", "true"],
         ),
         has_entries(
             foo=has_entries(
                 key_ids=["bar", "baz"],
                 partition="aws",
                 account_ids=["12345", "67890"],
+                restricted=False,
             ),
             quux=has_entries(
                 key_ids=["quuz", "corge"],
                 partition="aws-cn",
                 account_ids=["23456", "78901"],
+                restricted=True,
             ),
         ),
     )

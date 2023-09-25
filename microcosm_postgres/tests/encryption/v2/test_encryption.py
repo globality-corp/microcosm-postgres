@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from enum import Enum
 from typing import TYPE_CHECKING, ClassVar, Iterator
 from uuid import uuid4
 
@@ -10,16 +11,30 @@ from microcosm.api import (
     load_from_environ,
 )
 from microcosm.object_graph import ObjectGraph
-from pytest import fixture
-from sqlalchemy import Column, Table
+from pytest import fixture, raises
+from sqlalchemy import CheckConstraint, Column, Table
 from sqlalchemy.orm import Session, sessionmaker as SessionMaker
 from sqlalchemy_utils import UUIDType
 
+from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
-from microcosm_postgres.encryption.v2.encoders import ArrayEncoder, Nullable, StringEncoder
+from microcosm_postgres.encryption.v2.encoders import (
+    ArrayEncoder,
+    Encoder,
+    EnumEncoder,
+    JSONEncoder,
+    Nullable,
+    StringEncoder,
+)
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.models import Model
+from microcosm_postgres.temporary import transient
+
+
+class EmployeeType(Enum):
+    FULL_TIME = "FULL_TIME"
+    PART_TIME = "PART_TIME"
 
 
 class Employee(Model):
@@ -50,6 +65,26 @@ class Employee(Model):
     )
     roles_encrypted = roles.encrypted()
     roles_unencrypted = roles.unencrypted()
+
+    type = encryption("type", AwsKmsEncryptor(), EnumEncoder(EmployeeType))
+    type_encrypted = type.encrypted()
+    type_unencrypted = type.unencrypted()
+
+    extras = encryption(
+        "extras",
+        AwsKmsEncryptor(),
+        JSONEncoder(),
+    )
+    extras_encrypted = extras.encrypted()
+    extras_unencrypted = extras.unencrypted()
+
+    __table_args__ = (
+        # NB check constraint to enforce null values in JSON columns
+        CheckConstraint(
+            name="employee_extras_or_encrypted_is_null",
+            sqltext="extras IS NULL OR extras_encrypted IS NULL",
+        ),
+    )
 
 
 client_id = uuid4()
@@ -135,9 +170,14 @@ def test_encrypt_with_client(
     with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
         session.add(employee := Employee())
         employee.name = "foo"
+        employee.extras = {"foo": "bar"}
+        employee.type = EmployeeType.FULL_TIME
+
         assert employee.name_unencrypted is None
         assert employee.name_encrypted is not None
         assert employee.name == "foo"
+        assert employee.extras == {"foo": "bar"}
+        assert employee.type == EmployeeType.FULL_TIME
 
 
 def test_encrypt_with_client_default(
@@ -201,3 +241,40 @@ def test_remove_encryption_from_existing(
     employee.name = "foo"
     assert employee.name_encrypted is None
     assert employee.name_unencrypted == "foo"
+
+
+def test_encode_none_on_non_nullable_raises_error(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    """
+    Checks that if you pass in `None` when there is a default defined then
+    the default is used.
+    """
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee())
+
+        with raises(Encoder.EncodeException):
+            employee.roles = None  # type: ignore[assignment]
+
+
+def test_encrypt_with_transient_table(graph, single_tenant_encryptor: SingleTenantEncryptor):
+    with (
+        SessionContext(graph),
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor),
+        transient(Employee) as transient_table,
+    ):
+        transient_table.insert_many([
+            Employee(
+                name="foo",
+                extras={"foo": "bar"},
+            ),
+        ])
+        # NB extras column check constraint ensures that encrypted and unencrypted
+        #    columns are mutually exclusive
+        transient_table.upsert_into(Employee)
+        employees = transient_table.select_from(Employee)
+
+        assert len(employees) == 1
+        assert employees[0].extras == {"foo": "bar"}
+        assert employees[0].name == "foo"
