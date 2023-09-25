@@ -132,4 +132,3 @@ def test_members_override_for_insert_without_encryption():
     # The unencrypted value still exists in the dictionary as it's not the primary focus here.
     assert "encrypted_field_unencrypted" in result
     assert result["encrypted_field_unencrypted"] == "unencrypted value"
-
