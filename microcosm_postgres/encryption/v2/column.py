@@ -13,7 +13,6 @@ from typing import (
 )
 
 from sqlalchemy import Column, LargeBinary, String
-from sqlalchemy import LargeBinary, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import InstrumentedAttribute, Mapped
@@ -286,9 +285,8 @@ class encryption(hybrid_property, Generic[T]):
         )
 
     def beacon(self, **kwargs: Any) -> Mapped[Union[str, None]]:
-        column_type = ARRAY(String()) if self.use_beacon_array else String()
+        column_type = ARRAY(String()) if self.use_beacon_array else String
         return Column(
-            column_type,  # type: ignore[arg-type]
             column_type,  # type: ignore[arg-type]
             nullable=True,
             info=cast(dict, EncryptionV2ColumnInfo(

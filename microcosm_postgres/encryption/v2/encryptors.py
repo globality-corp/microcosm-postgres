@@ -9,7 +9,6 @@ from typing import (
     Literal,
     Protocol,
     Union,
-    TypeAlias,
     overload,
 )
 

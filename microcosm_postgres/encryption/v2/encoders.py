@@ -7,18 +7,15 @@ from typing import (
     Callable,
     Generic,
     Literal,
-    ParamSpec,
     Protocol,
     TypeVar,
     Union,
+    overload,
 )
 
 import sqlalchemy
-from sqlalchemy.dialects.postgresql import JSONB
-from typing_extensions import TypeAlias
-
-import sqlalchemy
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
+from typing_extensions import TypeAlias
 
 
 T = TypeVar("T")
@@ -36,7 +33,7 @@ class Encoder(Protocol[T]):
     class DecodeException(Exception):
         status_code = 400
 
-    def encode(self, value: T, **kwargs) -> list[str] | str:
+    def encode(self, value: T, **kwargs) -> Union[list[str], str]:
         ...
 
     def decode(self, value: str, **kwargs) -> T:
@@ -145,7 +142,7 @@ class ArrayEncoder(Encoder["list[T]"], Generic[T]):
     def encode(self, value: list[T], keep_as_array: Literal[False], **kwargs) -> str:
         ...
 
-    @decode_exception_wrapper
+    @encode_exception_wrapper
     def encode(self, value: list[T], keep_as_array: bool = False, **kwargs) -> "list[T] | str":
         raw = [self.element_encoder.encode(element) for element in value]
         if keep_as_array:
@@ -179,7 +176,7 @@ class Nullable(Encoder["Union[T, None]"], Generic[T]):
         self.sa_type = inner_encoder.sa_type
 
     @encode_exception_wrapper
-    def encode(self, value: "Union[T, None]", keep_as_array: bool = False, **kwargs) -> str | list[str]:
+    def encode(self, value: "Union[T, None]", keep_as_array: bool = False, **kwargs) -> Union[str, list[str]]:
         if value is None:
             return json.dumps(value)
 
