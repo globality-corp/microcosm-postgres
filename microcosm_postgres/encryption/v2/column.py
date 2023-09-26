@@ -28,9 +28,9 @@ class BeaconComparator(Comparator):
     def __init__(
         self,
         val,
-        encoder_fn: Callable | None = None,
-        beacon_fn: Callable[[str], str] | None = None,
-        encrypt_fn: Callable[[str], bytes | None] | None = None,
+        encoder_fn: Callable,
+        beacon_fn: Callable,
+        encrypt_fn: Callable[[str], bytes | None],
         beacon_val: Any = None,
     ):
         self.val = val
@@ -174,8 +174,12 @@ class encryption(hybrid_property[T], Generic[T]):
             return decoder_fn(decrypt_fn(encrypted))
 
         def _prop_setter(self, value) -> None:
-            encoded = encoder_fn(value)
-            encrypted = encrypt_fn(encoded)
+            # We ignore the type - should come back as a string
+            # as we don't explicitly say use_array=True inside the encoder
+            # Typing needs to be updated in all encoder functions to support
+            # properly
+            encoded = encoder_fn(value)  # type: ignore[arg-type]
+            encrypted = encrypt_fn(encoded)  # type: ignore[arg-type]
             if encrypted is None:
                 setattr(self, unencrypted_field, value)
                 setattr(self, encrypted_field, None)
@@ -190,7 +194,7 @@ class encryption(hybrid_property[T], Generic[T]):
                 setattr(
                     self,
                     beacon_field,
-                    beacon_fn(
+                    beacon_fn(  # type: ignore[call-overload]
                         encoder_fn(
                             value, keep_as_array=keep_as_array
                         ),
@@ -232,9 +236,9 @@ class encryption(hybrid_property[T], Generic[T]):
             default=(
                 lambda: (
                     self.encryptor.encrypt(
-                        self.encoder.encode(
+                        cast(str, self.encoder.encode(
                             self.default() if callable(self.default) else self.default
-                        )
+                        ))
                     )
                     if self.encryptor.should_encrypt()
                     else None
@@ -269,9 +273,9 @@ class encryption(hybrid_property[T], Generic[T]):
         )
 
     def beacon(self, **kwargs: Any) -> Mapped[str | None]:
-        column_type = ARRAY(String()) if self.use_beacon_array else String
+        column_type = ARRAY(String()) if self.use_beacon_array else String()
         return mapped_column(
-            column_type,
+            column_type,  # type: ignore[arg-type]
             nullable=True,
             info=cast(dict, EncryptionV2ColumnInfo(
                 encryption_v2_key=self.key,

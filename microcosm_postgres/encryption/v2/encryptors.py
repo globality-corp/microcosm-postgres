@@ -6,8 +6,10 @@ from typing import (
     Any,
     ContextManager,
     Iterator,
+    Literal,
     Protocol,
-    TypeAlias, Literal, overload,
+    TypeAlias,
+    overload,
 )
 
 from microcosm.object_graph import ObjectGraph
@@ -36,10 +38,10 @@ class Encryptor(Protocol):
         ...
 
     @overload
-    def beacon(self, value: str, use_array: Literal[True]) -> list[str]:
+    def beacon(self, value: list[str], use_array: Literal[True]) -> list[str]:
         ...
 
-    def beacon(self, value: str, use_array: bool = False) -> list[str] | str:
+    def beacon(self, value: str | list[str], use_array: bool = False) -> list[str] | str:
         """Hash value using the beacon key."""
         ...
 
@@ -152,21 +154,25 @@ class AwsKmsEncryptor(Encryptor):
         ...
 
     @overload
-    def beacon(self, value: str, use_array: Literal[True]) -> list[str]:
+    def beacon(self, value: list[str], use_array: Literal[True]) -> list[str]:
         ...
 
-    def beacon(self, value: str, use_array: bool = False) -> str | list[str]:
+    def beacon(self, value: str | list[str], use_array: bool = False) -> list[str] | str:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()
 
         _, encryptor = self.encryptor_context
         if use_array:
+            assert isinstance(value, list)
             _beacon = [encryptor.beacon(v) for v in value]
+            # Filter out the None values
+            _beacon = [v for v in _beacon if v is not None]
+
         else:
-            _beacon = encryptor.beacon(value)
+            assert isinstance(value, str)
+            _beacon = encryptor.beacon(value)  # type: ignore[assignment]
 
-
-        if _beacon is None:
+        if _beacon is None or (use_array and len(_beacon) == 0):
             raise self.BeaconKeyNotSet()
 
-        return _beacon
+        return _beacon  # type: ignore[return-value]

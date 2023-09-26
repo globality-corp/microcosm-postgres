@@ -6,10 +6,12 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Literal,
     ParamSpec,
     Protocol,
     TypeAlias,
     TypeVar,
+    overload,
 )
 
 import sqlalchemy
@@ -133,11 +135,21 @@ class ArrayEncoder(Encoder[list[T]], Generic[T]):
         self.element_encoder = element_encoder
         self.sa_type = ARRAY(element_encoder.sa_type)
 
+    @overload  # type: ignore[override]
+    def encode(self, value: list[T], keep_as_array: Literal[True], **kwargs) -> list[str]:
+        ...
+
+    @overload
+    def encode(self, value: list[T], keep_as_array: Literal[False], **kwargs) -> str:
+        ...
+
     @encode_exception_wrapper
-    def encode(self, value: list[T], keep_as_array: bool = False, **kwargs) -> str:
+    def encode(self, value: list[T], keep_as_array: bool = False, **kwargs) -> list[str] | str:
         raw = [self.element_encoder.encode(element) for element in value]
         if keep_as_array:
-            return raw
+            assert isinstance(raw, list)
+            assert isinstance(raw[0], str)
+            return raw  # type: ignore[return-value]
         else:
             return json.dumps(raw)
 
