@@ -9,6 +9,7 @@ from typing import (
 )
 
 from sqlalchemy import ColumnElement, LargeBinary, String
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import InstrumentedAttribute, Mapped, mapped_column
 from sqlalchemy.sql.operators import in_op
@@ -49,12 +50,13 @@ class BeaconComparator(Comparator):
                 return op(self.beacon_val)
             else:
                 return op(self.val)
+
         elif op == in_op:
             # e.g in_([1,2,3])
             # So we beaconise each of the values in the list
             # e.g [1,2,3] -> [beacon(1), beacon(2), beacon(3)]
             if self._check_if_should_use_beacon():
-                return op(self.beacon_val, [self._beaconise(v) for v in other], **kwargs)
+                return op(self.beacon_val, self._beaconise(other, use_array=isinstance(other, list)), **kwargs)
             else:
                 return op(self.val, other, **kwargs)
         return op(self.val, other, **kwargs)
@@ -74,7 +76,10 @@ class BeaconComparator(Comparator):
 
         return self.__clause_element__() == self._beaconise(other)
 
-    def _beaconise(self, value):
+    def _beaconise(self, value: Any, use_array: bool = False) -> Any:
+        if use_array:
+            return [self._beaconise(v) for v in value]
+
         encoded = self.encoder_fn(value)
         beaconised = self.beacon_fn(encoded)
         return beaconised
@@ -112,6 +117,7 @@ class encryption(hybrid_property[T], Generic[T]):
         encoder: Encoder[T],
         *,
         column_type: Any = NOT_SET,
+        use_beacon_array: bool = False,
     ):
         ...
 
@@ -124,6 +130,7 @@ class encryption(hybrid_property[T], Generic[T]):
         *,
         default: T | Callable[[], T],
         column_type: Any = NOT_SET,
+        use_beacon_array: bool = False,
     ):
         ...
 
@@ -135,12 +142,14 @@ class encryption(hybrid_property[T], Generic[T]):
         *,
         column_type: Any = NOT_SET,
         default: Any = NOT_SET,
+        use_beacon_array: bool = False,
     ):
         self.default = default
         self.key = key
         self.encryptor = encryptor
         self.encoder = encoder
         self.column_type = encoder.sa_type if column_type is NOT_SET else column_type
+        self.use_beacon_array = use_beacon_array
 
         # This is used in the store auto filters
         self.name = key
@@ -177,7 +186,17 @@ class encryption(hybrid_property[T], Generic[T]):
             setattr(self, encrypted_field, encrypted)
             setattr(self, unencrypted_field, None)
             if hasattr(self, beacon_field):
-                setattr(self, beacon_field, beacon_fn(encoded))
+                keep_as_array = isinstance(value, list)
+                setattr(
+                    self,
+                    beacon_field,
+                    beacon_fn(
+                        encoder_fn(
+                            value, keep_as_array=keep_as_array
+                        ),
+                        use_array=keep_as_array
+                    )
+                )
 
         def _prop_comparator(cls) -> Comparator[T] | InstrumentedAttribute:
             if beacon := getattr(cls, beacon_field, None):
@@ -250,8 +269,9 @@ class encryption(hybrid_property[T], Generic[T]):
         )
 
     def beacon(self, **kwargs: Any) -> Mapped[str | None]:
+        column_type = ARRAY(String()) if self.use_beacon_array else String
         return mapped_column(
-            String,
+            column_type,
             nullable=True,
             info=cast(dict, EncryptionV2ColumnInfo(
                 encryption_v2_key=self.key,

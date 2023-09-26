@@ -7,7 +7,7 @@ from typing import (
     ContextManager,
     Iterator,
     Protocol,
-    TypeAlias,
+    TypeAlias, Literal, overload,
 )
 
 from microcosm.object_graph import ObjectGraph
@@ -31,7 +31,15 @@ class Encryptor(Protocol):
         """Decrypt a value key identified from the ciphertext."""
         ...
 
-    def beacon(self, value: str) -> str:
+    @overload
+    def beacon(self, value: str, use_array: Literal[False]) -> str:
+        ...
+
+    @overload
+    def beacon(self, value: str, use_array: Literal[True]) -> list[str]:
+        ...
+
+    def beacon(self, value: str, use_array: bool = False) -> list[str] | str:
         """Hash value using the beacon key."""
         ...
 
@@ -139,13 +147,26 @@ class AwsKmsEncryptor(Encryptor):
         context, encryptor = self.encryptor_context
         return encryptor.decrypt(context, value)
 
-    def beacon(self, value: str) -> str:
+    @overload
+    def beacon(self, value: str, use_array: Literal[False]) -> str:
+        ...
+
+    @overload
+    def beacon(self, value: str, use_array: Literal[True]) -> list[str]:
+        ...
+
+    def beacon(self, value: str, use_array: bool = False) -> str | list[str]:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()
 
         _, encryptor = self.encryptor_context
-        beacon = encryptor.beacon(value)
-        if beacon is None:
+        if use_array:
+            _beacon = [encryptor.beacon(v) for v in value]
+        else:
+            _beacon = encryptor.beacon(value)
+
+
+        if _beacon is None:
             raise self.BeaconKeyNotSet()
 
-        return beacon
+        return _beacon
