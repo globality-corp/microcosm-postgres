@@ -18,17 +18,24 @@ from sqlalchemy import (
     UUID,
     String,
     Table,
+    Text,
     UniqueConstraint,
+    cast,
     select,
 )
-from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.dialects.postgresql import ARRAY, insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
-from microcosm_postgres.encryption.v2.encoders import IntEncoder, StringEncoder
+from microcosm_postgres.encryption.v2.encoders import (
+    ArrayEncoder,
+    IntEncoder,
+    Nullable,
+    StringEncoder,
+)
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.encryption.v2.utils import members_override
 from microcosm_postgres.models import Model
@@ -60,6 +67,18 @@ class Employee(Model):
 
     # Non encrypted field
     department = mapped_column(String())
+
+    # Array of encrypted values
+    skills = encryption(
+        "skills",
+        AwsKmsEncryptor(),
+        Nullable(ArrayEncoder(StringEncoder())),
+        default=list,
+        use_beacon_array=True,
+    )
+    skills_encrypted = skills.encrypted()
+    skills_unencrypted = skills.unencrypted()
+    skills_beacon = skills.beacon()
 
     # In the encrypted world, we need to make sure that the combination of name and department is unique
     __table_args__ = (
@@ -108,6 +127,14 @@ class EmployeeStore(Store):
         name = kwargs.get("name")
         if name is not None:
             query = query.filter(Employee.name == name)
+
+        skills = kwargs.get("skills")
+        if skills is not None:
+            query = query.filter(
+                cast(Employee.skills, ARRAY(Text)).contains(
+                    self._beaconise(skills, use_array=True) if self._check_if_using_encryption() else skills,
+                ),
+            )
         return super()._filter(query, **kwargs)
 
     def upsert(self, instance):
@@ -135,6 +162,12 @@ class EmployeeStore(Store):
 
     def _check_if_using_encryption(self) -> bool:
         return AwsKmsEncryptor().encryptor_context is not None
+
+    def _get_encryptor(self):
+        return AwsKmsEncryptor()
+
+    def _beaconise(self, value, use_array):
+        return AwsKmsEncryptor().beacon(value, use_array=use_array)
 
 
 client_id = uuid4()
@@ -270,6 +303,26 @@ def test_beacon_value_generation(
     assert beacon == "6fadab32a97ee7ee93eef7ff537cf4b977e7e736d8a2fea7023c3cca59573096"
 
 
+def test_beacon_array_value_generation(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
+    """
+    Test that checks that the beacon value is generated as expected
+
+    """
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee(name="James", skills=["foo", "bar"]))
+        assert employee.skills_unencrypted is None
+        assert employee.skills_encrypted is not None
+        assert employee.name == "James"
+        assert employee.skills_beacon == [
+            'db997b758f30e08b6bc21455ebf1f46c577a88ca9d18448d7175f491d097aae5',
+            '0a11245589085d402e710ff76cbea06e087bbff5f398715f174c9b7a0253c2cf'
+        ]
+
+
 def test_encrypt_and_search_using_beacon(
     session: Session,
     single_tenant_encryptor: SingleTenantEncryptor,
@@ -296,6 +349,77 @@ def test_encrypt_and_search_using_beacon(
         retrieved_employee = retrieved_employees[0]
         assert retrieved_employee.name == "foo"
         assert retrieved_employee.id == employee.id
+
+
+def test_encrypt_and_beacon_array_is_decoded_correctly(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+    clean_db: None,
+) -> None:
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee(name="James", skills=["foo", "bar"]))
+        assert employee.skills_beacon == [
+            'db997b758f30e08b6bc21455ebf1f46c577a88ca9d18448d7175f491d097aae5',
+            '0a11245589085d402e710ff76cbea06e087bbff5f398715f174c9b7a0253c2cf'
+        ]
+        session.commit()
+
+    with (
+        SessionContext(graph),
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
+    ):
+        retrieved_employees = graph.employee_store_with_encryption.search_by_name("James")
+        assert len(retrieved_employees) == 1
+        retrieved_employee = retrieved_employees[0]
+        assert retrieved_employee.skills == ["foo", "bar"]
+
+
+def test_search_using_beaconised_array(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+    clean_db: None,
+) -> None:
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(Employee(name="James", skills=["foo", "bar"]))
+        session.add(Employee(name="James2", skills=["baz", "biz"]))
+        session.commit()
+
+    with (
+        SessionContext(graph),
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
+    ):
+        retrieved_employees = graph.employee_store_with_encryption.search(skills=["foo"])
+        assert len(retrieved_employees) == 1
+        retrieved_employee = retrieved_employees[0]
+        assert retrieved_employee.skills == ["foo", "bar"]
+        assert retrieved_employee.name == "James"
+
+
+def test_search_without_array_beacon_no_encryption_context(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+    clean_db: None,
+) -> None:
+    """
+    Test that checks that we're able to search for an array column
+    outside of the encryption context
+
+    """
+    session.add(Employee(name="James", skills=["foo", "bar"]))
+    session.add(Employee(name="James2", skills=["baz", "biz"]))
+    session.commit()
+
+    with (
+        SessionContext(graph),
+    ):
+        retrieved_employees = graph.employee_store_with_encryption.search(skills=["baz"])
+        assert len(retrieved_employees) == 1
+        retrieved_employee = retrieved_employees[0]
+        assert retrieved_employee.skills == ["baz", "biz"]
+        assert retrieved_employee.name == "James2"
 
 
 def test_encrypt_and_search_using_beacon_with_no_beacon_key():
