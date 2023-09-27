@@ -17,6 +17,7 @@ class AnEnum(Enum):
     ("encoder", "value"),
     [
         (encoders.StringEncoder(), "foo"),
+        (encoders.TextEncoder(), "The quick brown fox jumps over the lazy dog"),
         (encoders.IntEncoder(), 1),
         (encoders.DecimalEncoder(), Decimal(1.0)),
         (encoders.ArrayEncoder(encoders.StringEncoder()), ["foo", "bar"]),
@@ -48,6 +49,19 @@ def test_string_encoder(input, output):
 
 
 @pytest.mark.parametrize(
+    ("input", "output"),
+    [
+        ("foo", "foo"),
+        (1, "1"),
+        (Decimal(1.0), "1"),
+        (True, "True"),
+    ],
+)
+def test_text_encoder(input, output):
+    assert encoders.TextEncoder().encode(input) == output
+
+
+@pytest.mark.parametrize(
     ("encoder", "value", "exception"),
     [
         # Decoding an invalid string to int
@@ -67,6 +81,7 @@ def test_string_encoder(input, output):
 
         # Decoding an invalid Nullable value
         (encoders.Nullable(encoders.StringEncoder()), 123, Encoder.DecodeException),
+        (encoders.Nullable(encoders.TextEncoder()), 123, Encoder.DecodeException),
 
         # Decoding an invalid datetime string
         (encoders.DatetimeEncoder(), "2021-25-09T25:63:75", Encoder.DecodeException),
