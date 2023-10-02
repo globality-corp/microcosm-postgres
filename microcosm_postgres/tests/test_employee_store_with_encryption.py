@@ -88,7 +88,7 @@ class Employee(Model):
         default=None,
     )
     location_encrypted = location.encrypted()
-    location_unencrypted = location.unencrypted(default=None,)
+    location_unencrypted = location.unencrypted(default=None)
 
     # In the encrypted world, we need to make sure that the combination of name and department is unique
     __table_args__ = (
