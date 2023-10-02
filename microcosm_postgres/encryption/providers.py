@@ -2,6 +2,7 @@
 Custom key providers
 
 """
+import logging
 from os import urandom
 
 from aws_encryption_sdk import (
@@ -35,6 +36,9 @@ class RestrictedKMSMasterKey(KMSMasterKey):
         kms:Encrypt
 
     """
+
+    _logger = logging.getLogger(__name__)
+
     def _generate_data_key(self, algorithm, encryption_context=None):
         kms_params = self._build_generate_data_key_request(algorithm, encryption_context)
         try:
@@ -42,7 +46,9 @@ class RestrictedKMSMasterKey(KMSMasterKey):
             key_id = response["KeyId"]
             ciphertext = response["CiphertextBlob"]
         except (ClientError, KeyError):
-            raise GenerateKeyError(f"Master Key {self._key_id} unable to generate data key")
+            err_message = f"Master Key {self._key_id} unable to generate data key"
+            self._logger.exception(err_message)
+            raise GenerateKeyError(err_message)
 
         try:
             response = self.config.client.decrypt(
@@ -52,7 +58,9 @@ class RestrictedKMSMasterKey(KMSMasterKey):
             )
             plaintext = response["Plaintext"]
         except (ClientError, KeyError):
-            raise GenerateKeyError(f"Master Key {key_id} unable to decrypt data key.")
+            err_message = f"Master Key {key_id} unable to decrypt data key."
+            self._logger.exception(err_message)
+            raise GenerateKeyError(err_message)
 
         return DataKey(
             key_provider=MasterKeyInfo(
