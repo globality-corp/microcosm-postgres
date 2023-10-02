@@ -21,7 +21,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     cast,
-    select,
+    select, CheckConstraint, text,
 )
 from sqlalchemy.dialects.postgresql import ARRAY, insert
 from sqlalchemy.exc import IntegrityError
@@ -80,6 +80,16 @@ class Employee(Model):
     skills_unencrypted = skills.unencrypted()
     skills_beacon = skills.beacon()
 
+    # Location
+    location = encryption(
+        "location",
+        AwsKmsEncryptor(),
+        Nullable(StringEncoder()),
+        default=None,
+    )
+    location_encrypted = location.encrypted()
+    location_unencrypted = location.unencrypted(default=None,)
+
     # In the encrypted world, we need to make sure that the combination of name and department is unique
     __table_args__ = (
         UniqueConstraint(
@@ -91,6 +101,10 @@ class Employee(Model):
             name_beacon,
             department,
             name="uq_employee_v2_name_department_encrypted",
+        ),
+        CheckConstraint(
+            text("location is NULL or location_encrypted is NULL"),
+            name="ck_employee_v2_location_or_encrypted_is_null",
         ),
     )
 
@@ -255,6 +269,20 @@ def session(sessionmaker: SessionMaker) -> Iterator[Session]:
     finally:
         session.rollback()
         session.close()
+
+
+def test_check_constraint_skills_or_encrypted_is_null(
+    session: Session,
+    graph: ObjectGraph,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    """
+    Checks that the check constraint skills_or_encrypted_is_null is enforced
+
+    """
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(Employee(name="foo", location="london"))
+        session.commit()
 
 
 def test_unique_constraint_name_department_encrypted(
