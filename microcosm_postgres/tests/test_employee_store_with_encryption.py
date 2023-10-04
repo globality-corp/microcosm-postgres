@@ -820,3 +820,27 @@ def test_upsert_existing_employee_with_encryption(
         assert employees[0].name_beacon == "b7ba82ea80985bd15f7e9909c6ff831c6c019d916bc0aff43646584c7901f7a5"
         assert employees[0].salary == 1300
         assert employees[0].age == 40
+
+
+def test_create_employee_with_empty_array_of_skills(
+    graph: ObjectGraph,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    """
+    Test that an employee with an empty array of skills can be created.
+
+    """
+
+    with (
+        SessionContext(graph) as context,
+        transaction(),
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
+    ):
+        context.recreate_all()
+        session = context.session
+
+        employee = Employee(
+            name="Brian",
+            skills=[],
+        )
+        session.add(employee)
