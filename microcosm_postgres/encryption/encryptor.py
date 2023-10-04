@@ -115,11 +115,11 @@ class MultiTenantEncryptor:
         except KeyError:
             return self.encryptors[self.default_key]
 
-    def encrypt(self, encryption_context_key: str, plaintext: str) -> Tuple[bytes, Sequence[str]]:
+    def encrypt(self, encryption_context_key: str, plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
         encryptor = self[encryption_context_key]
         return encryptor.encrypt(encryption_context_key, plaintext)
 
-    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
+    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str | None:
         encryptor = self[encryption_context_key]
         return encryptor.decrypt(encryption_context_key, ciphertext)
 

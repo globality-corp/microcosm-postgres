@@ -47,8 +47,12 @@ def on_init(target: "EncryptableMixin", args, kwargs):
     if plaintext is None:
         return
 
-    ciphertext, key_ids = encryptor.encrypt(encryption_context_key, plaintext)
-    target.ciphertext = (ciphertext, key_ids)
+    result = encryptor.encrypt(encryption_context_key, plaintext)
+    # If we're using the default encryptor, then we may get `None`
+    # back from the encryptor
+    if result is not None:
+        ciphertext, key_ids = result
+        target.ciphertext = (ciphertext, key_ids)
 
 
 def on_load(target: "EncryptableMixin", context):

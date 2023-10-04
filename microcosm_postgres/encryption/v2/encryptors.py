@@ -29,7 +29,7 @@ class Encryptor(Protocol):
         """
         ...
 
-    def decrypt(self, value: bytes) -> str:
+    def decrypt(self, value: bytes) -> str | None:
         """Decrypt a value key identified from the ciphertext."""
         ...
 
@@ -53,7 +53,7 @@ class PlainTextEncryptor(Encryptor):
     def encrypt(self, value: str) -> bytes | None:
         return None
 
-    def decrypt(self, value: bytes) -> str:
+    def decrypt(self, value: bytes) -> str | None:
         return value.decode()
 
 
@@ -148,7 +148,7 @@ class AwsKmsEncryptor(Encryptor):
         else:
             return encrypted[0]
 
-    def decrypt(self, value: bytes) -> str:
+    def decrypt(self, value: bytes) -> str | None:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()
 
