@@ -9,6 +9,7 @@ from microcosm.config.types import comma_separated_list
 from microcosm.config.validation import typed
 from microcosm_logging.decorators import logger
 
+from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.providers import (
     configure_decrypting_key_provider,
@@ -75,29 +76,57 @@ class MultiTenantKeyRegistry:
                 ),
             )
 
+        # Accumulate all account_ids and key_ids
+        all_account_ids = set()
+        all_key_ids = set()
+        for context_data in self.keys.values():
+            all_account_ids.update(context_data["account_ids"])
+            all_key_ids.update(context_data["key_ids"])
+
+        self.all_account_ids = list(all_account_ids)
+        self.all_key_ids = list(all_key_ids)
+
     def make_encryptor(self, graph) -> MultiTenantEncryptor:
+        encryptors = {
+            context_key: SingleTenantEncryptor(
+                encrypting_materials_manager=configure_materials_manager(
+                    graph,
+                    key_provider=configure_encrypting_key_provider(
+                        graph,
+                        key_ids=context_data["key_ids"],
+                        restricted=context_data["restricted"],
+                    ),
+                ),
+                decrypting_materials_manager=configure_materials_manager(
+                    graph,
+                    key_provider=configure_decrypting_key_provider(
+                        graph,
+                        context_data["account_ids"],
+                        context_data["partition"],
+                        context_data["key_ids"],
+                    ),
+                ),
+                beacon_key=context_data["beacon_key"],
+            )
+            for context_key, context_data in self.keys.items()
+        }
+
+        # Then we need to add the default encryptor
+        encryptors[ENCRYPTION_V2_DEFAULT_KEY] = SingleTenantEncryptor(
+            encrypting_materials_manager=None,
+            decrypting_materials_manager=configure_materials_manager(
+                graph,
+                key_provider=configure_decrypting_key_provider(
+                    graph,
+                    self.all_account_ids,  # Use all accumulated account_ids
+                    "aws",  # Assuming the partition is always "aws"
+                    self.all_key_ids,  # Use all accumulated key_ids
+                ),
+            ),
+            # TODO - need to work on being able to use multiple beacons...
+            beacon_key="test-key",
+        )
+
         return MultiTenantEncryptor(
-            encryptors={
-                context_key: SingleTenantEncryptor(
-                    encrypting_materials_manager=configure_materials_manager(
-                        graph,
-                        key_provider=configure_encrypting_key_provider(
-                            graph,
-                            key_ids=context_data["key_ids"],
-                            restricted=context_data["restricted"],
-                        ),
-                    ),
-                    decrypting_materials_manager=configure_materials_manager(
-                        graph,
-                        key_provider=configure_decrypting_key_provider(
-                            graph,
-                            context_data["account_ids"],
-                            context_data["partition"],
-                            context_data["key_ids"],
-                        ),
-                    ),
-                    beacon_key=context_data["beacon_key"],
-                )
-                for context_key, context_data in self.keys.items()
-            },
+            encryptors=encryptors,
         )

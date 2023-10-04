@@ -13,6 +13,8 @@ from aws_encryption_sdk import CommitmentPolicy, EncryptionSDKClient
 from aws_encryption_sdk.materials_managers.base import CryptoMaterialsManager
 from cryptography.hazmat.primitives import hashes, hmac
 
+from microcosm_postgres.encryption.constants import ENCRYPTION_V1_DEFAULT_KEY
+
 
 class SingleTenantEncryptor:
     """
@@ -21,8 +23,8 @@ class SingleTenantEncryptor:
     """
     def __init__(
         self,
-        encrypting_materials_manager: CryptoMaterialsManager,
-        decrypting_materials_manager: CryptoMaterialsManager,
+        encrypting_materials_manager: CryptoMaterialsManager | None,
+        decrypting_materials_manager: CryptoMaterialsManager | None,
         beacon_key: str | None = None
     ):
         self.encrypting_materials_manager = encrypting_materials_manager
@@ -37,7 +39,7 @@ class SingleTenantEncryptor:
 
     def encrypt(self,
                 encryption_context_key: str,
-                plaintext: str) -> Tuple[bytes, Sequence[str]]:
+                plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
         """
         Encrypt a plaintext string value.
 
@@ -46,6 +48,9 @@ class SingleTenantEncryptor:
         with master key aliases, these master key ids returned will represent the unaliased key.
 
         """
+        if self.encrypting_materials_manager is None:
+            return None
+
         encryption_context = dict(
             microcosm=encryption_context_key,
         )
@@ -62,7 +67,10 @@ class SingleTenantEncryptor:
         ]
         return ciphertext, key_ids
 
-    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
+    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str | None:
+        if self.decrypting_materials_manager is None:
+            return None
+
         plaintext, header = self.encryption_client.decrypt(
             source=ciphertext,
             materials_manager=self.decrypting_materials_manager,
@@ -94,7 +102,7 @@ class MultiTenantEncryptor:
 
     def __init__(self,
                  encryptors: Mapping[str, SingleTenantEncryptor],
-                 default_key="default"):
+                 default_key=ENCRYPTION_V1_DEFAULT_KEY):
         self.encryptors = encryptors
         self.default_key = default_key
 

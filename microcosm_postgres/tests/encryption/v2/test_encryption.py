@@ -16,6 +16,7 @@ from sqlalchemy import UUID, CheckConstraint, Table
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.context import SessionContext
+from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import (
@@ -147,6 +148,13 @@ def single_tenant_encryptor(
     multi_tenant_encryptor: MultiTenantEncryptor,
 ) -> SingleTenantEncryptor:
     return multi_tenant_encryptor.encryptors[str(client_id)]
+
+
+@fixture
+def default_tenant_encryptor(
+    multi_tenant_encryptor: MultiTenantEncryptor,
+) -> SingleTenantEncryptor:
+    return multi_tenant_encryptor.encryptors[ENCRYPTION_V2_DEFAULT_KEY]
 
 
 @fixture
@@ -290,3 +298,92 @@ def test_encrypt_with_transient_table(graph, single_tenant_encryptor: SingleTena
         assert len(employees) == 1
         assert employees[0].extras == {"foo": "bar"}
         assert employees[0].name == "foo"
+
+
+def test_decrypt_with_default_encryptor(
+    graph,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    default_tenant_encryptor: SingleTenantEncryptor
+) -> None:
+    """
+    Test that we can encrypt with one encryptor and then decrypt with the default
+
+    """
+    with (
+        SessionContext(graph) as context,
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor),
+    ):
+        session = context.session
+        session.add(employee := Employee(
+            name="foo",
+            extras={"foo": "bar"},
+            type=EmployeeType.FULL_TIME,
+            notes="baz"
+        ))
+        assert employee.name_unencrypted is None
+        assert employee.name_encrypted is not None
+        assert employee.name == "foo"
+        session.commit()
+
+    # Then we want to read back the data with the default encryptor
+    with (
+        SessionContext(graph) as context,
+        AwsKmsEncryptor.set_encryptor_context("test", default_tenant_encryptor),
+    ):
+        session = context.session
+        # Use the session to select the employee
+        results = session.query(Employee).all()
+        assert len(results) == 1
+        assert results[0].id == employee.id
+        assert results[0].name == "foo"
+        assert results[0].extras == {"foo": "bar"}
+
+
+def test_encrypt_with_default_encryptor(
+    graph,
+    default_tenant_encryptor: SingleTenantEncryptor,
+    single_tenant_encryptor: SingleTenantEncryptor,
+) -> None:
+    """
+    Test that when we use the default encryptor we don't encrypt anything
+
+    """
+    with (
+        SessionContext(graph) as context,
+        AwsKmsEncryptor.set_encryptor_context("test", default_tenant_encryptor),
+    ):
+        session = context.session
+        session.add(employee := Employee(
+            name="foo2",
+            extras={"foo2": "bar"},
+            notes="baz"
+        ))
+        assert employee.name_unencrypted == "foo2"
+        assert employee.name_encrypted is None
+        assert employee.name == "foo2"
+        session.commit()
+
+    # Then we test we can read back the data with no encryptor set
+    with (
+        SessionContext(graph) as context,
+    ):
+        session = context.session
+        # Use the session to select the employee
+        results = session.query(Employee).filter(Employee.name == "foo2").all()
+        assert len(results) == 1
+        assert results[0].id == employee.id
+        assert results[0].name == "foo2"
+        assert results[0].extras == {"foo2": "bar"}
+
+    # And we can read back the data within context of another random encryptor
+    with (
+        SessionContext(graph) as context,
+        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor),
+    ):
+        session = context.session
+        # Use the session to select the employee
+        results = session.query(Employee).filter(Employee.name == "foo2").all()
+        assert len(results) == 1
+        assert results[0].id == employee.id
+        assert results[0].name == "foo2"
+        assert results[0].extras == {"foo2": "bar"}

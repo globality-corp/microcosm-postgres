@@ -140,7 +140,13 @@ class AwsKmsEncryptor(Encryptor):
 
         assert self.encryptor_context is not None
         context, encryptor = self.encryptor_context
-        return encryptor.encrypt(context, value)[0]
+
+        # Note that the encryptor may return back None
+        encrypted = encryptor.encrypt(context, value)
+        if encrypted is None:
+            return None
+        else:
+            return encrypted[0]
 
     def decrypt(self, value: bytes) -> str:
         if self.encryptor_context is None:
