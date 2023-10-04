@@ -173,7 +173,7 @@ class AwsKmsEncryptor(Encryptor):
             assert isinstance(value, str)
             _beacon = encryptor.beacon(value)  # type: ignore[assignment]
 
-        if _beacon is None or (use_array and len(_beacon) == 0):
+        if _beacon is None:
             raise self.BeaconKeyNotSet()
 
         return _beacon  # type: ignore[return-value]
