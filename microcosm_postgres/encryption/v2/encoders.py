@@ -147,7 +147,6 @@ class ArrayEncoder(Encoder["list[T]"], Generic[T]):
         raw = [self.element_encoder.encode(element) for element in value]
         if keep_as_array:
             assert isinstance(raw, list)
-            assert isinstance(raw[0], str)
             return raw  # type: ignore[return-value]
         else:
             return json.dumps(raw)
