@@ -24,7 +24,7 @@ class SingleTenantEncryptor:
     def __init__(
         self,
         encrypting_materials_manager: CryptoMaterialsManager | None,
-        decrypting_materials_manager: CryptoMaterialsManager | None,
+        decrypting_materials_manager: CryptoMaterialsManager,
         beacon_key: str | None = None
     ):
         self.encrypting_materials_manager = encrypting_materials_manager
@@ -67,9 +67,7 @@ class SingleTenantEncryptor:
         ]
         return ciphertext, key_ids
 
-    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str | None:
-        if self.decrypting_materials_manager is None:
-            return None
+    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
 
         plaintext, header = self.encryption_client.decrypt(
             source=ciphertext,
@@ -119,7 +117,7 @@ class MultiTenantEncryptor:
         encryptor = self[encryption_context_key]
         return encryptor.encrypt(encryption_context_key, plaintext)
 
-    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str | None:
+    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
         encryptor = self[encryption_context_key]
         return encryptor.decrypt(encryption_context_key, ciphertext)
 

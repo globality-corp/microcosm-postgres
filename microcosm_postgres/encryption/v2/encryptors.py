@@ -15,6 +15,7 @@ from typing import (
 from microcosm.object_graph import ObjectGraph
 
 from microcosm_postgres.constants import X_REQUEST_CLIENT_HEADER
+from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 
 
@@ -115,7 +116,8 @@ class AwsKmsEncryptor(Encryptor):
 
         client_id = normalise(graph.request_context()).get(X_REQUEST_CLIENT_HEADER)
         if client_id is None or client_id not in encryptors.encryptors:
-            return nullcontext()
+            # Then we return back the default encryptor
+            return cls.set_encryptor_context(ENCRYPTION_V2_DEFAULT_KEY, encryptors[ENCRYPTION_V2_DEFAULT_KEY])
         return cls.set_encryptor_context(client_id, encryptors[client_id])
 
     @classmethod
