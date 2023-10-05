@@ -107,22 +107,31 @@ class MultiTenantEncryptor:
     def __contains__(self, encryption_context_key: str) -> bool:
         return encryption_context_key in self.encryptors or self.default_key in self.encryptors
 
-    def __getitem__(self, encryption_context_key: str) -> SingleTenantEncryptor:
+    def __getitem__(self, encryption_context_key: str) -> SingleTenantEncryptor | None:
         try:
             return self.encryptors[encryption_context_key]
         except KeyError:
-            return self.encryptors[self.default_key]
+            try:
+                return self.encryptors[self.default_key]
+            except KeyError:
+                return None
 
     def encrypt(self, encryption_context_key: str, plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
         encryptor = self[encryption_context_key]
+        if encryptor is None:
+            return None
         return encryptor.encrypt(encryption_context_key, plaintext)
 
-    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
+    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str | None:
         encryptor = self[encryption_context_key]
+        if encryptor is None:
+            return None
         return encryptor.decrypt(encryption_context_key, ciphertext)
 
     def beacon(self, encryption_context_key: str, value: str) -> Union[str, None]:
         encryptor = self[encryption_context_key]
+        if encryptor is None:
+            return None
         return encryptor.beacon(value)
 
 
