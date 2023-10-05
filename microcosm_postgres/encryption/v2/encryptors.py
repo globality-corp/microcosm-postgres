@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager, nullcontext
+from contextlib import contextmanager
 from contextvars import ContextVar
 from typing import (
     Any,
@@ -15,6 +15,7 @@ from typing import (
 from microcosm.object_graph import ObjectGraph
 
 from microcosm_postgres.constants import X_REQUEST_CLIENT_HEADER
+from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 
 
@@ -29,7 +30,7 @@ class Encryptor(Protocol):
         """
         ...
 
-    def decrypt(self, value: bytes) -> str:
+    def decrypt(self, value: bytes) -> str | None:
         """Decrypt a value key identified from the ciphertext."""
         ...
 
@@ -53,7 +54,7 @@ class PlainTextEncryptor(Encryptor):
     def encrypt(self, value: str) -> bytes | None:
         return None
 
-    def decrypt(self, value: bytes) -> str:
+    def decrypt(self, value: bytes) -> str | None:
         return value.decode()
 
 
@@ -115,7 +116,8 @@ class AwsKmsEncryptor(Encryptor):
 
         client_id = normalise(graph.request_context()).get(X_REQUEST_CLIENT_HEADER)
         if client_id is None or client_id not in encryptors.encryptors:
-            return nullcontext()
+            # Then we return back the default encryptor
+            return cls.set_encryptor_context(ENCRYPTION_V2_DEFAULT_KEY, encryptors[ENCRYPTION_V2_DEFAULT_KEY])
         return cls.set_encryptor_context(client_id, encryptors[client_id])
 
     @classmethod
@@ -140,9 +142,15 @@ class AwsKmsEncryptor(Encryptor):
 
         assert self.encryptor_context is not None
         context, encryptor = self.encryptor_context
-        return encryptor.encrypt(context, value)[0]
 
-    def decrypt(self, value: bytes) -> str:
+        # Note that the encryptor may return back None
+        encrypted = encryptor.encrypt(context, value)
+        if encrypted is None:
+            return None
+        else:
+            return encrypted[0]
+
+    def decrypt(self, value: bytes) -> str | None:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()
 
