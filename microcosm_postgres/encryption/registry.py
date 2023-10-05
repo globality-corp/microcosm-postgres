@@ -123,7 +123,8 @@ class MultiTenantKeyRegistry:
                     self.all_key_ids,  # Use all accumulated key_ids
                 ),
             ),
-            # TODO - need to work on being able to use multiple beacons...
+            # TODO - need to work on being able to use multiple beacons
+            # from different accounts
             beacon_key="test-key",
         )
 
