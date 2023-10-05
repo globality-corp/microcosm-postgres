@@ -107,11 +107,14 @@ class MultiTenantEncryptor:
     def __contains__(self, encryption_context_key: str) -> bool:
         return encryption_context_key in self.encryptors or self.default_key in self.encryptors
 
-    def __getitem__(self, encryption_context_key: str) -> SingleTenantEncryptor:
+    def __getitem__(self, encryption_context_key: str) -> SingleTenantEncryptor | None:
         try:
             return self.encryptors[encryption_context_key]
         except KeyError:
-            return self.encryptors[self.default_key]
+            try:
+                return self.encryptors[self.default_key]
+            except KeyError:
+                return None
 
     def encrypt(self, encryption_context_key: str, plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
         encryptor = self[encryption_context_key]
