@@ -105,4 +105,4 @@ def test_first_beacon_key_used_in_default_encryptor():
 
     multi_tenant_encryptor = graph.multi_tenant_key_registry.make_encryptor(graph)
     default_encryptor = multi_tenant_encryptor.encryptors[ENCRYPTION_V2_DEFAULT_KEY]
-    assert default_encryptor._beacon_key == "beacon1"
+    assert default_encryptor._beacon_key == b"beacon1"
