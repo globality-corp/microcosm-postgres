@@ -5,6 +5,8 @@ Test registry configuration.
 from unittest import SkipTest
 
 from hamcrest import assert_that, has_entries
+from microcosm.loaders import load_from_dict
+from microcosm.object_graph import create_object_graph
 
 from microcosm_postgres.encryption.registry import parse_config
 
@@ -58,3 +60,24 @@ def test_parse_config_key_ids():
             ),
         ),
     )
+
+
+def test_default_encryptor_not_created_when_no_config_available():
+    """
+    Tests that when we have no config then we don't try to make
+    a default encryptor as it can cause errors in the application.
+
+    """
+    loader = load_from_dict(
+        multi_tenant_key_registry=dict(),
+    )
+
+    graph = create_object_graph(
+        "example",
+        testing=True,
+        loader=loader,
+        import_name="microcosm_postgres",
+    )
+
+    multi_tenant_encryptor = graph.multi_tenant_key_registry.make_encryptor(graph)
+    assert len(multi_tenant_encryptor.encryptors) == 0
