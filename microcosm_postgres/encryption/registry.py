@@ -111,22 +111,25 @@ class MultiTenantKeyRegistry:
             for context_key, context_data in self.keys.items()
         }
 
-        # Then we need to add the default encryptor
-        encryptors[ENCRYPTION_V2_DEFAULT_KEY] = SingleTenantEncryptor(
-            encrypting_materials_manager=None,
-            decrypting_materials_manager=configure_materials_manager(
-                graph,
-                key_provider=configure_decrypting_key_provider(
+        if len(self.all_account_ids) > 0 and len(self.all_key_ids) > 0:
+            # We'll only create a default encryptor if we have at least one
+            # account_id and key_id
+
+            encryptors[ENCRYPTION_V2_DEFAULT_KEY] = SingleTenantEncryptor(
+                encrypting_materials_manager=None,
+                decrypting_materials_manager=configure_materials_manager(
                     graph,
-                    self.all_account_ids,  # Use all accumulated account_ids
-                    "aws",  # Assuming the partition is always "aws"
-                    self.all_key_ids,  # Use all accumulated key_ids
+                    key_provider=configure_decrypting_key_provider(
+                        graph,
+                        self.all_account_ids,  # Use all accumulated account_ids
+                        "aws",  # Assuming the partition is always "aws"
+                        self.all_key_ids,  # Use all accumulated key_ids
+                    ),
                 ),
-            ),
-            # TODO - need to work on being able to use multiple beacons
-            # from different accounts
-            beacon_key="test-key",
-        )
+                # TODO - need to work on being able to use multiple beacons
+                # from different accounts
+                beacon_key="test-key",
+            )
 
         return MultiTenantEncryptor(
             encryptors=encryptors,
