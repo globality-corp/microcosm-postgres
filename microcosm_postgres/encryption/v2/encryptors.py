@@ -121,7 +121,11 @@ class AwsKmsEncryptor(Encryptor):
             if default_encryptor is None:
                 return nullcontext()
             return cls.set_encryptor_context(ENCRYPTION_V2_DEFAULT_KEY, default_encryptor)
-        return cls.set_encryptor_context(client_id, encryptors[client_id])
+
+        client_encryptor = encryptors[client_id]
+        if client_encryptor is None:
+            return nullcontext()
+        return cls.set_encryptor_context(client_id, client_encryptor)
 
     @classmethod
     def register_flask_context(cls, graph: ObjectGraph) -> None:
