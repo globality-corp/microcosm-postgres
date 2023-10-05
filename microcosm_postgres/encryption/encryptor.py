@@ -118,14 +118,20 @@ class MultiTenantEncryptor:
 
     def encrypt(self, encryption_context_key: str, plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
         encryptor = self[encryption_context_key]
+        if encryptor is None:
+            return None
         return encryptor.encrypt(encryption_context_key, plaintext)
 
-    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str:
+    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str | None:
         encryptor = self[encryption_context_key]
+        if encryptor is None:
+            return None
         return encryptor.decrypt(encryption_context_key, ciphertext)
 
     def beacon(self, encryption_context_key: str, value: str) -> str | None:
         encryptor = self[encryption_context_key]
+        if encryptor is None:
+            return None
         return encryptor.beacon(value)
 
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from typing import (
     Any,
@@ -117,7 +117,10 @@ class AwsKmsEncryptor(Encryptor):
         client_id = normalise(graph.request_context()).get(X_REQUEST_CLIENT_HEADER)
         if client_id is None or client_id not in encryptors.encryptors:
             # Then we return back the default encryptor
-            return cls.set_encryptor_context(ENCRYPTION_V2_DEFAULT_KEY, encryptors[ENCRYPTION_V2_DEFAULT_KEY])
+            default_encryptor = encryptors[ENCRYPTION_V2_DEFAULT_KEY]
+            if default_encryptor is None:
+                return nullcontext()
+            return cls.set_encryptor_context(ENCRYPTION_V2_DEFAULT_KEY, default_encryptor)
         return cls.set_encryptor_context(client_id, encryptors[client_id])
 
     @classmethod
