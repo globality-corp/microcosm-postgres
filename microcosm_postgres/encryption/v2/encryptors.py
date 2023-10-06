@@ -31,7 +31,7 @@ class Encryptor(Protocol):
         """
         ...
 
-    def decrypt(self, value: bytes) -> str | None:
+    def decrypt(self, value: bytes) -> Union[str, None]:
         """Decrypt a value key identified from the ciphertext."""
         ...
 
@@ -43,7 +43,7 @@ class Encryptor(Protocol):
     def beacon(self, value: list[str], use_array: Literal[True]) -> list[str]:
         ...
 
-    def beacon(self, value: str | list[str], use_array: bool = False) -> list[str] | str:
+    def beacon(self, value: Union[str, list[str]], use_array: bool = False) -> Union[list[str], str]:
         """Hash value using the beacon key."""
         ...
 
@@ -55,7 +55,7 @@ class PlainTextEncryptor(Encryptor):
     def encrypt(self, value: str) -> Union[bytes, None]:
         return None
 
-    def decrypt(self, value: bytes) -> str | None:
+    def decrypt(self, value: bytes) -> Union[str, None]:
         return value.decode()
 
 
@@ -162,7 +162,7 @@ class AwsKmsEncryptor(Encryptor):
         else:
             return encrypted[0]
 
-    def decrypt(self, value: bytes) -> str | None:
+    def decrypt(self, value: bytes) -> Union[str, None]:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()
 
@@ -177,7 +177,7 @@ class AwsKmsEncryptor(Encryptor):
     def beacon(self, value: list[str], use_array: Literal[True]) -> list[str]:
         ...
 
-    def beacon(self, value: str | list[str], use_array: bool = False) -> list[str] | str:
+    def beacon(self, value: Union[str, list[str]], use_array: bool = False) -> Union[list[str], str]:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()
 
