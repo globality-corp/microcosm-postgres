@@ -88,11 +88,22 @@ class Employee(Model):
     extras_encrypted = extras.encrypted()
     extras_unencrypted = extras.unencrypted()
 
+    bio = encryption("bio", AwsKmsEncryptor(), StringEncoder(), default="")
+    bio_encrypted = bio.encrypted()
+    bio_unencrypted = bio.unencrypted()
+
     __table_args__ = (
         # NB check constraint to enforce null values in JSON columns
         CheckConstraint(
             name="employee_extras_or_encrypted_is_null",
             sqltext="extras IS NULL OR extras_encrypted IS NULL",
+        ),
+        CheckConstraint(
+            name="employee_bio_is_not_null",
+            sqltext=(
+                "(bio IS NULL OR bio_encrypted IS NULL) AND "
+                "(bio IS NOT NULL OR bio_encrypted IS NOT NULL)"
+            ),
         ),
     )
 
@@ -358,10 +369,12 @@ def test_encrypt_with_default_encryptor(
             extras={"foo2": "bar"},
             notes="baz"
         ))
+        session.commit()
         assert employee.name_unencrypted == "foo2"
         assert employee.name_encrypted is None
         assert employee.name == "foo2"
-        session.commit()
+        assert employee.bio_unencrypted == ""  # the default
+        assert employee.bio_encrypted is None
 
     # Then we test we can read back the data with no encryptor set
     with (
