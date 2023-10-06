@@ -374,7 +374,7 @@ def test_encrypt_with_default_encryptor(
         assert employee.name_encrypted is None
         assert employee.name == "foo2"
         assert employee.bio_unencrypted == ""  # the default
-        assert employee.bio_encrypted == None
+        assert employee.bio_encrypted is None
 
     # Then we test we can read back the data with no encryptor set
     with (
