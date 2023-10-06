@@ -79,12 +79,16 @@ class MultiTenantKeyRegistry:
         # Accumulate all account_ids and key_ids
         all_account_ids = set()
         all_key_ids = set()
+        all_beacon_keys = []
         for context_data in self.keys.values():
             all_account_ids.update(context_data["account_ids"])
             all_key_ids.update(context_data["key_ids"])
+            if context_data["beacon_key"]:
+                all_beacon_keys.append(context_data["beacon_key"])
 
         self.all_account_ids = list(all_account_ids)
         self.all_key_ids = list(all_key_ids)
+        self.all_beacon_keys = all_beacon_keys
 
     def make_encryptor(self, graph) -> MultiTenantEncryptor:
         encryptors = {
@@ -111,22 +115,29 @@ class MultiTenantKeyRegistry:
             for context_key, context_data in self.keys.items()
         }
 
-        # Then we need to add the default encryptor
-        encryptors[ENCRYPTION_V2_DEFAULT_KEY] = SingleTenantEncryptor(
-            encrypting_materials_manager=None,
-            decrypting_materials_manager=configure_materials_manager(
-                graph,
-                key_provider=configure_decrypting_key_provider(
+        if len(self.all_account_ids) > 0 and len(self.all_key_ids) > 0:
+            # We'll only create a default encryptor if we have at least one
+            # account_id and key_id
+            if len(self.all_beacon_keys) > 0:
+                # For now we'll take the first beacon key
+                # in future, we'll need to be able to use multiple beacons
+                # within the default encryptor
+                beacon_key = self.all_beacon_keys[0]
+            else:
+                beacon_key = "test-key"
+            encryptors[ENCRYPTION_V2_DEFAULT_KEY] = SingleTenantEncryptor(
+                encrypting_materials_manager=None,
+                decrypting_materials_manager=configure_materials_manager(
                     graph,
-                    self.all_account_ids,  # Use all accumulated account_ids
-                    "aws",  # Assuming the partition is always "aws"
-                    self.all_key_ids,  # Use all accumulated key_ids
+                    key_provider=configure_decrypting_key_provider(
+                        graph,
+                        self.all_account_ids,  # Use all accumulated account_ids
+                        "aws",  # Assuming the partition is always "aws"
+                        self.all_key_ids,  # Use all accumulated key_ids
+                    ),
                 ),
-            ),
-            # TODO - need to work on being able to use multiple beacons
-            # from different accounts
-            beacon_key="test-key",
-        )
+                beacon_key=beacon_key,
+            )
 
         return MultiTenantEncryptor(
             encryptors=encryptors,

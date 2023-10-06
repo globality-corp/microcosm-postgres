@@ -194,10 +194,6 @@ def config() -> dict:
                 "beacon_key",
             ],
         ),
-
-        postgres=dict(
-            echo=True,
-        )
     )
 
 
