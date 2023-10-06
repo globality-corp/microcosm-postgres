@@ -34,7 +34,7 @@ class BeaconComparator(Comparator):
         val,
         encoder_fn: Callable,
         beacon_fn: Callable,
-        encrypt_fn: Callable[[str], bytes | None],
+        encrypt_fn: Callable[[str], Union[bytes, None]],
         beacon_val: Any = None,
     ):
         self.val = val

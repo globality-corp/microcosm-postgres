@@ -23,7 +23,7 @@ class SingleTenantEncryptor:
     """
     def __init__(
         self,
-        encrypting_materials_manager: CryptoMaterialsManager | None,
+        encrypting_materials_manager: Union[CryptoMaterialsManager, None],
         decrypting_materials_manager: CryptoMaterialsManager,
         beacon_key: Union[str, None] = None
     ):
@@ -39,7 +39,7 @@ class SingleTenantEncryptor:
 
     def encrypt(self,
                 encryption_context_key: str,
-                plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
+                plaintext: str) -> Union[Tuple[bytes, Sequence[str]], None]:
         """
         Encrypt a plaintext string value.
 
@@ -107,7 +107,7 @@ class MultiTenantEncryptor:
     def __contains__(self, encryption_context_key: str) -> bool:
         return encryption_context_key in self.encryptors or self.default_key in self.encryptors
 
-    def __getitem__(self, encryption_context_key: str) -> SingleTenantEncryptor | None:
+    def __getitem__(self, encryption_context_key: str) -> Union[SingleTenantEncryptor, None]:
         try:
             return self.encryptors[encryption_context_key]
         except KeyError:
@@ -116,13 +116,13 @@ class MultiTenantEncryptor:
             except KeyError:
                 return None
 
-    def encrypt(self, encryption_context_key: str, plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
+    def encrypt(self, encryption_context_key: str, plaintext: str) -> Union[Tuple[bytes, Sequence[str]], None]:
         encryptor = self[encryption_context_key]
         if encryptor is None:
             return None
         return encryptor.encrypt(encryption_context_key, plaintext)
 
-    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> str | None:
+    def decrypt(self, encryption_context_key: str, ciphertext: bytes) -> Union[str, None]:
         encryptor = self[encryption_context_key]
         if encryptor is None:
             return None
