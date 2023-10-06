@@ -142,7 +142,11 @@ class AwsKmsEncryptor(Encryptor):
             return response
 
     def should_encrypt(self) -> bool:
-        return self.encryptor_context is not None
+        if self.encryptor_context is None:
+            return False
+
+        _, encryptor = self.encryptor_context
+        return encryptor.encrypting_materials_manager is not None
 
     def encrypt(self, value: str) -> Union[bytes, None]:
         if not self.should_encrypt():
