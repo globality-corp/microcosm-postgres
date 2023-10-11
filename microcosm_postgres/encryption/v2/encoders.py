@@ -75,6 +75,8 @@ class StringEncoder(Encoder[Any]):
 
     @encode_exception_wrapper
     def encode(self, value: Any, **kwargs) -> str:
+        if value is None:
+            return None
         return str(value)
 
     @decode_exception_wrapper
@@ -87,6 +89,8 @@ class TextEncoder(Encoder[Any]):
 
     @encode_exception_wrapper
     def encode(self, value: Any, **kwargs) -> str:
+        if value is None:
+            return None
         return str(value)
 
     @decode_exception_wrapper
@@ -99,6 +103,8 @@ class IntEncoder(Encoder[int]):
 
     @encode_exception_wrapper
     def encode(self, value: int, **kwargs) -> str:
+        if value is None:
+            return None
         return str(value)
 
     @decode_exception_wrapper
@@ -111,6 +117,8 @@ class DecimalEncoder(Encoder[Decimal]):
 
     @encode_exception_wrapper
     def encode(self, value: Decimal, **kwargs) -> str:
+        if value is None:
+            return None
         return str(value)
 
     @decode_exception_wrapper
@@ -123,6 +131,8 @@ class DatetimeEncoder(Encoder[datetime]):
 
     @encode_exception_wrapper
     def encode(self, value: datetime, **kwargs) -> str:
+        if value is None:
+            return None
         return value.isoformat()
 
     @decode_exception_wrapper

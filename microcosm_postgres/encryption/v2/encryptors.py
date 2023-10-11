@@ -155,6 +155,8 @@ class AwsKmsEncryptor(Encryptor):
         context, encryptor = self.encryptor_context
 
         # Note that the encryptor may return back None
+        if value is None:
+            return None
         encrypted = encryptor.encrypt(context, value)
         if encrypted is None:
             return None
