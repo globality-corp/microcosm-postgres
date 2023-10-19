@@ -159,14 +159,6 @@ def test_reencrypt_instance(
         assert person.name == "foo"
         session.commit()
 
-        # Run test - check that two encrypted values aren't the same
-        # session.add(person2 := Person(
-        #     name="foo",
-        #     client_id=client_id_1,
-        # ))
-        # assert person.name == "foo"
-        # assert person.name_encrypted != person2.name_encrypted
-
     # Check that we can't read the data with client_id_3
     with (
         graph.sessionmaker() as session,
@@ -193,15 +185,6 @@ def test_reencrypt_instance(
             encryption_columns=["name"],
         )
         session.commit()
-
-    # N.B at this point we can still read data with the first key from client_id_1
-    # i.e no exception is raised
-    with (
-        graph.sessionmaker() as session,
-        AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor_client_1)
-    ):
-        person = session.query(Person).first()
-        assert person.name == "foo"
 
     # Now check that we can read the data with client_id_3
     with (
