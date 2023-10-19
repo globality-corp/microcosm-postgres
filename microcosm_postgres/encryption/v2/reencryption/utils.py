@@ -36,6 +36,11 @@ class ModelWithEncryption:
         return []
 
 
+@dataclass
+class ModelWithEncryptionSearch(ModelWithEncryption):
+    search_kwargs: None | dict = None
+
+
 def reencrypt_instance(session: Session, instance: Any, encryption_columns: list[str]) -> None:
     """
     Update the instance in a way in which the ORM is leveraged, so that writes leveraging
@@ -46,7 +51,7 @@ def reencrypt_instance(session: Session, instance: Any, encryption_columns: list
         # ie. instance.my_column = instance.my_column
         setattr(instance, column_name, getattr(instance, column_name))
         session.merge(instance)
-        session.flush()
+        session.commit()
 
 
 def find_models_using_encryption(base_model=Model, encryption_type=encryption):

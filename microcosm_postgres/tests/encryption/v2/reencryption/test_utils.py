@@ -1,21 +1,23 @@
 from typing import Iterator
 from uuid import uuid4
 
-import pytest
 from aws_encryption_sdk.exceptions import DecryptKeyError
 from microcosm.loaders import load_each, load_from_dict, load_from_environ
 from microcosm.object_graph import ObjectGraph, create_object_graph
-from sqlalchemy import UUID
+from sqlalchemy import UUID, String
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 from pytest import fixture
+import pytest
 
 from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
-from microcosm_postgres.encryption.v2.reencryption.utils import reencrypt_instance
+from microcosm_postgres.encryption.v2.reencryption.utils import reencrypt_instance, find_models_using_encryption, \
+    print_reencryption_usage_info, ModelWithEncryption, verify_client_has_some_encryption_config, \
+    verify_planning_to_handle_all_tables
 from microcosm_postgres.models import Model
 
 
@@ -28,6 +30,15 @@ class Person(Model):
     name_encrypted = name.encrypted()
     name_unencrypted = name.unencrypted(index=True)
 
+    client_id = mapped_column(UUID, nullable=False, index=True)
+
+
+class PersonWithoutEncryption(Model):
+    __tablename__ = "test_encryption_person_without_encryption"
+
+    id = mapped_column(UUID, primary_key=True, default=uuid4)
+
+    name = mapped_column(String, nullable=False, index=True)
     client_id = mapped_column(UUID, nullable=False, index=True)
 
 
@@ -210,3 +221,89 @@ def test_reencrypt_instance(
         person = session.query(Person).first()
         with pytest.raises(DecryptKeyError):
             assert person.name == "foo"
+
+
+def test_find_models_using_encryption() -> None:
+    """
+    Test that we can find all models using encryption
+
+    """
+    # Note that the PersonWithoutEncryption model is not included
+    assert {i.model.__tablename__ for i in find_models_using_encryption()} == {Person.__tablename__}
+
+
+def test_print_usage_no_models(capfd):
+    print_reencryption_usage_info([])
+    captured = capfd.readouterr()
+    assert captured.out == "No models found using encryption.\n"
+
+
+def test_print_usage_single_model(capfd):
+    model_with_encryption1 = ModelWithEncryption(Person)
+    print_reencryption_usage_info([model_with_encryption1])
+    captured = capfd.readouterr()
+    assert captured.out == "Found 1 table(s) with encryption usage:\nPerson: name\n"
+
+
+def test_print_usage_multiple_models(capfd):
+    model_with_encryption1 = ModelWithEncryption(Person)
+    model_with_encryption2 = ModelWithEncryption(PersonWithoutEncryption)
+    print_reencryption_usage_info([model_with_encryption1, model_with_encryption2])
+    captured = capfd.readouterr()
+    assert captured.out == ('Found 2 table(s) with encryption usage:\nPerson: name\nPersonWithoutEncryption: \n')
+
+
+def test_verify_client_has_some_encryption_config_happy_path(
+    graph: ObjectGraph,
+) -> None:
+    """
+    Test that we can verify that a client has some encryption config
+
+    """
+    verify_client_has_some_encryption_config(graph, client_id_1)
+
+
+def test_verify_client_has_some_encryption_config_no_encryption_config(
+    graph: ObjectGraph,
+) -> None:
+    """
+    Test that we can verify that a client has some encryption config
+
+    """
+    with pytest.raises(ValueError):
+        verify_client_has_some_encryption_config(graph, uuid4())
+
+
+def test_verify_planning_to_handle_all_tables_happy_path() -> None:
+    """
+    Test that the function does not raise an error if all tables are accounted for.
+    """
+    models_to_encrypt = [ModelWithEncryption(Person)]
+    verify_planning_to_handle_all_tables(models_to_encrypt)
+
+
+def test_verify_planning_to_handle_all_tables_missing_table() -> None:
+    """
+    Test that the function raises an error when a table with encryption is not in the provided list.
+    """
+    models_to_encrypt = [ModelWithEncryption(PersonWithoutEncryption)]
+    with pytest.raises(ValueError, match=r"Looks like we might be missing a table\(s\) using encryption: Person"):
+        verify_planning_to_handle_all_tables(models_to_encrypt)
+
+
+def test_encryption_columns_for_encrypted_model() -> None:
+    """
+    Test that encryption_columns returns the encrypted columns for an encrypted model.
+    """
+    model_encryption = ModelWithEncryption(Person)
+    columns = model_encryption.encryption_columns()
+    assert columns == ["name"], f"Expected ['name'], but got {columns}"
+
+
+def test_encryption_columns_for_non_encrypted_model() -> None:
+    """
+    Test that encryption_columns returns an empty list for a model without encrypted columns.
+    """
+    model_encryption = ModelWithEncryption(PersonWithoutEncryption)
+    columns = model_encryption.encryption_columns()
+    assert columns == [], f"Expected [], but got {columns}"
