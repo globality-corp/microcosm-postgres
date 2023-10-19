@@ -1,28 +1,39 @@
-from typing import Iterator, Any
-from uuid import uuid4
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Iterator,
+)
+from uuid import UUID as UUIDType, uuid4
 
 from microcosm.decorators import binding
 from microcosm.loaders import load_each, load_from_dict, load_from_environ
 from microcosm.object_graph import ObjectGraph, create_object_graph
-from sqlalchemy import UUID
+from pytest import fixture
+from sqlalchemy import UUID, Table
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
-from pytest import fixture
 
-from microcosm_postgres.context import transaction, SessionContext
+from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
-from microcosm_postgres.encryption.v2.reencryption.utils import verify_client_has_some_encryption_config, \
-    verify_planning_to_handle_all_tables, ModelWithEncryptionSearch, reencrypt_instance, ModelWithEncryption
+from microcosm_postgres.encryption.v2.reencryption.utils import (
+    ModelWithEncryptionSearch,
+    reencrypt_instance,
+    verify_client_has_some_encryption_config,
+    verify_planning_to_handle_all_tables,
+)
 from microcosm_postgres.models import Model
 from microcosm_postgres.store import Store
 
 
 class Person(Model):
     __tablename__ = "test_encryption_person"
+    if TYPE_CHECKING:
+        __table__: ClassVar[Table]
 
     id = mapped_column(UUID, primary_key=True, default=uuid4)
 
@@ -56,16 +67,16 @@ def config() -> dict:
     return dict(
         multi_tenant_key_registry=dict(
             context_keys=[
-                str(client_id_1),str(client_id_2),
+                str(client_id_1), str(client_id_2),
             ],
             key_ids=[
                 "key_id_1", "key_id_2;key_id_1",
             ],
             partitions=[
-                "aws","aws",
+                "aws", "aws",
             ],
             account_ids=[
-                "12345","12345",
+                "12345", "12345",
             ],
         ),
     )
@@ -135,14 +146,12 @@ def single_tenant_encryptor_client_2(
     return multi_tenant_encryptor.encryptors[str(client_id_2)]
 
 
-
-
 MODELS_TO_REENCRYPT = [
     ModelWithEncryptionSearch(model=Person),
 ]
 
 
-def find_instances(model: Any, client_id: UUID, search_kwargs: dict) -> Iterator[Model]:
+def find_instances(model: Any, client_id: UUIDType, search_kwargs: dict) -> Iterator[Model]:
     """
     This function is meant to find all the instances of a given model that belong to a given client.
 
@@ -150,7 +159,7 @@ def find_instances(model: Any, client_id: UUID, search_kwargs: dict) -> Iterator
     return model.store.search(client_id=client_id, **search_kwargs)
 
 
-def reencrypt_model(session: Session, model_with_encryption: ModelWithEncryptionSearch, client_id: UUID) -> None:
+def reencrypt_model(session: Session, model_with_encryption: ModelWithEncryptionSearch, client_id: UUIDType) -> None:
     """
     This function is meant to reencrypt all the relevant instances that are part of a
      given model.
@@ -175,7 +184,7 @@ def reencrypt_model(session: Session, model_with_encryption: ModelWithEncryption
         )
 
 
-def reencrypt_script(graph: ObjectGraph, client_id: UUID, single_tenant_encryptor: SingleTenantEncryptor) -> None:
+def reencrypt_script(graph: ObjectGraph, client_id: UUIDType, single_tenant_encryptor: SingleTenantEncryptor) -> None:
     verify_client_has_some_encryption_config(graph, client_id)
     verify_planning_to_handle_all_tables(MODELS_TO_REENCRYPT)
 

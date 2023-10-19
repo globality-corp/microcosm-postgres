@@ -1,5 +1,7 @@
-from microcosm_postgres.encryption.v2.reencryption.utils import find_models_using_encryption, \
-    print_reencryption_usage_info
+from microcosm_postgres.encryption.v2.reencryption.utils import (
+    find_models_using_encryption,
+    print_reencryption_usage_info,
+)
 
 
 def run_audit():

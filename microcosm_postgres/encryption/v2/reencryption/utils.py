@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Sequence
 
-from microcosm_postgres.encryption.v2.column import encryption
-from microcosm_postgres.models import Model
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import Session
+
+from microcosm_postgres.encryption.v2.column import encryption
+from microcosm_postgres.models import Model
 
 
 @dataclass
@@ -14,7 +15,7 @@ class ModelWithEncryption:
     encryption_type: type = encryption
 
     def encryption_columns(self) -> list[str]:
-        inspected_model = inspect(self.model)
+        inspected_model: Any = inspect(self.model)
         if inspected_model is None:
             return []
 
@@ -73,13 +74,13 @@ def find_models_using_encryption(base_model=Model, encryption_type=encryption):
 
 def print_reencryption_usage_info(models_with_encryption: list[ModelWithEncryption]) -> None:
     if not models_with_encryption:
-        print("No models found using encryption.")
+        print("No models found using encryption.")  # noqa: T201
         return
 
-    print(f"Found {len(models_with_encryption)} table(s) with encryption usage:")
+    print(f"Found {len(models_with_encryption)} table(s) with encryption usage:")  # noqa: T201
     for model_with_encryption in models_with_encryption:
         cols_used = ", ".join([col for col in model_with_encryption.encryption_columns()])
-        print(f"{model_with_encryption.model.__name__}: {cols_used}")
+        print(f"{model_with_encryption.model.__name__}: {cols_used}")  # noqa: T201
 
 
 def verify_client_has_some_encryption_config(graph, client_id):
