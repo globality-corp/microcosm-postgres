@@ -57,9 +57,13 @@ client_id_3 = uuid4()
 @fixture(scope="module")
 def config() -> dict:
     """
-    This config is meant to represent the config in three different stages
+    This config is meant to represent the config in different stages
     of the reencryption process i.e first you have a single key (key 1)
-    then you have key1 and key2 configured and finally you removed key1.
+    then you have key1 and key2 configured.
+
+    N.b that for unit testing, we use a strict decryption key provider
+    so we have to specify both keys at once. In production we use the discovery
+    key provider so we can swap the key one for one.
 
     """
     return dict(
