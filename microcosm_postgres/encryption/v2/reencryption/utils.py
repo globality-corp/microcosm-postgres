@@ -14,8 +14,17 @@ class ModelWithEncryption:
     model: type
     encryption_type: type = encryption
 
+    @property
+    def model_name(self) -> str:
+        return self.model.__name__
+
     def encryption_columns(self) -> list[str]:
-        inspected_model: Any = inspect(self.model)
+        try:
+            inspected_model: Any = inspect(self.model)
+        except Exception:
+            print(f"Unable to inspect model: {self.model.__name__}")  # noqa: T201
+            return []
+
         if inspected_model is None:
             return []
 
