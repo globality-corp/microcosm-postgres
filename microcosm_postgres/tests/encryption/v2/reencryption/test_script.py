@@ -150,7 +150,7 @@ def find_instances(model: Any, client_id: UUID, search_kwargs: dict) -> Iterator
     return model.store.search(client_id=client_id, **search_kwargs)
 
 
-def reencrypt_model(session: Session, model_with_encryption: ModelWithEncryption, client_id: UUID) -> None:
+def reencrypt_model(session: Session, model_with_encryption: ModelWithEncryptionSearch, client_id: UUID) -> None:
     """
     This function is meant to reencrypt all the relevant instances that are part of a
      given model.
