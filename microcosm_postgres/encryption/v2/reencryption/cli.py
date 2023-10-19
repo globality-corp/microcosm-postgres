@@ -15,6 +15,15 @@ class ReencryptionCli:
     def _add_reencrypt_command(self, fn):
         reencrypt_command_parser = self.subparsers.add_parser('reencrypt', help='Reencrypt some data')
         reencrypt_command_parser.add_argument("--client-id", help="The client id to reencrypt")
+
+        # Adding the dry_run argument
+        reencrypt_command_parser.add_argument(
+            "--dry-run",
+            action='store_true',
+            default=True,
+            help="Execute the command without making actual changes. Default is True."
+        )
+
         reencrypt_command_parser.set_defaults(func=fn)
 
     def _add_audit_command(self, fn):
