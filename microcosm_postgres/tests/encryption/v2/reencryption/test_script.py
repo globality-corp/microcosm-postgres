@@ -12,7 +12,12 @@ from microcosm.object_graph import ObjectGraph, create_object_graph
 from pytest import fixture
 from sqlalchemy import UUID, Table
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Session,
+    mapped_column,
+    sessionmaker as SessionMaker,
+)
 
 from microcosm_postgres.context import SessionContext
 from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
@@ -30,7 +35,11 @@ from microcosm_postgres.models import Model
 from microcosm_postgres.store import Store
 
 
-class Person(Model):
+class NewModel(DeclarativeBase):
+    pass
+
+
+class Person(NewModel):
     __tablename__ = "test_encryption_person"
     if TYPE_CHECKING:
         __table__: ClassVar[Table]
@@ -186,7 +195,7 @@ def reencrypt_model(session: Session, model_with_encryption: ModelWithEncryption
 
 def reencrypt_script(graph: ObjectGraph, client_id: UUIDType, single_tenant_encryptor: SingleTenantEncryptor) -> None:
     verify_client_has_some_encryption_config(graph, client_id)
-    verify_planning_to_handle_all_tables(MODELS_TO_REENCRYPT)
+    verify_planning_to_handle_all_tables(MODELS_TO_REENCRYPT, NewModel)
 
     with (
         SessionContext(graph),

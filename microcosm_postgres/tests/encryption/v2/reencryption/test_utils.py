@@ -8,7 +8,12 @@ from microcosm.object_graph import ObjectGraph, create_object_graph
 from pytest import fixture
 from sqlalchemy import UUID, String, Table
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Session,
+    mapped_column,
+    sessionmaker as SessionMaker,
+)
 
 from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
@@ -23,11 +28,14 @@ from microcosm_postgres.encryption.v2.reencryption.utils import (
     verify_client_has_some_encryption_config,
     verify_planning_to_handle_all_tables,
 )
-from microcosm_postgres.models import Model
 
 
-class Person(Model):
-    __tablename__ = "test_encryption_person"
+class NewModel(DeclarativeBase):
+    pass
+
+
+class Person(NewModel):
+    __tablename__ = "test_encryption_person_2"
     if TYPE_CHECKING:
         __table__: ClassVar[Table]
 
@@ -40,8 +48,10 @@ class Person(Model):
     client_id = mapped_column(UUID, nullable=False, index=True)
 
 
-class PersonWithoutEncryption(Model):
+class PersonWithoutEncryption(NewModel):
     __tablename__ = "test_encryption_person_without_encryption"
+    if TYPE_CHECKING:
+        __table__: ClassVar[Table]
 
     id = mapped_column(UUID, primary_key=True, default=uuid4)
 
@@ -240,7 +250,7 @@ def test_find_models_using_encryption() -> None:
 
     """
     # Note that the PersonWithoutEncryption model is not included
-    assert {i.model.__tablename__ for i in find_models_using_encryption()} == {Person.__tablename__}
+    assert {i.model.__tablename__ for i in find_models_using_encryption(NewModel)} == {Person.__tablename__}
 
 
 def test_print_usage_no_models(capfd):
@@ -290,7 +300,7 @@ def test_verify_planning_to_handle_all_tables_happy_path() -> None:
     Test that the function does not raise an error if all tables are accounted for.
     """
     models_to_encrypt = [ModelWithEncryption(Person)]
-    verify_planning_to_handle_all_tables(models_to_encrypt)
+    verify_planning_to_handle_all_tables(models_to_encrypt=models_to_encrypt, base_model=NewModel)
 
 
 def test_verify_planning_to_handle_all_tables_missing_table() -> None:
@@ -299,7 +309,7 @@ def test_verify_planning_to_handle_all_tables_missing_table() -> None:
     """
     models_to_encrypt = [ModelWithEncryption(PersonWithoutEncryption)]
     with pytest.raises(ValueError, match=r"Looks like we might be missing a table\(s\) using encryption: Person"):
-        verify_planning_to_handle_all_tables(models_to_encrypt)
+        verify_planning_to_handle_all_tables(models_to_encrypt=models_to_encrypt, base_model=NewModel)
 
 
 def test_encryption_columns_for_encrypted_model() -> None:

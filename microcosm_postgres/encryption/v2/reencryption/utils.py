@@ -55,7 +55,7 @@ def reencrypt_instance(session: Session, instance: Any, encryption_columns: list
         session.commit()
 
 
-def find_models_using_encryption(base_model=Model, encryption_type=encryption):
+def find_models_using_encryption(base_model: type = Model):
     """Given a base model as a reference for finding all tables, find all tables + columns
     that appear to use encryption.
 
@@ -88,8 +88,11 @@ def verify_client_has_some_encryption_config(graph, client_id):
         raise ValueError("Client does not appear to have any encryption config, cannot run re-encryption.")
 
 
-def verify_planning_to_handle_all_tables(models_to_encrypt: Sequence[ModelWithEncryption]) -> None:
-    model_with_encryption = find_models_using_encryption()
+def verify_planning_to_handle_all_tables(
+    models_to_encrypt: Sequence[ModelWithEncryption],
+    base_model: type = Model,
+) -> None:
+    model_with_encryption = find_models_using_encryption(base_model)
     expected_models = set(m.model.__name__ for m in model_with_encryption)
     actual_models = set(m.model.__name__ for m in models_to_encrypt)
 
