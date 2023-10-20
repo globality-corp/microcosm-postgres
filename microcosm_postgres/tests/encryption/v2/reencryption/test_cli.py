@@ -9,6 +9,7 @@ from microcosm_postgres.encryption.v2.reencryption.cli import ReencryptionCli
 
 def mock_reencrypt_fn(args):
     assert args.client_id == "123"
+    assert args.no_dry_run is not None
     return "Reencryption successful!"
 
 
@@ -28,6 +29,11 @@ def raises_help_text(func, expected_exit_code, *args, **kwargs):
 
 def test_reencrypt_command_setup():
     sys.argv = ["prog_name", "reencrypt", "--client-id", "123"]
+    cli()
+
+
+def test_reencrypt_command_dry_run():
+    sys.argv = ["prog_name", "reencrypt", "--client-id", "123", "--no-dry-run"]
     cli()
 
 

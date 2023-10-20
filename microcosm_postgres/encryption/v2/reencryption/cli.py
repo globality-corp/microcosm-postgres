@@ -18,9 +18,9 @@ class ReencryptionCli:
 
         # Adding the dry_run argument
         reencrypt_command_parser.add_argument(
-            "--dry-run",
+            "--no-dry-run",
             action='store_true',
-            default=True,
+            default=False,
             help="Execute the command without making actual changes. Default is True."
         )
 
