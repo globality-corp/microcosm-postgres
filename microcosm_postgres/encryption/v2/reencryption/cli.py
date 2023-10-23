@@ -24,6 +24,14 @@ class ReencryptionCli:
             help="Execute the command without making actual changes. Default is True."
         )
 
+        # Adding testing argument
+        reencrypt_command_parser.add_argument(
+            "--testing",
+            action='store_true',
+            default=False,
+            help="Execute the command without making actual changes. Default is True."
+        )
+
         reencrypt_command_parser.set_defaults(func=fn)
 
     def _add_audit_command(self, fn):
