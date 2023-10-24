@@ -113,7 +113,7 @@ def client_encryptor_used(
     return lambda: {
         client_id
         for client_id in client_ids
-        if encryptors[str(client_id)].encrypt.called
+        if encryptors[str(client_id)].encrypt.called  # type: ignore
     }
 
 
@@ -124,7 +124,7 @@ def client_decryptor_used(
     return lambda: {
         client_id
         for client_id in client_ids
-        if encryptors[str(client_id)].decrypt.called
+        if encryptors[str(client_id)].decrypt.called  # type: ignore
     }
 
 
