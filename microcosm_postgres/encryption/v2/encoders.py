@@ -19,6 +19,7 @@ from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
 from microcosm_postgres.types import EnumType
 
+
 T = TypeVar("T")
 JSONType: TypeAlias = (
     "dict[str, JSONType] | list[JSONType] | str | int | float | bool | None"
@@ -202,9 +203,9 @@ class EnumEncoder(Encoder[E], Generic[E]):
     Encodes and decodes an enum by its name.
 
     """
-    sa_type = EnumType(type[E])
 
     def __init__(self, enum: type[E]):
+        self.sa_type = EnumType(enum)
         self._enum = enum
 
     @encode_exception_wrapper
