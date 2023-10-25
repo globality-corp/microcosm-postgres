@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import (
@@ -26,6 +26,7 @@ JSONType: TypeAlias = (
 
 class Encoder(Protocol[T]):
     sa_type: Any
+    redacted_value: T
 
     class EncodeException(Exception):
         status_code = 400
@@ -72,6 +73,7 @@ def decode_exception_wrapper(func: OriginalFunc[P, R]) -> DecoratedFunc[P, R]:
 
 class StringEncoder(Encoder[Any]):
     sa_type = sqlalchemy.String
+    redacted_value = "REDACTED"
 
     @encode_exception_wrapper
     def encode(self, value: Any, **kwargs) -> str:
@@ -84,6 +86,7 @@ class StringEncoder(Encoder[Any]):
 
 class TextEncoder(Encoder[Any]):
     sa_type = sqlalchemy.Text
+    redacted_value = "REDACTED"
 
     @encode_exception_wrapper
     def encode(self, value: Any, **kwargs) -> str:
@@ -96,6 +99,7 @@ class TextEncoder(Encoder[Any]):
 
 class IntEncoder(Encoder[int]):
     sa_type = sqlalchemy.Integer
+    redacted_value = -1
 
     @encode_exception_wrapper
     def encode(self, value: int, **kwargs) -> str:
@@ -108,6 +112,7 @@ class IntEncoder(Encoder[int]):
 
 class DecimalEncoder(Encoder[Decimal]):
     sa_type = sqlalchemy.Numeric(asdecimal=True)
+    redacted_value = Decimal(-1)
 
     @encode_exception_wrapper
     def encode(self, value: Decimal, **kwargs) -> str:
@@ -120,6 +125,7 @@ class DecimalEncoder(Encoder[Decimal]):
 
 class DatetimeEncoder(Encoder[datetime]):
     sa_type = sqlalchemy.DateTime(timezone=True)
+    redacted_value = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
     @encode_exception_wrapper
     def encode(self, value: datetime, **kwargs) -> str:
@@ -131,12 +137,16 @@ class DatetimeEncoder(Encoder[datetime]):
 
 
 class ArrayEncoder(Encoder[list[T]], Generic[T]):
+    redacted_value = []
+
     def __init__(self, element_encoder: Encoder[T]):
         self.element_encoder = element_encoder
         self.sa_type = ARRAY(element_encoder.sa_type)
 
     @overload  # type: ignore[override]
-    def encode(self, value: list[T], keep_as_array: Literal[True], **kwargs) -> list[str]:
+    def encode(
+        self, value: list[T], keep_as_array: Literal[True], **kwargs
+    ) -> list[str]:
         ...
 
     @overload
@@ -144,7 +154,9 @@ class ArrayEncoder(Encoder[list[T]], Generic[T]):
         ...
 
     @encode_exception_wrapper
-    def encode(self, value: list[T], keep_as_array: bool = False, **kwargs) -> list[str] | str:
+    def encode(
+        self, value: list[T], keep_as_array: bool = False, **kwargs
+    ) -> list[str] | str:
         raw = [self.element_encoder.encode(element) for element in value]
         if keep_as_array:
             assert isinstance(raw, list)
@@ -159,6 +171,7 @@ class ArrayEncoder(Encoder[list[T]], Generic[T]):
 
 class JSONEncoder(Encoder[JSONType]):
     sa_type = JSONB(none_as_null=True)
+    redacted_value = {}
 
     @encode_exception_wrapper
     def encode(self, value: JSONType, **kwargs) -> str:
@@ -170,13 +183,17 @@ class JSONEncoder(Encoder[JSONType]):
 
 
 class Nullable(Encoder[T | None], Generic[T]):
+    redacted_value = None
+
     def __init__(self, inner_encoder: Encoder[T]) -> None:
         self.inner_encoder = inner_encoder
         # Nullable encoder does not affect the sa_type
         self.sa_type = inner_encoder.sa_type
 
     @encode_exception_wrapper
-    def encode(self, value: T | None, keep_as_array: bool = False, **kwargs) -> str | list[str]:
+    def encode(
+        self, value: T | None, keep_as_array: bool = False, **kwargs
+    ) -> str | list[str]:
         if value is None:
             return json.dumps(value)
 
@@ -201,10 +218,12 @@ class EnumEncoder(Encoder[E], Generic[E]):
     Encodes and decodes an enum by its name.
 
     """
+
     sa_type = sqlalchemy.String
 
     def __init__(self, enum: type[E]):
         self._enum = enum
+        self.redacted_value = list(self._enum)[0]
 
     @encode_exception_wrapper
     def encode(self, value: E, **kwargs) -> str:
