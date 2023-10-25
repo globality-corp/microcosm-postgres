@@ -137,11 +137,11 @@ class DatetimeEncoder(Encoder[datetime]):
 
 
 class ArrayEncoder(Encoder[list[T]], Generic[T]):
-    redacted_value = []
 
     def __init__(self, element_encoder: Encoder[T]):
         self.element_encoder = element_encoder
         self.sa_type = ARRAY(element_encoder.sa_type)
+        self.redacted_value = [self.element_encoder.redacted_value]
 
     @overload  # type: ignore[override]
     def encode(
@@ -171,7 +171,7 @@ class ArrayEncoder(Encoder[list[T]], Generic[T]):
 
 class JSONEncoder(Encoder[JSONType]):
     sa_type = JSONB(none_as_null=True)
-    redacted_value = {}
+    redacted_value: JSONType = {"REDACTED": True}
 
     @encode_exception_wrapper
     def encode(self, value: JSONType, **kwargs) -> str:

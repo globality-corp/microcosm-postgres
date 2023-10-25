@@ -188,3 +188,57 @@ def test_redacted_nullable_value(
     # Attempt to decrypt data with the wrong set of keys to simulate disabled client key
     with AwsKmsEncryptor.set_encryptor_context("test", encryptors[str(client_ids[1])]):
         assert model.field == inner_encoder.redacted_value
+
+
+@mark.parametrize(
+    ("inner_encoder", "value"),
+    [
+        (encoders.StringEncoder(), "foo"),
+        (encoders.TextEncoder(), "foo"),
+        (encoders.IntEncoder(), 5000),
+        (encoders.DecimalEncoder(), Decimal("1.5")),
+        (encoders.JSONEncoder(), {"foo": "bar", "something_else": []}),
+        (encoders.DatetimeEncoder(), datetime.now()),
+        (encoders.EnumEncoder(AnEnum), AnEnum.FOO),
+        (encoders.Nullable(encoders.StringEncoder()), None),
+        (encoders.Nullable(encoders.StringEncoder()), "foo"),
+        (encoders.Nullable(encoders.EnumEncoder(AnEnum)), None),
+        (encoders.Nullable(encoders.EnumEncoder(AnEnum)), AnEnum.FOO),
+    ],
+)
+def test_redacted_array_value(
+    graph: ObjectGraph,
+    session: Session,
+    encryptors: dict[str, SingleTenantEncryptor],
+    inner_encoder: encoders.Encoder,
+    value: Any,
+) -> None:
+    """Nullable encoders should take the inner redacted value"""
+
+    class TestModel(Model):
+        __tablename__ = "test_employee_redacted_array"
+        __table_args__ = {"extend_existing": True}
+
+        if TYPE_CHECKING:
+            __table__: ClassVar[Table]
+
+        id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+        field = encryption(
+            "field", AwsKmsEncryptor(), encoders.ArrayEncoder(inner_encoder)
+        )
+        field_encrypted = field.encrypted()
+        field_unencrypted = field.unencrypted()
+
+    try:
+        TestModel.__table__.drop(graph.postgres)
+    except ProgrammingError:
+        ...
+    TestModel.__table__.create(graph.postgres)
+
+    # Encrypt data with client1's keys only
+    with AwsKmsEncryptor.set_encryptor_context("test", encryptors[str(client_ids[0])]):
+        session.add(model := TestModel(field=[value]))
+
+    # Attempt to decrypt data with the wrong set of keys to simulate disabled client key
+    with AwsKmsEncryptor.set_encryptor_context("test", encryptors[str(client_ids[1])]):
+        assert model.field == [inner_encoder.redacted_value]
