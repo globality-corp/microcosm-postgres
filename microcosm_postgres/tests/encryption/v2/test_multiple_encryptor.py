@@ -17,14 +17,10 @@ from microcosm.api import (
 )
 from microcosm.object_graph import ObjectGraph
 from pytest import fixture
-from sqlalchemy import Table
+from sqlalchemy import Column, Table
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import (
-    Mapped,
-    Session,
-    mapped_column,
-    sessionmaker as SessionMaker,
-)
+from sqlalchemy.orm import Session, sessionmaker as SessionMaker
+from sqlalchemy_utils import UUIDType
 
 from microcosm_postgres.encryption.encryptor import SingleTenantEncryptor
 from microcosm_postgres.encryption.v2.column import encryption
@@ -38,7 +34,7 @@ class Employee(Model):
     if TYPE_CHECKING:
         __table__: ClassVar[Table]
 
-    id: Mapped[UUID] = mapped_column(default=uuid4, primary_key=True)
+    id = Column(UUIDType, default=uuid4, primary_key=True)
     name: encryption[str] = encryption("name", AwsKmsEncryptor(), StringEncoder())
     name_encrypted = name.encrypted()
     name_unencrypted = name.unencrypted()
