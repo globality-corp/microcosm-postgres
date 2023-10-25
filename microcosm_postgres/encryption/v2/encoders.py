@@ -17,6 +17,8 @@ from typing import (
 import sqlalchemy
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 
+from microcosm_postgres.types import EnumType
+
 
 T = TypeVar("T")
 JSONType: TypeAlias = (
@@ -196,20 +198,26 @@ class Nullable(Encoder[T | None], Generic[T]):
 E = TypeVar("E", bound=Enum)
 
 
-class EnumEncoder(Encoder[E], Generic[E]):
+class EnumEncoder(Encoder[E | None], Generic[E]):
     """
     Encodes and decodes an enum by its name.
 
     """
-    sa_type = sqlalchemy.String
 
     def __init__(self, enum: type[E]):
+        self.sa_type = EnumType(enum)
         self._enum = enum
 
     @encode_exception_wrapper
-    def encode(self, value: E, **kwargs) -> str:
-        return value.name
+    def encode(self, value: E | None, **kwargs) -> str:
+        if value is not None:
+            return value.name
+        else:
+            return "None"
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> E:
-        return self._enum[value]
+    def decode(self, value: str, **kwargs) -> E | None:
+        if value == "None":
+            return None
+        else:
+            return self._enum[value]
