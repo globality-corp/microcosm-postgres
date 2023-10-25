@@ -183,12 +183,12 @@ class JSONEncoder(Encoder[JSONType]):
 
 
 class Nullable(Encoder[T | None], Generic[T]):
-    redacted_value = None
 
     def __init__(self, inner_encoder: Encoder[T]) -> None:
         self.inner_encoder = inner_encoder
         # Nullable encoder does not affect the sa_type
         self.sa_type = inner_encoder.sa_type
+        self.redacted_value = inner_encoder.redacted_value
 
     @encode_exception_wrapper
     def encode(
