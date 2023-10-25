@@ -114,7 +114,9 @@ def test_redacted_value_used(
     value: Any,
 ) -> None:
     class TestModel(Model):
-        __tablename__ = f"test_employee_redacted_{uuid4()}"
+        __tablename__ = "test_employee_redacted"
+        __table_args__ = {"extend_existing": True}
+
         if TYPE_CHECKING:
             __table__: ClassVar[Table]
 
@@ -129,8 +131,10 @@ def test_redacted_value_used(
         ...
     TestModel.__table__.create(graph.postgres)
 
+    # Encrypt data with client1's keys only
     with AwsKmsEncryptor.set_encryptor_context("test", encryptors[str(client_ids[0])]):
         session.add(model := TestModel(field=value))
 
+    # Attempt to decrypt data with the wrong set of keys to simulate disabled client key
     with AwsKmsEncryptor.set_encryptor_context("test", encryptors[str(client_ids[1])]):
         assert model.field == encoder.redacted_value
