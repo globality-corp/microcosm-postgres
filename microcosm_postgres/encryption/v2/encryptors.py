@@ -12,12 +12,14 @@ from typing import (
     overload,
 )
 
+from aws_encryption_sdk.exceptions import DecryptKeyError
 from microcosm.object_graph import ObjectGraph
 from typing_extensions import TypeAlias
 
 from microcosm_postgres.constants import X_REQUEST_CLIENT_HEADER
 from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
+from microcosm_postgres.encryption.v2.errors import DecryptionError
 
 
 class Encryptor(Protocol):
@@ -48,7 +50,7 @@ class Encryptor(Protocol):
         ...
 
 
-class PlainTextEncryptor(Encryptor):
+class PlainTextEncryptor(Encryptor, Protocol):
     def should_encrypt(self) -> bool:
         return False
 
@@ -164,10 +166,13 @@ class AwsKmsEncryptor(Encryptor):
 
     def decrypt(self, value: bytes) -> Union[str, None]:
         if self.encryptor_context is None:
-            raise self.EncryptorNotBound()
+            raise self.EncryptorNotBound("Decryption context is not set")
 
         context, encryptor = self.encryptor_context
-        return encryptor.decrypt(context, value)
+        try:
+            return encryptor.decrypt(context, value)
+        except DecryptKeyError as e:
+            raise DecryptionError() from e
 
     @overload
     def beacon(self, value: str, use_array: Literal[False]) -> str:
