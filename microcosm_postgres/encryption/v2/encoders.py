@@ -210,8 +210,14 @@ class EnumEncoder(Encoder[E], Generic[E]):
 
     @encode_exception_wrapper
     def encode(self, value: E, **kwargs) -> str:
-        return value.name
+        if value is not None:
+            return value.name
+        else:
+            return "None"
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> E:
-        return self._enum[value]
+    def decode(self, value: str, **kwargs) -> E | None:
+        if value == "None":
+            return None
+        else:
+            return self._enum[value]
