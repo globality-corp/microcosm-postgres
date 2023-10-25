@@ -198,7 +198,7 @@ class Nullable(Encoder[T | None], Generic[T]):
 E = TypeVar("E", bound=Enum)
 
 
-class EnumEncoder(Encoder[E], Generic[E]):
+class EnumEncoder(Encoder[E | None], Generic[E]):
     """
     Encodes and decodes an enum by its name.
 
@@ -209,7 +209,7 @@ class EnumEncoder(Encoder[E], Generic[E]):
         self._enum = enum
 
     @encode_exception_wrapper
-    def encode(self, value: E, **kwargs) -> str:
+    def encode(self, value: E | None, **kwargs) -> str:
         if value is not None:
             return value.name
         else:
