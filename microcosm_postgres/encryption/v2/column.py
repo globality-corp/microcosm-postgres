@@ -14,6 +14,8 @@ from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import InstrumentedAttribute, Mapped, mapped_column
 from sqlalchemy.sql.operators import in_op
 
+from microcosm_postgres.encryption.v2.errors import DecryptionError
+
 from .encoders import Encoder
 from .encryptors import Encryptor
 
@@ -170,8 +172,10 @@ class encryption(hybrid_property[T], Generic[T]):
 
             if encrypted is None:
                 return getattr(self, unencrypted_field)
-
-            return decoder_fn(decrypt_fn(encrypted))
+            try:
+                return decoder_fn(decrypt_fn(encrypted))
+            except DecryptionError:
+                return encoder.redacted_value
 
         def _prop_setter(self, value) -> None:
             # We ignore the type - should come back as a string
