@@ -1,7 +1,7 @@
 import logging
 import sys
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, ClassVar, Iterator
+from typing import TYPE_CHECKING, ClassVar
 from uuid import uuid4
 
 from _pytest.logging import LogCaptureFixture
@@ -15,7 +15,12 @@ from microcosm.object_graph import ObjectGraph
 from pytest import fixture
 from sqlalchemy import UUID, Table
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import mapped_column, sessionmaker as SessionMaker, Session
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Session,
+    mapped_column,
+    sessionmaker as SessionMaker,
+)
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
@@ -23,10 +28,13 @@ from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.encryption.v2.reencryption.cli import ReencryptionCli
-from microcosm_postgres.models import Model
 
 
-class Employee(Model):
+class NewModel(DeclarativeBase):
+    pass
+
+
+class Employee(NewModel):
     __tablename__ = "test_encryption_employee_v4"
     if TYPE_CHECKING:
         __table__: ClassVar[Table]
@@ -111,7 +119,21 @@ def find_employee_instances_iter(session: Session, client_id: str, **kwargs) -> 
     return session.query(Employee).filter(Employee.client_id == client_id).all()
 
 
-def test_reencrypt_cli(graph: ObjectGraph, single_tenant_encryptor: SingleTenantEncryptor, caplog: LogCaptureFixture):
+@fixture
+def reencryption_cli(graph: ObjectGraph) -> ReencryptionCli:
+    return ReencryptionCli(
+        instance_iterators=[find_employee_instances_iter],  # type: ignore
+        base_models_mapping={NewModel: [Employee]},
+        graph=graph,
+    )
+
+
+def test_reencrypt_cli(
+    graph: ObjectGraph,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    caplog: LogCaptureFixture,
+    reencryption_cli: ReencryptionCli
+) -> None:
     caplog.set_level(logging.INFO)
 
     with (
@@ -140,17 +162,12 @@ def test_reencrypt_cli(graph: ObjectGraph, single_tenant_encryptor: SingleTenant
         for _ in range(10):
             session.add(Employee(name="foo", client_id=random_client_id))
 
-    cli = ReencryptionCli(
-        instance_iterators=[find_employee_instances_iter],  # type: ignore
-        base_models_mapping={Model: [Employee]},
-        graph=graph,
-    )
     args_mock = SimpleNamespace(
         client_id=str(client_id),
         no_dry_run=True,
         testing=True,
     )
-    cli.reencrypt(args_mock)
+    reencryption_cli.reencrypt(args_mock)
 
     with (
         SessionContext(graph) as context,
@@ -179,7 +196,12 @@ def test_reencrypt_cli(graph: ObjectGraph, single_tenant_encryptor: SingleTenant
            "instances_found_to_be_unencrypted=0, instances_reencrypted=10)"
 
 
-def test_reencrypt_cli_dry_run(graph: ObjectGraph, single_tenant_encryptor: SingleTenantEncryptor):
+def test_reencrypt_cli_no_dry_run(
+    graph: ObjectGraph,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    caplog: LogCaptureFixture,
+    reencryption_cli: ReencryptionCli
+) -> None:
     with (
         SessionContext(graph) as context,
         transaction(),
@@ -206,17 +228,12 @@ def test_reencrypt_cli_dry_run(graph: ObjectGraph, single_tenant_encryptor: Sing
         for _ in range(10):
             session.add(Employee(name="foo", client_id=random_client_id))
 
-    cli = ReencryptionCli(
-        instance_iterators=[find_employee_instances_iter],  # type: ignore
-        base_models_mapping={Model: [Employee]},
-        graph=graph,
-    )
     args_mock = SimpleNamespace(
         client_id=str(client_id),
         no_dry_run=False,
         testing=True,
     )
-    cli.reencrypt(args_mock)
+    reencryption_cli.reencrypt(args_mock)
 
     with (
         SessionContext(graph) as context,
@@ -242,7 +259,12 @@ def test_reencrypt_cli_validation_error():
     pass
 
 
-def test_audit_cli(graph: ObjectGraph, single_tenant_encryptor: SingleTenantEncryptor, caplog: LogCaptureFixture):
+def test_audit_cli(
+    graph: ObjectGraph,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    caplog: LogCaptureFixture,
+    reencryption_cli: ReencryptionCli
+) -> None:
     caplog.set_level(logging.INFO)
 
     with (
@@ -269,60 +291,63 @@ def test_audit_cli(graph: ObjectGraph, single_tenant_encryptor: SingleTenantEncr
         for _ in range(10):
             session.add(Employee(name="foo", client_id=random_client_id))
 
-    cli = ReencryptionCli(
-        instance_iterators=[find_employee_instances_iter],  # type: ignore
-        base_models_mapping={Model: [Employee]},
-        graph=graph,
-    )
-    cli.audit(SimpleNamespace())
+    reencryption_cli.audit(SimpleNamespace())
     assert caplog.messages[-2] == "Found {} table(s) with encryption usage:"
     assert caplog.messages[-1] == "Model name: {}, Cols used: {}"
 
 
-def test_reencrypt_command_setup(graph: ObjectGraph, single_tenant_encryptor, caplog: LogCaptureFixture):
-    caplog.set_level(logging.INFO)
-    sys.argv = ["prog_name", "reencrypt", "--client-id", str(client_id)]
-
+@fixture
+def reencryption_cli_with_mocked_iterator(
+        graph: ObjectGraph,
+) -> ReencryptionCli:
     def mock_iterator(*args, **kwargs):
         return []
 
-    cli = ReencryptionCli(
+    return ReencryptionCli(
         instance_iterators=[mock_iterator],
-        base_models_mapping={Model: [Employee]},
+        base_models_mapping={NewModel: [Employee]},
         graph=graph,
     )
-    cli()
+
+
+def test_reencrypt_command_setup(
+    graph: ObjectGraph,
+    single_tenant_encryptor,
+    caplog: LogCaptureFixture,
+    reencryption_cli_with_mocked_iterator: ReencryptionCli
+):
+    caplog.set_level(logging.INFO)
+    sys.argv = ["prog_name", "reencrypt", "--client-id", str(client_id)]
+
+    reencryption_cli_with_mocked_iterator()
     assert caplog.messages[-3] == "Success!"
 
 
-def test_reencrypt_command_setup_dry_run(graph: ObjectGraph, single_tenant_encryptor, caplog: LogCaptureFixture):
+def test_reencrypt_command_setup_dry_run(
+    graph: ObjectGraph,
+    single_tenant_encryptor,
+    caplog: LogCaptureFixture,
+    reencryption_cli_with_mocked_iterator: ReencryptionCli
+):
     caplog.set_level(logging.INFO)
     sys.argv = ["prog_name", "reencrypt", "--client-id", str(client_id), "--no-dry-run"]
 
     def mock_iterator(*args, **kwargs):
         return []
 
-    cli = ReencryptionCli(
-        instance_iterators=[mock_iterator],
-        base_models_mapping={Model: [Employee]},
-        graph=graph,
-    )
-    cli()
+    reencryption_cli_with_mocked_iterator()
     assert caplog.messages[-3] == "Success!"
 
 
-def test_audit_command_setup(graph: ObjectGraph, single_tenant_encryptor, caplog: LogCaptureFixture):
+def test_audit_command_setup(
+    graph: ObjectGraph,
+    single_tenant_encryptor,
+    caplog: LogCaptureFixture,
+    reencryption_cli_with_mocked_iterator: ReencryptionCli
+):
     caplog.set_level(logging.INFO)
     sys.argv = ["prog_name", "audit"]
 
-    def mock_iterator(*args, **kwargs):
-        return []
-
-    cli = ReencryptionCli(
-        instance_iterators=[mock_iterator],
-        base_models_mapping={Model: [Employee]},
-        graph=graph,
-    )
-    cli()
+    reencryption_cli_with_mocked_iterator()
     assert caplog.messages[-2] == "Found {} table(s) with encryption usage:"
     assert caplog.messages[-1] == "Model name: {}, Cols used: {}"
