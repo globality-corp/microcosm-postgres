@@ -2,7 +2,7 @@ import io
 import sys
 from contextlib import contextmanager
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import uuid4
 
 from microcosm.api import (
@@ -13,14 +13,10 @@ from microcosm.api import (
 )
 from microcosm.object_graph import ObjectGraph
 from pytest import fixture
-from sqlalchemy import UUID, Table
+from sqlalchemy import Column, Table
 from sqlalchemy.exc import ProgrammingError
-from sqlalchemy.orm import (
-    DeclarativeBase,
-    Session,
-    mapped_column,
-    sessionmaker as SessionMaker,
-)
+from sqlalchemy.orm import Session, declarative_base, sessionmaker as SessionMaker
+from sqlalchemy_utils import UUIDType
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
@@ -30,8 +26,7 @@ from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 from microcosm_postgres.encryption.v2.reencryption.cli import ReencryptionCli
 
 
-class NewModel(DeclarativeBase):
-    pass
+NewModel: Any = declarative_base()
 
 
 class Employee(NewModel):
@@ -39,7 +34,7 @@ class Employee(NewModel):
     if TYPE_CHECKING:
         __table__: ClassVar[Table]
 
-    id = mapped_column(UUID, primary_key=True, default=uuid4)
+    id = Column(UUIDType(), primary_key=True, default=uuid4)
 
     # Name requires beacon value for search
     name = encryption("name", AwsKmsEncryptor(), StringEncoder())
@@ -47,7 +42,7 @@ class Employee(NewModel):
     name_unencrypted = name.unencrypted(index=True)
     name_beacon = name.beacon()
 
-    client_id = mapped_column(UUID, nullable=False, index=True)
+    client_id = Column(UUIDType(), nullable=False)
 
 
 client_id = uuid4()

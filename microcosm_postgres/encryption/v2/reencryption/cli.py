@@ -1,5 +1,10 @@
 from argparse import ArgumentParser
-from typing import Any, Iterator, Protocol
+from typing import (
+    Any,
+    Iterator,
+    Protocol,
+    Union,
+)
 
 from microcosm.object_graph import ObjectGraph
 from sqlalchemy import inspect
@@ -153,7 +158,7 @@ class ReencryptionCli:
         for stat in stats:
             stat.log_stats()
 
-    def _get_encryption_columns(self, instance: Model | type):
+    def _get_encryption_columns(self, instance: Union[Model, type]):
         if isinstance(instance, type):
             model = instance
         else:
