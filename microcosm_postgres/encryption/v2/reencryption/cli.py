@@ -1,9 +1,7 @@
 from argparse import ArgumentParser
-from logging import Logger
 from typing import Any, Iterator, Protocol
 
 from microcosm.object_graph import ObjectGraph
-from microcosm_logging.decorators import logger
 from sqlalchemy import inspect
 from sqlalchemy.orm import Session
 
@@ -19,14 +17,11 @@ from microcosm_postgres.models import Model
 
 
 class InstanceIterator(Protocol):
-    def __call__(self, session: Session | None = None, client_id: str | None = None, **kwargs) -> Iterator[Model]:
+    def __call__(self, session: Session, client_id: str, graph: ObjectGraph, **kwargs) -> Iterator[Model]:
         ...
 
 
-@logger
 class ReencryptionCli:
-
-    logger: Logger
 
     def __init__(
         self,
@@ -44,6 +39,9 @@ class ReencryptionCli:
         self.iterators = instance_iterators
         self.base_models_mapping = base_models_mapping
         self.graph = graph
+
+        # Squash into single list of models
+        self.all_models = [item for sublist in base_models_mapping.values() for item in sublist]
 
         self.parser = ArgumentParser(description="Reencryption CLI")
         self.subparsers = self.parser.add_subparsers()
@@ -77,26 +75,40 @@ class ReencryptionCli:
             stats: list[ReencryptionStatistic] = []
 
             # We assume that we have one iterator per model type
+            collector = ReencryptionStatsCollector()
             for instance_iterator in self.iterators:
-                collector = ReencryptionStatsCollector()
-
-                for instance in instance_iterator(session=session, client_id=client_id):
+                for instance in instance_iterator(session=session, client_id=client_id, graph=self.graph):
                     found_to_be_unencrypted, changed_committed = reencrypt_instance(
                         session=session,
                         instance=instance,
                         encryption_columns=self._get_encryption_columns(instance),
                         dry_run=dry_run,
                     )
-                    collector.update(instance, found_to_be_unencrypted, changed_committed)
+                    model = self._find_model_for_instance(instance)
+                    collector.update(found_to_be_unencrypted, changed_committed, model_name=model.__name__)
 
-                stats.append(collector.get_statistic())
-
+        stats = collector.get_stats()
         self._write_reenrypt_logs(elapsed_time_data, stats)
 
     def audit(self, args: Any):
         for base_model in self.base_models_mapping:
             models = self._find_models_using_encryption(base_model=base_model)
             self._log_reencryption_usage_info(models)
+
+    def _find_model_for_instance(self, instance: Model) -> type:
+        """
+        Find the model class for the given instance.
+
+        To speed this up we can pass in the previously used model_type?
+
+        """
+        for m in self.all_models:
+            if isinstance(instance, m):
+                return m
+
+        raise ValueError(
+            f"This shouldn't happen. Instance type not found in any of the models. instance: {instance}"
+        )
 
     def _get_reencrypt_args(self, args: Any) -> tuple[str, bool]:
         """
@@ -134,12 +146,12 @@ class ReencryptionCli:
             raise ValueError(f"Looks like we might be missing a table(s) using encryption: {', '.join(diff)}")
 
     def _write_reenrypt_logs(self, elapsed_time_data: dict[str, Any], stats: list[ReencryptionStatistic]):
-        self.logger.info("Success!")
-        self.logger.info("Time taken to run: {elapsed_time}", extra=elapsed_time_data)
+        print("Success!")  # noqa: T201
+        print(f"Time taken to run: {elapsed_time_data['elapsed_time']}")  # noqa: T201
 
         # Log stats
         for stat in stats:
-            self.logger.info(stat)
+            stat.log_stats()
 
     def _get_encryption_columns(self, instance: Model | type):
         if isinstance(instance, type):
@@ -150,7 +162,7 @@ class ReencryptionCli:
         try:
             inspected_model: Any = inspect(model)
         except Exception:
-            self.logger.info("Unable to inspect model: {}", extra=dict(model=model.__name__))
+            print(f"Unable to inspect model: {model.__name__}")  # noqa: T201
             return []
 
         if inspected_model is None:
@@ -206,13 +218,10 @@ class ReencryptionCli:
 
     def _log_reencryption_usage_info(self, models_with_encryption: list[type]) -> None:
         if not models_with_encryption:
-            self.logger.info("No models found using encryption.")
+            print("No models found using encryption.")  # noqa: T201
             return
 
-        self.logger.info(
-            "Found {} table(s) with encryption usage:",
-            extra=dict(models_with_encryption=len(models_with_encryption))
-        )
+        print(f"Found {len(models_with_encryption)} table(s) with encryption usage:")  # noqa: T201
         for m in models_with_encryption:
             cols_used = ", ".join([col for col in self._get_encryption_columns(m)])
-            self.logger.info("Model name: {}, Cols used: {}", extra=dict(model_name=m.__name__, cols_used=cols_used))
+            print(f"Model name: {m.__name__}, Cols used: {cols_used}")  # noqa: T201

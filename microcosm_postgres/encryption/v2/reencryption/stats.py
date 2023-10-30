@@ -1,35 +1,6 @@
 from dataclasses import dataclass
 
 
-class ReencryptionStatsCollector:
-    """
-    Used in the collection of reencryption statistics
-    Designed to be used with the reencryption cli
-
-    """
-    def __init__(self):
-        self.instances_found_to_be_unencrypted = 0
-        self.instances_reencrypted = 0
-        self.total_instances_found = 0
-        self.model = None
-
-    def update(self, instance, found_to_be_unencrypted, changed_committed):
-        if self.model is None:
-            self.model = instance.__class__
-
-        self.instances_found_to_be_unencrypted += 1 if found_to_be_unencrypted else 0
-        self.instances_reencrypted += 1 if changed_committed else 0
-        self.total_instances_found += 1
-
-    def get_statistic(self):
-        return ReencryptionStatistic(
-            model_name=self.model.__name__ if self.model else "Unknown",
-            total_instances_found=self.total_instances_found,
-            instances_found_to_be_unencrypted=self.instances_found_to_be_unencrypted,
-            instances_reencrypted=self.instances_reencrypted,
-        )
-
-
 @dataclass
 class ReencryptionStatistic:
     """
@@ -47,3 +18,37 @@ class ReencryptionStatistic:
         print(f"- Total Instances Found: {self.total_instances_found}")  # noqa: T201
         print(f"- Instances Found to be Unencrypted: {self.instances_found_to_be_unencrypted}")  # noqa: T201
         print(f"- Instances Reencrypted: {self.instances_reencrypted}")  # noqa: T201
+
+
+class ReencryptionStatsCollector:
+    """
+    Used in the collection of reencryption statistics
+    Designed to be used with the reencryption cli
+
+    """
+    def __init__(self):
+        self.instances_found_to_be_unencrypted = 0
+        self.instances_reencrypted = 0
+        self.total_instances_found = 0
+        self.model = None
+
+        # Data holds a mapping of model_name to ReencryptionStatistic
+        self.data = dict()
+
+    def update(self, found_to_be_unencrypted, changed_committed, model_name: str):
+        statistic = self.data.get(model_name)
+        if statistic is None:
+            statistic = ReencryptionStatistic(
+                model_name=model_name,
+                total_instances_found=0,
+                instances_found_to_be_unencrypted=0,
+                instances_reencrypted=0,
+            )
+            self.data[model_name] = statistic
+
+        statistic.instances_found_to_be_unencrypted += 1 if found_to_be_unencrypted else 0
+        statistic.instances_reencrypted += 1 if changed_committed else 0
+        statistic.total_instances_found += 1
+
+    def get_stats(self) -> list[ReencryptionStatistic]:
+        return list(self.data.values())
