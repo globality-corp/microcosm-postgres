@@ -4,6 +4,7 @@ Implement application-layer encryption using the aws-encryption-sdk.
 """
 from typing import (
     Mapping,
+    Optional,
     Sequence,
     Tuple,
     Union,
@@ -11,9 +12,11 @@ from typing import (
 
 from aws_encryption_sdk import CommitmentPolicy, EncryptionSDKClient
 from aws_encryption_sdk.materials_managers.base import CryptoMaterialsManager
+from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, hmac
 
 from microcosm_postgres.encryption.constants import ENCRYPTION_V1_DEFAULT_KEY
+from microcosm_postgres.encryption.v2.beacons import BeaconHashAlgorithm
 
 
 class SingleTenantEncryptor:
@@ -75,13 +78,24 @@ class SingleTenantEncryptor:
         )
         return plaintext.decode("utf-8")
 
-    def beacon(self, value: str) -> Union[str, None]:
-        if self._beacon_key is None:
-            return None
+    def beacon(self, value: str, algorithm: Optional[BeaconHashAlgorithm] = None) -> Optional[str]:
+        if algorithm in [BeaconHashAlgorithm.SHA_256, None]:
+            # Note that this is the default behaviour
+            # Create a SHA-256 hash object
+            digest = hashes.Hash(hashes.SHA256(), backend=default_backend())
+            digest.update(value.encode("utf-8"))
+            return digest.finalize().hex()
 
-        h = hmac.HMAC(self._beacon_key, hashes.SHA256())
-        h.update(value.encode("utf-8"))
-        return h.finalize().hex()
+        elif algorithm == BeaconHashAlgorithm.HMAC_SHA_256:
+            if self._beacon_key is None:
+                return None
+
+            h = hmac.HMAC(self._beacon_key, hashes.SHA256())
+            h.update(value.encode("utf-8"))
+            return h.finalize().hex()
+
+        else:
+            return None
 
     def unpack_key_id(self, key_provider):
         key_info = key_provider.key_info
@@ -128,11 +142,16 @@ class MultiTenantEncryptor:
             return None
         return encryptor.decrypt(encryption_context_key, ciphertext)
 
-    def beacon(self, encryption_context_key: str, value: str) -> Union[str, None]:
+    def beacon(
+        self,
+        encryption_context_key: str,
+        value: str,
+        algorithm: Optional[BeaconHashAlgorithm] = None
+    ) -> Optional[str]:
         encryptor = self[encryption_context_key]
         if encryptor is None:
             return None
-        return encryptor.beacon(value)
+        return encryptor.beacon(value, algorithm=algorithm)
 
 
 Encryptor = Union[

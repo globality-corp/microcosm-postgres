@@ -7,6 +7,7 @@ from typing import (
     ContextManager,
     Iterator,
     Literal,
+    Optional,
     Protocol,
     Union,
     overload,
@@ -19,6 +20,7 @@ from typing_extensions import TypeAlias
 from microcosm_postgres.constants import X_REQUEST_CLIENT_HEADER
 from microcosm_postgres.encryption.constants import ENCRYPTION_V2_DEFAULT_KEY
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
+from microcosm_postgres.encryption.v2.beacons import BeaconHashAlgorithm
 from microcosm_postgres.encryption.v2.errors import DecryptionError
 
 
@@ -38,14 +40,29 @@ class Encryptor(Protocol):
         ...
 
     @overload
-    def beacon(self, value: str, use_array: Literal[False]) -> str:
+    def beacon(
+        self,
+        value: str,
+        use_array: Literal[False],
+        algorithm: Optional[BeaconHashAlgorithm] = None,
+    ) -> str:
         ...
 
     @overload
-    def beacon(self, value: list[str], use_array: Literal[True]) -> list[str]:
+    def beacon(
+        self,
+        value: list[str],
+        use_array: Literal[True],
+        algorithm: Optional[BeaconHashAlgorithm] = None,
+    ) -> list[str]:
         ...
 
-    def beacon(self, value: Union[str, list[str]], use_array: bool = False) -> Union[list[str], str]:
+    def beacon(
+        self,
+        value: str | list[str],
+        use_array: bool = False,
+        algorithm: Optional[BeaconHashAlgorithm] = None,
+    ) -> list[str] | str:
         """Hash value using the beacon key."""
         ...
 
@@ -123,7 +140,9 @@ class AwsKmsEncryptor(Encryptor):
             default_encryptor = encryptors[ENCRYPTION_V2_DEFAULT_KEY]
             if default_encryptor is None:
                 return nullcontext()
-            return cls.set_encryptor_context(ENCRYPTION_V2_DEFAULT_KEY, default_encryptor)
+            return cls.set_encryptor_context(
+                ENCRYPTION_V2_DEFAULT_KEY, default_encryptor
+            )
 
         client_encryptor = encryptors[client_id]
         if client_encryptor is None:
@@ -175,27 +194,42 @@ class AwsKmsEncryptor(Encryptor):
             raise DecryptionError() from e
 
     @overload
-    def beacon(self, value: str, use_array: Literal[False]) -> str:
+    def beacon(
+        self,
+        value: str,
+        use_array: Literal[False],
+        algorithm: Optional[BeaconHashAlgorithm] = None,
+    ) -> str:
         ...
 
     @overload
-    def beacon(self, value: list[str], use_array: Literal[True]) -> list[str]:
+    def beacon(
+        self,
+        value: list[str],
+        use_array: Literal[True],
+        algorithm: Optional[BeaconHashAlgorithm] = None,
+    ) -> list[str]:
         ...
 
-    def beacon(self, value: Union[str, list[str]], use_array: bool = False) -> Union[list[str], str]:
+    def beacon(
+        self,
+        value: str | list[str],
+        use_array: bool = False,
+        algorithm: Optional[BeaconHashAlgorithm] = None,
+    ) -> list[str] | str:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()
 
         _, encryptor = self.encryptor_context
         if use_array:
             assert isinstance(value, list)
-            _beacon = [encryptor.beacon(v) for v in value]
+            _beacon = [encryptor.beacon(v, algorithm=algorithm) for v in value]
             # Filter out the None values
             _beacon = [v for v in _beacon if v is not None]
 
         else:
             assert isinstance(value, str)
-            _beacon = encryptor.beacon(value)  # type: ignore[assignment]
+            _beacon = encryptor.beacon(value, algorithm=algorithm)  # type: ignore[assignment]
 
         if _beacon is None:
             raise self.BeaconKeyNotSet()

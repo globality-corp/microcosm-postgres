@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Optional,
     TypedDict,
     TypeVar,
     Union,
@@ -18,6 +19,7 @@ from sqlalchemy.ext.hybrid import Comparator, hybrid_property
 from sqlalchemy.orm import InstrumentedAttribute, Mapped
 from sqlalchemy.sql.operators import in_op
 
+from microcosm_postgres.encryption.v2.beacons import BeaconHashAlgorithm
 from microcosm_postgres.encryption.v2.errors import DecryptionError
 
 from .encoders import Encoder
@@ -38,6 +40,7 @@ class BeaconComparator(Comparator):
         beacon_fn: Callable,
         encrypt_fn: Callable[[str], Union[bytes, None]],
         beacon_val: Any = None,
+        beacon_algorithm: Optional[BeaconHashAlgorithm] = None,
     ):
         self.val = val
 
@@ -48,6 +51,7 @@ class BeaconComparator(Comparator):
         self.encoder_fn = encoder_fn
         self.beacon_fn = beacon_fn
         self.encrypt_fn = encrypt_fn
+        self.beacon_algorithm = beacon_algorithm
 
     def operate(self, op: Callable, other: Any = NOT_SET, **kwargs: Any):  # type: ignore[override]  # noqa: E501
         # This first condition might happen when we are doing an order by ACS / DESC
@@ -87,7 +91,7 @@ class BeaconComparator(Comparator):
             return [self._beaconise(v) for v in value]
 
         encoded = self.encoder_fn(value)
-        beaconised = self.beacon_fn(encoded)
+        beaconised = self.beacon_fn(encoded, algorithm=self.beacon_algorithm)
         return beaconised
 
     def _check_if_should_use_beacon(self):
@@ -124,6 +128,7 @@ class encryption(hybrid_property, Generic[T]):
         *,
         column_type: Any = NOT_SET,
         use_beacon_array: bool = False,
+        beacon_algorithm: Optional[BeaconHashAlgorithm] = None
     ):
         ...
 
@@ -137,6 +142,7 @@ class encryption(hybrid_property, Generic[T]):
         default: Union[T, Callable[[], T]],
         column_type: Any = NOT_SET,
         use_beacon_array: bool = False,
+        beacon_algorithm: Optional[BeaconHashAlgorithm] = None
     ):
         ...
 
@@ -149,6 +155,7 @@ class encryption(hybrid_property, Generic[T]):
         column_type: Any = NOT_SET,
         default: Any = NOT_SET,
         use_beacon_array: bool = False,
+        beacon_algorithm: Optional[BeaconHashAlgorithm] = None,
     ):
         self.default = default
         self.key = key
@@ -156,6 +163,7 @@ class encryption(hybrid_property, Generic[T]):
         self.encoder = encoder
         self.column_type = encoder.sa_type if column_type is NOT_SET else column_type
         self.use_beacon_array = use_beacon_array
+        self.beacon_algorithm = beacon_algorithm
 
         # This is used in the store auto filters
         self.name = key
@@ -206,7 +214,8 @@ class encryption(hybrid_property, Generic[T]):
                         encoder_fn(
                             value, keep_as_array=keep_as_array
                         ),
-                        use_array=keep_as_array
+                        use_array=keep_as_array,
+                        algorithm=beacon_algorithm,
                     )
                 )
 
@@ -218,6 +227,7 @@ class encryption(hybrid_property, Generic[T]):
                     encoder_fn=encoder_fn,
                     beacon_fn=beacon_fn,
                     encrypt_fn=encrypt_fn,
+                    beacon_algorithm=beacon_algorithm,
                 )
 
             return getattr(cls, unencrypted_field)
