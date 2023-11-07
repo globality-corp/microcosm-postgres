@@ -29,6 +29,7 @@ from sqlalchemy.orm import Session, mapped_column, sessionmaker as SessionMaker
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
+from microcosm_postgres.encryption.v2.beacons import BeaconHashAlgorithm
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import (
     ArrayEncoder,
@@ -50,7 +51,7 @@ class Employee(Model):
     id = mapped_column(UUID, primary_key=True, default=uuid4)
 
     # Name requires beacon value for search
-    name = encryption("name", AwsKmsEncryptor(), StringEncoder())
+    name = encryption("name", AwsKmsEncryptor(), StringEncoder(), beacon_algorithm=BeaconHashAlgorithm.HMAC_SHA_256)
     name_encrypted = name.encrypted()
     name_unencrypted = name.unencrypted(index=True)
     name_beacon = name.beacon()
@@ -60,7 +61,7 @@ class Employee(Model):
     salary_encrypted = salary.encrypted()
     salary_unencrypted = salary.unencrypted()
 
-    age = encryption("age", AwsKmsEncryptor(), IntEncoder())
+    age = encryption("age", AwsKmsEncryptor(), IntEncoder(), beacon_algorithm=BeaconHashAlgorithm.HMAC_SHA_256)
     age_encrypted = age.encrypted()
     age_unencrypted = age.unencrypted()
     age_beacon = age.beacon()
@@ -75,10 +76,24 @@ class Employee(Model):
         Nullable(ArrayEncoder(StringEncoder())),
         default=list,
         use_beacon_array=True,
+        beacon_algorithm=BeaconHashAlgorithm.HMAC_SHA_256,
     )
     skills_encrypted = skills.encrypted()
     skills_unencrypted = skills.unencrypted()
     skills_beacon = skills.beacon()
+
+    # Array of encrypted values
+    locations = encryption(
+        "locations",
+        AwsKmsEncryptor(),
+        Nullable(ArrayEncoder(StringEncoder())),
+        default=list,
+        use_beacon_array=True,
+        beacon_algorithm=BeaconHashAlgorithm.SHA_256,
+    )
+    locations_encrypted = locations.encrypted()
+    locations_unencrypted = locations.unencrypted()
+    locations_beacon = locations.beacon()
 
     # In the encrypted world, we need to make sure that the combination of name and department is unique
     __table_args__ = (
@@ -167,7 +182,7 @@ class EmployeeStore(Store):
         return AwsKmsEncryptor()
 
     def _beaconise(self, value, use_array):
-        return AwsKmsEncryptor().beacon(value, use_array=use_array)
+        return AwsKmsEncryptor().beacon(value, use_array=use_array, algorithm=BeaconHashAlgorithm.HMAC_SHA_256)
 
 
 client_id = uuid4()
@@ -295,8 +310,21 @@ def test_beacon_value_generation(
     Test that checks that the beacon value is generated as expected
 
     """
-    beacon = single_tenant_encryptor.beacon("test")
+    beacon = single_tenant_encryptor.beacon("test", algorithm=BeaconHashAlgorithm.HMAC_SHA_256)
     assert beacon == "6fadab32a97ee7ee93eef7ff537cf4b977e7e736d8a2fea7023c3cca59573096"
+
+
+def test_beacon_value_generation_sha_256(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
+    """
+    Test that checks that the beacon value is generated as expected
+
+    """
+    beacon = single_tenant_encryptor.beacon("test", algorithm=BeaconHashAlgorithm.SHA_256)
+    assert beacon == "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
 
 
 def test_beacon_array_value_generation(
@@ -317,6 +345,26 @@ def test_beacon_array_value_generation(
             'db997b758f30e08b6bc21455ebf1f46c577a88ca9d18448d7175f491d097aae5',
             '0a11245589085d402e710ff76cbea06e087bbff5f398715f174c9b7a0253c2cf'
         ]
+
+
+def test_beacon_array_value_generation_sha_256(
+    session: Session,
+    single_tenant_encryptor: SingleTenantEncryptor,
+    graph: ObjectGraph,
+) -> None:
+    """
+    Test that checks that the beacon value is generated as expected
+
+    """
+    with AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor):
+        session.add(employee := Employee(name="James", locations=["london", "new york"]))
+        assert employee.locations_unencrypted is None
+        assert employee.locations_encrypted is not None
+        assert employee.locations_beacon == [
+            '6089854c94ca5454b76be6752c562901a985f64c9a946f62976aeab593b83161',
+            'bd732730bd39834d83bf92a114960180d3bd4a6f1309307165e6f30ed9846fdd'
+        ]
+        assert employee.locations == ["london", "new york"]
 
 
 def test_encrypt_and_search_using_beacon(
