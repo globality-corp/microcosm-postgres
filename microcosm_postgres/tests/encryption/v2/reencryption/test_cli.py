@@ -20,6 +20,7 @@ from sqlalchemy_utils import UUIDType
 
 from microcosm_postgres.context import SessionContext, transaction
 from microcosm_postgres.encryption.encryptor import MultiTenantEncryptor, SingleTenantEncryptor
+from microcosm_postgres.encryption.v2.beacons import BeaconHashAlgorithm
 from microcosm_postgres.encryption.v2.column import encryption
 from microcosm_postgres.encryption.v2.encoders import StringEncoder
 from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
@@ -37,7 +38,7 @@ class Employee(NewModel):
     id = Column(UUIDType(), primary_key=True, default=uuid4)
 
     # Name requires beacon value for search
-    name = encryption("name", AwsKmsEncryptor(), StringEncoder())
+    name = encryption("name", AwsKmsEncryptor(), StringEncoder(), beacon_algorithm=BeaconHashAlgorithm.HMAC_SHA_256)
     name_encrypted = name.encrypted()
     name_unencrypted = name.unencrypted(index=True)
     name_beacon = name.beacon()
