@@ -4,6 +4,7 @@ Implement application-layer encryption using the aws-encryption-sdk.
 """
 from typing import (
     Mapping,
+    Optional,
     Sequence,
     Tuple,
     Union,
@@ -77,7 +78,7 @@ class SingleTenantEncryptor:
         )
         return plaintext.decode("utf-8")
 
-    def beacon(self, value: str, algorithm: BeaconHashAlgorithm | None = None) -> str | None:
+    def beacon(self, value: str, algorithm: Optional[BeaconHashAlgorithm] = None) -> Optional[str]:
         if algorithm in [BeaconHashAlgorithm.SHA_256, None]:
             # Note that this is the default behaviour
             # Create a SHA-256 hash object
@@ -145,8 +146,8 @@ class MultiTenantEncryptor:
         self,
         encryption_context_key: str,
         value: str,
-        algorithm: BeaconHashAlgorithm | None = None
-    ) -> str | None:
+        algorithm: Optional[BeaconHashAlgorithm] = None
+    ) -> Optional[str]:
         encryptor = self[encryption_context_key]
         if encryptor is None:
             return None

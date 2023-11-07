@@ -7,6 +7,7 @@ from typing import (
     ContextManager,
     Iterator,
     Literal,
+    Optional,
     Protocol,
     Union,
     overload,
@@ -43,7 +44,7 @@ class Encryptor(Protocol):
         self,
         value: str,
         use_array: Literal[False],
-        algorithm: BeaconHashAlgorithm | None = None,
+        algorithm: Optional[BeaconHashAlgorithm] = None,
     ) -> str:
         ...
 
@@ -52,7 +53,7 @@ class Encryptor(Protocol):
         self,
         value: list[str],
         use_array: Literal[True],
-        algorithm: BeaconHashAlgorithm | None = None,
+        algorithm: Optional[BeaconHashAlgorithm] = None,
     ) -> list[str]:
         ...
 
@@ -60,7 +61,7 @@ class Encryptor(Protocol):
         self,
         value: str | list[str],
         use_array: bool = False,
-        algorithm: BeaconHashAlgorithm | None = None,
+        algorithm: Optional[BeaconHashAlgorithm] = None,
     ) -> list[str] | str:
         """Hash value using the beacon key."""
         ...
@@ -197,7 +198,7 @@ class AwsKmsEncryptor(Encryptor):
         self,
         value: str,
         use_array: Literal[False],
-        algorithm: BeaconHashAlgorithm | None = None,
+        algorithm: Optional[BeaconHashAlgorithm] = None,
     ) -> str:
         ...
 
@@ -206,7 +207,7 @@ class AwsKmsEncryptor(Encryptor):
         self,
         value: list[str],
         use_array: Literal[True],
-        algorithm: BeaconHashAlgorithm | None = None,
+        algorithm: Optional[BeaconHashAlgorithm] = None,
     ) -> list[str]:
         ...
 
@@ -214,7 +215,7 @@ class AwsKmsEncryptor(Encryptor):
         self,
         value: str | list[str],
         use_array: bool = False,
-        algorithm: BeaconHashAlgorithm | None = None,
+        algorithm: Optional[BeaconHashAlgorithm] = None,
     ) -> list[str] | str:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()

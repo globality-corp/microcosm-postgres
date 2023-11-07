@@ -5,6 +5,7 @@ from typing import (
     Any,
     Callable,
     Generic,
+    Optional,
     TypedDict,
     TypeVar,
     Union,
@@ -39,7 +40,7 @@ class BeaconComparator(Comparator):
         beacon_fn: Callable,
         encrypt_fn: Callable[[str], Union[bytes, None]],
         beacon_val: Any = None,
-        beacon_algorithm: BeaconHashAlgorithm | None = None,
+        beacon_algorithm: Optional[BeaconHashAlgorithm] = None,
     ):
         self.val = val
 
@@ -127,7 +128,7 @@ class encryption(hybrid_property, Generic[T]):
         *,
         column_type: Any = NOT_SET,
         use_beacon_array: bool = False,
-        beacon_algorithm: BeaconHashAlgorithm | None = None
+        beacon_algorithm: Optional[BeaconHashAlgorithm] = None
     ):
         ...
 
@@ -141,7 +142,7 @@ class encryption(hybrid_property, Generic[T]):
         default: Union[T, Callable[[], T]],
         column_type: Any = NOT_SET,
         use_beacon_array: bool = False,
-        beacon_algorithm: BeaconHashAlgorithm | None = None
+        beacon_algorithm: Optional[BeaconHashAlgorithm] = None
     ):
         ...
 
@@ -154,7 +155,7 @@ class encryption(hybrid_property, Generic[T]):
         column_type: Any = NOT_SET,
         default: Any = NOT_SET,
         use_beacon_array: bool = False,
-        beacon_algorithm: BeaconHashAlgorithm | None = None,
+        beacon_algorithm: Optional[BeaconHashAlgorithm] = None,
     ):
         self.default = default
         self.key = key
