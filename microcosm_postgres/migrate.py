@@ -40,13 +40,48 @@ from sys import argv
 from tempfile import mkdtemp
 from textwrap import dedent
 
-from alembic import context
+from alembic import context, script
 from alembic.config import CommandLine, Config
+from alembic.migration import MigrationContext
 from alembic.script import ScriptDirectory
 from microcosm.errors import LockedGraphError, NotBoundError
 
 from microcosm_postgres.models import Model
 from microcosm_postgres.sharded_subgraph import subgraphs
+
+
+def _get_script_version(graph):
+    script_ = script.ScriptDirectory(dir=".", version_locations=[get_migrations_dir(graph)])
+    return script_.get_current_head()
+
+
+def _get_db_version(graph):
+    cx = MigrationContext.configure(graph.postgres.connect())
+    return cx.get_current_revision()
+
+
+def check_alembic_versions(graph, last_verified_version):
+    """
+    Check that last_verified_version, database and migration scripts versions match.
+
+    :param graph: The graph of the app used to connect to the database and find migration files
+    :param last_verified_version: The version we want to check against. If the current version is not
+    the same as this version, an error will be raised. If the database is not in sync with migrations,
+    an error will be raised.
+    :return:
+    """
+    alembic_db_version = _get_db_version(graph)
+    alembic_script_version = _get_script_version(graph)
+    print("Alembic Script revision:", alembic_script_version)  # noqa: T201
+    print("Alembic DB revision:", alembic_db_version)  # noqa: T201
+    print("Last verified revision:", last_verified_version)  # noqa: T201
+    assert alembic_db_version == alembic_script_version, \
+        "Script and alembic versions do not match. Please upgrade your database with: `migrate upgrade head`"
+    assert alembic_db_version == last_verified_version, \
+        (f"Database version is not the last verified version."
+         f" Please check your code, make sure all is up to date and all fields are accounted for."
+         f" When done, update {last_verified_version} with {alembic_db_version}")
+    print("Versions match.")  # noqa: T201
 
 
 def make_alembic_config(temporary_dir, migrations_dir):
