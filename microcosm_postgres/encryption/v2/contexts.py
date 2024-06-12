@@ -3,7 +3,8 @@ Contains some utils around session contexts.
 
 """
 import contextlib
-from typing import Any, Generator
+from collections.abc import Generator
+from typing import Any
 
 from microcosm.object_graph import ObjectGraph
 
@@ -14,7 +15,7 @@ from microcosm_postgres.encryption.v2.encryptors import AwsKmsEncryptor
 @contextlib.contextmanager
 def encryptor_context_as_client(graph: ObjectGraph, client_id: str) -> Generator[None, Any, None]:
     """Manually choose the client_id you would like to choose."""
-    encryptor = graph.multi_tenant_encryptor[client_id]
+    encryptor = graph.multi_tenant_encryptor[client_id]  # type: ignore
     with AwsKmsEncryptor.set_encryptor_context(client_id, encryptor):
         yield
 

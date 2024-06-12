@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
-from typing import Any, Iterator, Protocol
+from collections.abc import Iterator
+from typing import Any, Protocol
 
 from microcosm.object_graph import ObjectGraph
 from sqlalchemy import inspect
@@ -129,7 +130,7 @@ class ReencryptionCli:
         self._verify_handle_all_tables()
 
     def _verify_client_has_some_encryption_config(self, client_id: str):
-        if str(client_id) not in self.graph.multi_tenant_encryptor.encryptors:
+        if str(client_id) not in self.graph.multi_tenant_encryptor.encryptors:  # type: ignore
             raise ValueError("Client does not appear to have any encryption config, cannot run re-encryption.")
 
     def _verify_handle_all_tables(self):
@@ -138,8 +139,8 @@ class ReencryptionCli:
 
     def _verify_planning_to_handle_all_tables(self, base_model: type, models_to_encrypt: list[type]):
         models_with_encryption = self._find_models_using_encryption(base_model)
-        expected_models = set(m.__name__ for m in models_with_encryption)
-        actual_models = set(m.__name__ for m in models_to_encrypt)
+        expected_models = {m.__name__ for m in models_with_encryption}
+        actual_models = {m.__name__ for m in models_to_encrypt}
 
         diff = expected_models.difference(actual_models)
         if diff:

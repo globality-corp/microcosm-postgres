@@ -2,12 +2,8 @@
 Implement application-layer encryption using the aws-encryption-sdk.
 
 """
-from typing import (
-    Mapping,
-    Sequence,
-    Tuple,
-    Union,
-)
+from collections.abc import Mapping, Sequence
+from typing import Union
 
 from aws_encryption_sdk import CommitmentPolicy, EncryptionSDKClient
 from aws_encryption_sdk.materials_managers.base import CryptoMaterialsManager
@@ -41,7 +37,7 @@ class SingleTenantEncryptor:
 
     def encrypt(self,
                 encryption_context_key: str,
-                plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
+                plaintext: str) -> tuple[bytes, Sequence[str]] | None:
         """
         Encrypt a plaintext string value.
 
@@ -129,7 +125,7 @@ class MultiTenantEncryptor:
             except KeyError:
                 return None
 
-    def encrypt(self, encryption_context_key: str, plaintext: str) -> Tuple[bytes, Sequence[str]] | None:
+    def encrypt(self, encryption_context_key: str, plaintext: str) -> tuple[bytes, Sequence[str]] | None:
         encryptor = self[encryption_context_key]
         if encryptor is None:
             return None

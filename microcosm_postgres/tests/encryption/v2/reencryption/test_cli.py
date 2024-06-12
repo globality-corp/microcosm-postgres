@@ -103,15 +103,15 @@ def graph(config: dict) -> ObjectGraph:
 @fixture(autouse=True, scope="module")
 def create_tables(graph: ObjectGraph) -> None:
     try:
-        Employee.__table__.drop(graph.postgres)
+        Employee.__table__.drop(graph.postgres)  # type: ignore
     except ProgrammingError:
         pass
-    Employee.__table__.create(graph.postgres)
+    Employee.__table__.create(graph.postgres)  # type: ignore
 
 
 @fixture
 def multi_tenant_encryptor(graph: ObjectGraph) -> MultiTenantEncryptor:
-    return graph.multi_tenant_encryptor
+    return graph.multi_tenant_encryptor  # type: ignore
 
 
 @fixture
@@ -123,7 +123,7 @@ def single_tenant_encryptor(
 
 @fixture
 def sessionmaker(graph: ObjectGraph) -> SessionMaker:
-    return graph.sessionmaker
+    return graph.sessionmaker  # type: ignore
 
 
 def find_employee_instances_iter(session: Session, client_id: str, **kwargs) -> list[Employee]:

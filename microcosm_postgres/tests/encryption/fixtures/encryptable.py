@@ -1,4 +1,4 @@
-from typing import Sequence, Tuple
+from collections.abc import Sequence
 
 from microcosm.api import binding
 from sqlalchemy import (
@@ -55,7 +55,7 @@ class Encryptable(EntityMixin, EncryptableMixin, Model):
         return (self.encrypted.ciphertext, self.encrypted.key_ids)
 
     @ciphertext.setter
-    def ciphertext(self, value: Tuple[bytes, Sequence[str]]) -> None:
+    def ciphertext(self, value: tuple[bytes, Sequence[str]]) -> None:
         ciphertext, key_ids = value
         self.encrypted = Encrypted(
             ciphertext=ciphertext,

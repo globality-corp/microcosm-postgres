@@ -17,7 +17,7 @@ class Version(dict):
 
     """
     def __init__(self, instance):
-        super(Version, self).__init__({
+        super().__init__({
             prop.key: getattr(instance, prop.key)
             for prop in class_mapper(instance.__class__).iterate_properties
             if isinstance(prop, ColumnProperty)
@@ -36,7 +36,7 @@ class Delta(dict):
 
     """
     def __init__(self, left, right):
-        super(Delta, self).__init__({
+        super().__init__({
             key: Change(left.get(key), right.get(key))
             for key in set(chain(list(left.keys()), list(right.keys())))
             if left.get(key) != right.get(key)

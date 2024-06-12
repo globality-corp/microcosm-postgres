@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import re
-from typing import TYPE_CHECKING, ClassVar, Iterator
+from collections.abc import Iterator
+from typing import TYPE_CHECKING, ClassVar
 from uuid import uuid4
 
 import pytest
@@ -226,8 +227,8 @@ def graph(config: dict) -> ObjectGraph:
 
 @fixture(autouse=True, scope="module")
 def create_tables(graph: ObjectGraph) -> None:
-    Employee.__table__.drop(graph.postgres)
-    Employee.__table__.create(graph.postgres)
+    Employee.__table__.drop(graph.postgres)  # type: ignore
+    Employee.__table__.create(graph.postgres)  # type: ignore
 
 
 @fixture()
@@ -236,13 +237,13 @@ def clean_db(graph: ObjectGraph) -> None:
     To be used when we want to explicitly clean the database
 
     """
-    Employee.__table__.drop(graph.postgres)
-    Employee.__table__.create(graph.postgres)
+    Employee.__table__.drop(graph.postgres)  # type: ignore
+    Employee.__table__.create(graph.postgres)  # type: ignore
 
 
 @fixture
 def multi_tenant_encryptor(graph: ObjectGraph) -> MultiTenantEncryptor:
-    return graph.multi_tenant_encryptor
+    return graph.multi_tenant_encryptor  # type: ignore
 
 
 @fixture
@@ -254,7 +255,7 @@ def single_tenant_encryptor(
 
 @fixture
 def sessionmaker(graph: ObjectGraph) -> SessionMaker:
-    return graph.sessionmaker
+    return graph.sessionmaker  # type: ignore
 
 
 @fixture
@@ -388,7 +389,7 @@ def test_encrypt_and_search_using_beacon(
         SessionContext(graph),
         AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
     ):
-        retrieved_employees = graph.employee_store_with_encryption.search_by_name("foo")
+        retrieved_employees = graph.employee_store_with_encryption.search_by_name("foo")  # type: ignore
         assert len(retrieved_employees) == 1
         retrieved_employee = retrieved_employees[0]
         assert retrieved_employee.name == "foo"
@@ -413,7 +414,7 @@ def test_encrypt_and_beacon_array_is_decoded_correctly(
         SessionContext(graph),
         AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
     ):
-        retrieved_employees = graph.employee_store_with_encryption.search_by_name("James")
+        retrieved_employees = graph.employee_store_with_encryption.search_by_name("James")  # type: ignore
         assert len(retrieved_employees) == 1
         retrieved_employee = retrieved_employees[0]
         assert retrieved_employee.skills == ["foo", "bar"]
@@ -434,7 +435,7 @@ def test_search_using_beaconised_array(
         SessionContext(graph),
         AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
     ):
-        retrieved_employees = graph.employee_store_with_encryption.search(skills=["foo"])
+        retrieved_employees = graph.employee_store_with_encryption.search(skills=["foo"])  # type: ignore
         assert len(retrieved_employees) == 1
         retrieved_employee = retrieved_employees[0]
         assert retrieved_employee.skills == ["foo", "bar"]
@@ -459,7 +460,7 @@ def test_search_without_array_beacon_no_encryption_context(
     with (
         SessionContext(graph),
     ):
-        retrieved_employees = graph.employee_store_with_encryption.search(skills=["baz"])
+        retrieved_employees = graph.employee_store_with_encryption.search(skills=["baz"])  # type: ignore
         assert len(retrieved_employees) == 1
         retrieved_employee = retrieved_employees[0]
         assert retrieved_employee.skills == ["baz", "biz"]
@@ -553,7 +554,7 @@ def test_search_by_beaconised_field_with_no_encryption(
         session.commit()
 
     with SessionContext(graph):
-        retrieved_employees = graph.employee_store_with_encryption.search_by_name("foo")
+        retrieved_employees = graph.employee_store_with_encryption.search_by_name("foo")  # type: ignore
         assert len(retrieved_employees) == 1
         retrieved_employee = retrieved_employees[0]
         assert retrieved_employee.name == "foo"
@@ -664,7 +665,7 @@ def test_search_with_auto_filter_field(
         SessionContext(graph),
         AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
     ):
-        retrieved_employees = graph.employee_store_with_encryption.search(age=100)
+        retrieved_employees = graph.employee_store_with_encryption.search(age=100)  # type: ignore
         assert len(retrieved_employees) == 1
         retrieved_employee = retrieved_employees[0]
         assert retrieved_employee.id == employee.id
@@ -673,7 +674,7 @@ def test_search_with_auto_filter_field(
         assert retrieved_employee.department == "bar"
 
         # Search with department - non encrypted field
-        retrieved_employees = graph.employee_store_with_encryption.search(department="bar2")
+        retrieved_employees = graph.employee_store_with_encryption.search(department="bar2")  # type: ignore
         assert len(retrieved_employees) == 1
         retrieved_employee2 = retrieved_employees[0]
         assert retrieved_employee2.id == employee2.id
@@ -701,7 +702,7 @@ def test_insert_employee_no_encryption(graph: ObjectGraph):
 
     with SessionContext(graph):
         # Check that the data is there
-        employees = graph.employee_store_with_encryption.search(name="Alice")
+        employees = graph.employee_store_with_encryption.search(name="Alice")  # type: ignore
         assert len(employees) == 1
         assert employees[0].name == "Alice"
         assert employees[0].name_beacon is None
@@ -733,7 +734,7 @@ def test_insert_employee_with_encryption(graph: ObjectGraph, single_tenant_encry
         AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
     ):
         # Check that the data is in the database
-        employees = graph.employee_store_with_encryption.search(name="Alice")
+        employees = graph.employee_store_with_encryption.search(name="Alice")  # type: ignore
         assert len(employees) == 1
         assert employees[0].name == "Alice"
         assert employees[0].name_beacon == "144586366ce538da6cf694c9ba0e50a4bdb45446b9de2e1ffe2ae70e16508516"
@@ -751,7 +752,7 @@ def test_upsert_new_employee(
 
     with SessionContext(graph) as context, transaction():
         context.recreate_all()
-        result = graph.employee_store_with_encryption.upsert(new_employee)
+        result = graph.employee_store_with_encryption.upsert(new_employee)  # type: ignore
 
     assert result is not None
     assert result.name == new_employee.name
@@ -781,7 +782,7 @@ def test_upsert_existing_employee_2(
             age=40,
             salary=1300,
         )
-        result = graph.employee_store_with_encryption.upsert(updated_employee)
+        result = graph.employee_store_with_encryption.upsert(updated_employee)  # type: ignore
 
     assert result is not None
     assert result.name == updated_employee.name
@@ -808,14 +809,14 @@ def test_upsert_new_employee_with_encryption(
             department="IT"
         )
 
-        graph.employee_store_with_encryption.upsert(new_employee)
+        graph.employee_store_with_encryption.upsert(new_employee)  # type: ignore
 
     with (
         SessionContext(graph),
         AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
     ):
         # Check that the data is in the database
-        employees = graph.employee_store_with_encryption.search(name="Alice")
+        employees = graph.employee_store_with_encryption.search(name="Alice")  # type: ignore
         assert len(employees) == 1
         assert employees[0].name == "Alice"
         assert employees[0].name_beacon == "144586366ce538da6cf694c9ba0e50a4bdb45446b9de2e1ffe2ae70e16508516"
@@ -850,7 +851,7 @@ def test_upsert_existing_employee_with_encryption(
             age=40,
             salary=1300,
         )
-        graph.employee_store_with_encryption.upsert(updated_employee)
+        graph.employee_store_with_encryption.upsert(updated_employee)  # type: ignore
 
     # Separate transaction
     with (
@@ -858,7 +859,7 @@ def test_upsert_existing_employee_with_encryption(
         AwsKmsEncryptor.set_encryptor_context("test", single_tenant_encryptor)
     ):
         # Check that the data is in the database
-        employees = graph.employee_store_with_encryption.search(name="Bob")
+        employees = graph.employee_store_with_encryption.search(name="Bob")  # type: ignore
         assert len(employees) == 1
         assert employees[0].name == "Bob"
         assert employees[0].name_beacon == "b7ba82ea80985bd15f7e9909c6ff831c6c019d916bc0aff43646584c7901f7a5"

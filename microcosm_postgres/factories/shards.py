@@ -4,7 +4,7 @@ Build an Engine for each horizontal shard we define.
 By default, we use the "postgres" engine as the only shard called "global".
 """
 import json
-from typing import Any, Dict
+from typing import Any
 
 from microcosm.api import binding, defaults
 from microcosm.config.model import Configuration
@@ -126,7 +126,7 @@ def configure_sharded_sessionmaker(graph):
         "sessionmakers",
     )  # Automatically bind shard related resources
 
-    def normalise(opaque: Dict[str, Any]) -> Dict[str, Any]:
+    def normalise(opaque: dict[str, Any]) -> dict[str, Any]:
         return {k.lower(): v for k, v in opaque.items()}
 
     def select_shard():

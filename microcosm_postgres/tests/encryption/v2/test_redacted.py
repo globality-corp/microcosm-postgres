@@ -1,14 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    ClassVar,
-    Iterator,
-)
+from typing import TYPE_CHECKING, Any, ClassVar
 from uuid import UUID, uuid4
 
 from microcosm.api import (
@@ -64,12 +60,12 @@ def graph(config: dict) -> ObjectGraph:
 
 @fixture
 def encryptors(graph: ObjectGraph) -> dict[str, SingleTenantEncryptor]:
-    return graph.multi_tenant_encryptor.encryptors
+    return graph.multi_tenant_encryptor.encryptors  # type: ignore
 
 
 @fixture
 def sessionmaker(graph: ObjectGraph) -> SessionMaker:
-    return graph.sessionmaker
+    return graph.sessionmaker  # type: ignore
 
 
 @fixture
@@ -126,10 +122,10 @@ def test_redacted_value_used(
         field_unencrypted = field.unencrypted()
 
     try:
-        TestModel.__table__.drop(graph.postgres)
+        TestModel.__table__.drop(graph.postgres)  # type: ignore
     except ProgrammingError:
         ...
-    TestModel.__table__.create(graph.postgres)
+    TestModel.__table__.create(graph.postgres)  # type: ignore
 
     # Encrypt data with client1's keys only
     with AwsKmsEncryptor.set_encryptor_context("test", encryptors[str(client_ids[0])]):
@@ -176,10 +172,10 @@ def test_redacted_nullable_value(
         field_unencrypted = field.unencrypted()
 
     try:
-        TestModel.__table__.drop(graph.postgres)
+        TestModel.__table__.drop(graph.postgres)  # type: ignore
     except ProgrammingError:
         ...
-    TestModel.__table__.create(graph.postgres)
+    TestModel.__table__.create(graph.postgres)  # type: ignore
 
     # Encrypt data with client1's keys only
     with AwsKmsEncryptor.set_encryptor_context("test", encryptors[str(client_ids[0])]):
@@ -230,10 +226,10 @@ def test_redacted_array_value(
         field_unencrypted = field.unencrypted()
 
     try:
-        TestModel.__table__.drop(graph.postgres)
+        TestModel.__table__.drop(graph.postgres)  # type: ignore
     except ProgrammingError:
         ...
-    TestModel.__table__.create(graph.postgres)
+    TestModel.__table__.create(graph.postgres)  # type: ignore
 
     # Encrypt data with client1's keys only
     with AwsKmsEncryptor.set_encryptor_context("test", encryptors[str(client_ids[0])]):
