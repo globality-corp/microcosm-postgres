@@ -2,13 +2,7 @@
 Encryption-related models.
 
 """
-from typing import (
-    Callable,
-    Dict,
-    Optional,
-    Sequence,
-    Tuple,
-)
+from collections.abc import Callable, Sequence
 
 from sqlalchemy import Column, LargeBinary, String
 from sqlalchemy.dialects.postgresql import ARRAY
@@ -65,7 +59,7 @@ def on_load(target: "EncryptableMixin", context):
         target.plaintext = plaintext  # type: ignore
 
 
-def decrypt_instance(target: "EncryptableMixin") -> Tuple[bool, Optional[str]]:
+def decrypt_instance(target: "EncryptableMixin") -> tuple[bool, str | None]:
     encryptor: Encryptor = target.__encryptor__  # type: ignore
 
     # encryption context may be nullable
@@ -103,7 +97,7 @@ class EncryptableMixin:
     -  An `encrypted_relationship` property (defaults to `encrypted`)
 
     """
-    __encryptor__: Optional[Encryptor] = None
+    __encryptor__: Encryptor | None = None
     __encrypted_identifier__ = "encrypted_id"
     __encrypted_relationship__ = "encrypted"
     __encryption_context_key__ = "key"
@@ -118,7 +112,7 @@ class EncryptableMixin:
         return getattr(self, self.__encrypted_relationship__)
 
     @property
-    def encryption_context_key(self) -> Optional[str]:
+    def encryption_context_key(self) -> str | None:
         return getattr(self, self.__encryption_context_key__)
 
     @property
@@ -138,11 +132,11 @@ class EncryptableMixin:
         return text
 
     @property
-    def ciphertext(self) -> Optional[Tuple[bytes, Sequence[str]]]:
+    def ciphertext(self) -> tuple[bytes, Sequence[str]] | None:
         raise NotImplementedError("Encryptable must implement `ciphertext` property")
 
     @ciphertext.setter
-    def ciphertext(self, value: Tuple[bytes, Sequence[str]]) -> None:
+    def ciphertext(self, value: tuple[bytes, Sequence[str]]) -> None:
         raise NotImplementedError("Encryptable must implement `ciphertext` property")
 
     @classmethod
@@ -159,7 +153,7 @@ class EncryptableMixin:
         # NB: we cannot use the before_insert listener in conjunction with a foreign key relationship
         # for encrypted data; SQLAlchemy will warn about using 'related attribute set' operation so
         # late in its insert/flush process.
-        listeners: Dict[str, Callable] = dict(
+        listeners: dict[str, Callable] = dict(
             init=on_init,
             load=on_load,
         )

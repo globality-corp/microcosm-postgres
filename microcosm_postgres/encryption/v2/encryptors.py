@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from contextlib import contextmanager, nullcontext
 from contextvars import ContextVar
 from typing import (
     Any,
     ContextManager,
-    Iterator,
     Literal,
     Protocol,
     TypeAlias,
@@ -127,12 +127,12 @@ class AwsKmsEncryptor(Encryptor):
 
     @classmethod
     def set_context_from_graph(cls, graph: ObjectGraph) -> ContextManager[None]:
-        encryptors: MultiTenantEncryptor = graph.multi_tenant_encryptor
+        encryptors: MultiTenantEncryptor = graph.multi_tenant_encryptor  # type: ignore
 
         def normalise(opaque: dict[str, Any]) -> dict[str, Any]:
             return {k.lower(): v for k, v in opaque.items()}
 
-        client_id = normalise(graph.request_context()).get(X_REQUEST_CLIENT_HEADER)
+        client_id = normalise(graph.request_context()).get(X_REQUEST_CLIENT_HEADER)  # type: ignore
         if client_id is None or client_id not in encryptors.encryptors:
             # Then we return back the default encryptor
             default_encryptor = encryptors[ENCRYPTION_V2_DEFAULT_KEY]
@@ -151,11 +151,11 @@ class AwsKmsEncryptor(Encryptor):
     def register_flask_context(cls, graph: ObjectGraph) -> None:
         graph.use("multi_tenant_encryptor")
 
-        @graph.flask.before_request
+        @graph.flask.before_request  # type: ignore
         def _register_encryptor():
             cls.set_context_from_graph(graph)
 
-        @graph.flask.after_request
+        @graph.flask.after_request  # type: ignore
         def _reset_encryptor(response):
             cls._encryptor_context.set(None)
             return response

@@ -2,8 +2,6 @@
 Common database operations.
 
 """
-from typing import Dict
-
 from sqlalchemy import MetaData, text
 from sqlalchemy.exc import ProgrammingError
 
@@ -72,7 +70,7 @@ def drop_alembic_table(graph):
 
 
 # Cached database metadata instance
-_metadata: Dict[str, MetaData] = {}
+_metadata: dict[str, MetaData] = {}
 
 
 def recreate_all(graph, model_cls=Model):

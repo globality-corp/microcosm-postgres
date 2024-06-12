@@ -1,10 +1,10 @@
 import json
+from collections.abc import Callable
 from datetime import datetime, timezone
 from decimal import Decimal
 from enum import Enum
 from typing import (
     Any,
-    Callable,
     Generic,
     Literal,
     ParamSpec,

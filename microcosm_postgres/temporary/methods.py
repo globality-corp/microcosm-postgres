@@ -20,8 +20,8 @@ def to_dict(item, columns):
        if column.info.get("encryption_v2_encrypted") is True and value is not None
     }
 
-    return dict(
-        (column.name, value)
+    return {
+        column.name: value
         for column, value in column_values
         # discard nulls if defaulted
         if (value is not None or not column.default)
@@ -30,7 +30,7 @@ def to_dict(item, columns):
             column.info.get("encryption_v2_unencrypted") and
             column.info.get("encryption_v2_key") in encrypted_columns
         )
-    )
+    }
 
 
 def insert_many(self, items):

@@ -3,12 +3,8 @@ Test sessionmaker factory
 
 """
 import json
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterator,
-)
+from collections.abc import Callable, Iterator
+from typing import Any
 
 from microcosm.api import (
     create_object_graph,
@@ -172,12 +168,12 @@ def get_shards_for_query(graph: ObjectGraph) -> Callable[..., Iterator[str]]:
 
 
 def test_configure_shards(graph: ObjectGraph) -> None:
-    assert graph.shards.keys() == {GLOBAL_SHARD_NAME, "secondary"}
+    assert graph.shards.keys() == {GLOBAL_SHARD_NAME, "secondary"}  # type: ignore
 
 
 def test_configure_sessionmakers(graph: ObjectGraph) -> None:
-    assert graph.sessionmakers.keys() == {GLOBAL_SHARD_NAME, "secondary"}
-    assert all(isinstance(sm, sessionmaker) for sm in graph.sessionmakers.values())
+    assert graph.sessionmakers.keys() == {GLOBAL_SHARD_NAME, "secondary"}  # type: ignore
+    assert all(isinstance(sm, sessionmaker) for sm in graph.sessionmakers.values())  # type: ignore
 
 
 @mark.parametrize(
@@ -199,11 +195,11 @@ def test_configure_sessionmakers(graph: ObjectGraph) -> None:
 def test_create_company(
     graph: ObjectGraph,
     get_shards_for_query: Callable[..., Iterator[str]],
-    opaque: Dict,
+    opaque: dict,
     shard_name: str,
 ) -> None:
-    with graph.opaque.initialize(lambda: opaque):
-        with graph.sessionmaker() as session, session.begin():
+    with graph.opaque.initialize(lambda: opaque):  # type: ignore
+        with graph.sessionmaker() as session, session.begin():  # type: ignore
             session.add(company := Company(name="name", type=CompanyType.public))
             session.flush()
             company_id = company.id

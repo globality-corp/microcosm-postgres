@@ -54,7 +54,7 @@ class EmployeeStore(Store):
             query = query.filter(Employee.company_id == company_id)
         if first is not None:
             query = query.filter(Employee.first == first)
-        return super(EmployeeStore, self)._filter(query, **kwargs)
+        return super()._filter(query, **kwargs)
 
 
 @binding("employee_data_store")

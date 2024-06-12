@@ -1,4 +1,4 @@
-from typing import Optional, Sequence, Tuple
+from collections.abc import Sequence
 
 from microcosm.api import binding
 from sqlalchemy import (
@@ -47,13 +47,13 @@ class NullableEncryptable(EntityMixin, EncryptableMixin, Model):
     )
 
     @property
-    def ciphertext(self) -> Optional[Tuple[bytes, Sequence[str]]]:
+    def ciphertext(self) -> tuple[bytes, Sequence[str]] | None:
         if not self.encrypted:
             return None
         return (self.encrypted.ciphertext, self.encrypted.key_ids)
 
     @ciphertext.setter
-    def ciphertext(self, value: Tuple[bytes, Sequence[str]]) -> None:
+    def ciphertext(self, value: tuple[bytes, Sequence[str]]) -> None:
         ciphertext, key_ids = value
         self.encrypted = NullableEncrypted(
             ciphertext=ciphertext,

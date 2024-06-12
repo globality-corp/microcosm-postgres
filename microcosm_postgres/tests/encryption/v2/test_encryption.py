@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from enum import Enum
-from typing import TYPE_CHECKING, ClassVar, Iterator
+from typing import TYPE_CHECKING, ClassVar
 from uuid import uuid4
 
 from microcosm.api import (
@@ -145,13 +146,13 @@ def graph(config: dict) -> ObjectGraph:
 
 @fixture(autouse=True, scope="module")
 def create_tables(graph: ObjectGraph) -> None:
-    Employee.__table__.drop(graph.postgres)
-    Employee.__table__.create(graph.postgres)
+    Employee.__table__.drop(graph.postgres)  # type: ignore
+    Employee.__table__.create(graph.postgres)  # type: ignore
 
 
 @fixture
 def multi_tenant_encryptor(graph: ObjectGraph) -> MultiTenantEncryptor:
-    return graph.multi_tenant_encryptor
+    return graph.multi_tenant_encryptor  # type: ignore
 
 
 @fixture
@@ -170,7 +171,7 @@ def default_tenant_encryptor(
 
 @fixture
 def sessionmaker(graph: ObjectGraph) -> SessionMaker:
-    return graph.sessionmaker
+    return graph.sessionmaker  # type: ignore
 
 
 @fixture

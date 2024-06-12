@@ -243,7 +243,7 @@ def get_migrations_dir(graph):
         migrations_dir = graph.metadata.get_path("migrations")
 
     if not isdir(migrations_dir):
-        raise Exception("Migrations dir must exist: {}".format(migrations_dir))
+        raise Exception(f"Migrations dir must exist: {migrations_dir}")
     return migrations_dir
 
 

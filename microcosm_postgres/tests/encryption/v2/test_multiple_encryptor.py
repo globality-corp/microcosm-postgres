@@ -1,11 +1,7 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    ClassVar,
-    Iterator,
-)
+from collections.abc import Callable, Iterator
+from typing import TYPE_CHECKING, ClassVar
 from unittest.mock import MagicMock
 from uuid import UUID, uuid4
 
@@ -74,25 +70,25 @@ def graph(config: dict) -> ObjectGraph:
 @fixture(autouse=True, scope="module")
 def create_tables(graph: ObjectGraph) -> None:
     try:
-        Employee.__table__.drop(graph.postgres)
+        Employee.__table__.drop(graph.postgres)  # type: ignore
     except ProgrammingError:
         ...
-    Employee.__table__.create(graph.postgres)
+    Employee.__table__.create(graph.postgres)  # type: ignore
 
 
 @fixture
 def encryptors(graph: ObjectGraph) -> dict[str, SingleTenantEncryptor]:
     encryptors = {
         context_key: MagicMock(wraps=encryptor)
-        for context_key, encryptor in graph.multi_tenant_encryptor.encryptors.items()
+        for context_key, encryptor in graph.multi_tenant_encryptor.encryptors.items()  # type: ignore
     }
-    graph.multi_tenant_encryptor.encryptors = encryptors
+    graph.multi_tenant_encryptor.encryptors = encryptors  # type: ignore
     return encryptors  # type: ignore
 
 
 @fixture
 def sessionmaker(graph: ObjectGraph) -> SessionMaker:
-    return graph.sessionmaker
+    return graph.sessionmaker  # type: ignore
 
 
 @fixture

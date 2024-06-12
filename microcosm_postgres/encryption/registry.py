@@ -2,7 +2,7 @@
 A registry for context keys and their master key ids.
 
 """
-from typing import Mapping, Sequence, Union
+from collections.abc import Mapping, Sequence
 
 from microcosm.api import defaults
 from microcosm.config.types import comma_separated_list
@@ -20,12 +20,12 @@ from microcosm_postgres.encryption.providers import (
 
 def parse_config(
     context_keys: Sequence[str],
-    key_ids: Sequence[Union[str, Sequence[str]]],
-    account_ids: Sequence[Union[str, Sequence[str]]],
-    partitions: Sequence[Union[str, Sequence[str]]],
+    key_ids: Sequence[str | Sequence[str]],
+    account_ids: Sequence[str | Sequence[str]],
+    partitions: Sequence[str | Sequence[str]],
     restricted_kms_policy: Sequence[str],
     beacon_keys: Sequence[str] | None = None,
-) -> Mapping[str, Mapping[str, Union[str, Sequence[str], bool, None]]]:
+) -> Mapping[str, Mapping[str, str | Sequence[str] | bool | None]]:
     _beacon_keys: Sequence[str] = [] if beacon_keys is None else beacon_keys
     config = {}
 
