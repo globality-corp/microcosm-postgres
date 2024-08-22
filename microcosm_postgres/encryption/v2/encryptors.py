@@ -6,10 +6,8 @@ from contextvars import ContextVar
 from typing import (
     Any,
     ContextManager,
-    Literal,
     Protocol,
     TypeAlias,
-    overload,
 )
 
 from aws_encryption_sdk.exceptions import DecryptKeyError
@@ -23,8 +21,7 @@ from microcosm_postgres.encryption.v2.errors import DecryptionError
 
 
 class Encryptor(Protocol):
-    def should_encrypt(self) -> bool:
-        ...
+    def should_encrypt(self) -> bool: ...
 
     def encrypt(self, value: str) -> bytes | None:
         """Encrypt a value.
@@ -37,30 +34,11 @@ class Encryptor(Protocol):
         """Decrypt a value key identified from the ciphertext."""
         ...
 
-    @overload
     def beacon(
         self,
         value: str,
-        use_array: Literal[False],
         algorithm: BeaconHashAlgorithm | None = None,
     ) -> str:
-        ...
-
-    @overload
-    def beacon(
-        self,
-        value: list[str],
-        use_array: Literal[True],
-        algorithm: BeaconHashAlgorithm | None = None,
-    ) -> list[str]:
-        ...
-
-    def beacon(
-        self,
-        value: str | list[str],
-        use_array: bool = False,
-        algorithm: BeaconHashAlgorithm | None = None,
-    ) -> list[str] | str:
         """Hash value using the beacon key."""
         ...
 
@@ -191,45 +169,18 @@ class AwsKmsEncryptor(Encryptor):
         except DecryptKeyError as e:
             raise DecryptionError() from e
 
-    @overload
     def beacon(
         self,
         value: str,
-        use_array: Literal[False],
         algorithm: BeaconHashAlgorithm | None = None,
     ) -> str:
-        ...
-
-    @overload
-    def beacon(
-        self,
-        value: list[str],
-        use_array: Literal[True],
-        algorithm: BeaconHashAlgorithm | None = None,
-    ) -> list[str]:
-        ...
-
-    def beacon(
-        self,
-        value: str | list[str],
-        use_array: bool = False,
-        algorithm: BeaconHashAlgorithm | None = None,
-    ) -> list[str] | str:
         if self.encryptor_context is None:
             raise self.EncryptorNotBound()
 
         _, encryptor = self.encryptor_context
-        if use_array:
-            assert isinstance(value, list)
-            _beacon = [encryptor.beacon(v, algorithm=algorithm) for v in value]
-            # Filter out the None values
-            _beacon = [v for v in _beacon if v is not None]
-
-        else:
-            assert isinstance(value, str)
-            _beacon = encryptor.beacon(value, algorithm=algorithm)  # type: ignore[assignment]
+        _beacon = encryptor.beacon(value, algorithm=algorithm)
 
         if _beacon is None:
             raise self.BeaconKeyNotSet()
 
-        return _beacon  # type: ignore[return-value]
+        return _beacon

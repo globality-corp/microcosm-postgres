@@ -6,12 +6,10 @@ from enum import Enum
 from typing import (
     Any,
     Generic,
-    Literal,
     ParamSpec,
     Protocol,
     TypeAlias,
     TypeVar,
-    overload,
 )
 
 import sqlalchemy
@@ -34,11 +32,9 @@ class Encoder(Protocol[T]):
     class DecodeException(Exception):
         status_code = 400
 
-    def encode(self, value: T, **kwargs) -> list[str] | str:
-        ...
+    def encode(self, value: T) -> str: ...
 
-    def decode(self, value: str, **kwargs) -> T:
-        ...
+    def decode(self, value: str) -> T: ...
 
 
 P = ParamSpec("P")
@@ -76,11 +72,11 @@ class StringEncoder(Encoder[Any]):
     redacted_value = "REDACTED"
 
     @encode_exception_wrapper
-    def encode(self, value: Any, **kwargs) -> str:
+    def encode(self, value: Any) -> str:
         return str(value)
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> Any:
+    def decode(self, value: str) -> Any:
         return value
 
 
@@ -89,11 +85,11 @@ class TextEncoder(Encoder[Any]):
     redacted_value = "REDACTED"
 
     @encode_exception_wrapper
-    def encode(self, value: Any, **kwargs) -> str:
+    def encode(self, value: Any) -> str:
         return str(value)
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> Any:
+    def decode(self, value: str) -> Any:
         return value
 
 
@@ -102,11 +98,11 @@ class IntEncoder(Encoder[int]):
     redacted_value = -1
 
     @encode_exception_wrapper
-    def encode(self, value: int, **kwargs) -> str:
+    def encode(self, value: int) -> str:
         return str(value)
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> int:
+    def decode(self, value: str) -> int:
         return int(value)
 
 
@@ -115,11 +111,11 @@ class DecimalEncoder(Encoder[Decimal]):
     redacted_value = Decimal(-1)
 
     @encode_exception_wrapper
-    def encode(self, value: Decimal, **kwargs) -> str:
+    def encode(self, value: Decimal) -> str:
         return str(value)
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> Decimal:
+    def decode(self, value: str) -> Decimal:
         return Decimal(value)
 
 
@@ -128,44 +124,27 @@ class DatetimeEncoder(Encoder[datetime]):
     redacted_value = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
     @encode_exception_wrapper
-    def encode(self, value: datetime, **kwargs) -> str:
+    def encode(self, value: datetime) -> str:
         return value.isoformat()
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> datetime:
+    def decode(self, value: str) -> datetime:
         return datetime.fromisoformat(value)
 
 
 class ArrayEncoder(Encoder[list[T]], Generic[T]):
-
     def __init__(self, element_encoder: Encoder[T]):
         self.element_encoder = element_encoder
         self.sa_type = ARRAY(element_encoder.sa_type)
         self.redacted_value = [self.element_encoder.redacted_value]
 
-    @overload  # type: ignore[override]
-    def encode(
-        self, value: list[T], keep_as_array: Literal[True], **kwargs
-    ) -> list[str]:
-        ...
-
-    @overload
-    def encode(self, value: list[T], keep_as_array: Literal[False], **kwargs) -> str:
-        ...
-
     @encode_exception_wrapper
-    def encode(
-        self, value: list[T], keep_as_array: bool = False, **kwargs
-    ) -> list[str] | str:
+    def encode(self, value: list[T]) -> str:
         raw = [self.element_encoder.encode(element) for element in value]
-        if keep_as_array:
-            assert isinstance(raw, list)
-            return raw  # type: ignore[return-value]
-        else:
-            return json.dumps(raw)
+        return json.dumps(raw)
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> list[T]:
+    def decode(self, value: str) -> list[T]:
         return [self.element_encoder.decode(v) for v in json.loads(value)]
 
 
@@ -183,6 +162,7 @@ class JSONEncoder(Encoder[JSONType]):
 
 
 class Nullable(Encoder[T | None], Generic[T]):
+    null_encoded = json.dumps(None)
 
     def __init__(self, inner_encoder: Encoder[T]) -> None:
         self.inner_encoder = inner_encoder
@@ -191,23 +171,18 @@ class Nullable(Encoder[T | None], Generic[T]):
         self.redacted_value = inner_encoder.redacted_value
 
     @encode_exception_wrapper
-    def encode(
-        self, value: T | None, keep_as_array: bool = False, **kwargs
-    ) -> str | list[str]:
+    def encode(self, value: T | None) -> str:
         if value is None:
-            return json.dumps(value)
+            return self.null_encoded
 
-        if keep_as_array:
-            return self.inner_encoder.encode(value, keep_as_array=keep_as_array)
-        else:
-            return json.dumps(self.inner_encoder.encode(value))
+        return json.dumps(self.inner_encoder.encode(value))
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> T | None:
-        if (loaded_value := json.loads(value)) is None:
+    def decode(self, value: str) -> T | None:
+        if value == self.null_encoded:
             return None
 
-        return self.inner_encoder.decode(loaded_value)
+        return self.inner_encoder.decode(json.loads(value))
 
 
 E = TypeVar("E", bound=Enum)
@@ -226,9 +201,9 @@ class EnumEncoder(Encoder[E], Generic[E]):
         self.redacted_value = list(self._enum)[0]
 
     @encode_exception_wrapper
-    def encode(self, value: E, **kwargs) -> str:
+    def encode(self, value: E) -> str:
         return value.name
 
     @decode_exception_wrapper
-    def decode(self, value: str, **kwargs) -> E:
+    def decode(self, value: str) -> E:
         return self._enum[value]
