@@ -2,8 +2,7 @@
 
 Opinionated persistence with PostgreSQL.
 
-
-[![Circle CI](https://circleci.com/gh/globality-corp/microcosm-postgres/tree/develop.svg?style=svg)](https://circleci.com/gh/globality-corp/microcosm-postgres/tree/develop)
+[![Build Status](https://drone-internal.dev.globality.io/api/badges/globality-corp/microcosm-postgres/status.svg)](https://drone-internal.dev.globality.io/globality-corp/microcosm-postgres)
 
 
 ## Usage
