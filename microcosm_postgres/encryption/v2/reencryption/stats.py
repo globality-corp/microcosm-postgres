@@ -12,12 +12,16 @@ class ReencryptionStatistic:
     total_instances_found: int  # Total number of instances found for the model
     instances_found_to_be_unencrypted: int  # Number of instances found to be unencrypted
     instances_reencrypted: int  # Number of instances reencrypted
+    fields_not_encrypted: dict[str, int] = field(default_factory=dict)  # Number of instances with each field unencrypted
 
     def log_stats(self):
         print(f"Model: {self.model_name}")  # noqa: T201
         print(f"- Total Instances Found: {self.total_instances_found}")  # noqa: T201
         print(f"- Instances Found to be Unencrypted: {self.instances_found_to_be_unencrypted}")  # noqa: T201
         print(f"- Instances Reencrypted: {self.instances_reencrypted}")  # noqa: T201
+        print("- Fields not encrypted:")
+        for field_name, count in self.fields_not_encrypted.items():
+            print(f"   {field_name}: {count}")
 
 
 class ReencryptionStatsCollector:
@@ -49,6 +53,10 @@ class ReencryptionStatsCollector:
         statistic.instances_found_to_be_unencrypted += 1 if found_to_be_unencrypted else 0
         statistic.instances_reencrypted += 1 if changed_committed else 0
         statistic.total_instances_found += 1
+
+        # Update per-field counts.
+        for field in unencrypted_fields:
+            statistic.fields_not_encrypted[field] = statistic.fields_not_encrypted.get(field, 0) + 1
 
     def get_stats(self) -> list[ReencryptionStatistic]:
         return list(self.data.values())
