@@ -39,7 +39,7 @@ class ReencryptionStatsCollector:
         # Data holds a mapping of model_name to ReencryptionStatistic
         self.data = dict()
 
-    def update(self, found_to_be_unencrypted, changed_committed, model_name: str):
+    def update(self, found_to_be_unencrypted, changed_committed, model_name: str, unencrypted_fields: list[str]):
         statistic = self.data.get(model_name)
         if statistic is None:
             statistic = ReencryptionStatistic(

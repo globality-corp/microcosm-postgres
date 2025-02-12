@@ -63,30 +63,35 @@ class ReencryptionCli:
         args.func(args)
 
     def reencrypt(self, args: Any):
-        client_id, dry_run = self._get_reencrypt_args(args)
+        client_id, dry_run, only_unencrypted = self._get_reencrypt_args(args)
         self._run_validations(client_id)
 
-        elapsed_time_data: dict[str, Any] = dict()
+        elapsed_time_data: dict[str, Any] = {}
         with (
             elapsed_time(elapsed_time_data),
             encryptor_session_context_as_client(self.graph, client_id=client_id),
             transaction(),
         ):
             session = SessionContext.session
-            stats: list[ReencryptionStatistic] = []
-
-            # We assume that we have one iterator per model type
             collector = ReencryptionStatsCollector()
+
+            # Iterate over each instance in each iterator.
             for instance_iterator in self.iterators:
                 for instance in instance_iterator(session=session, client_id=client_id, graph=self.graph):
-                    found_to_be_unencrypted, changed_committed = reencrypt_instance(
+                    found, changed, unencrypted_fields = reencrypt_instance(
                         session=session,
                         instance=instance,
                         encryption_columns=self._get_encryption_columns(instance),
                         dry_run=dry_run,
+                        only_unencrypted=only_unencrypted,
                     )
                     model = self._find_model_for_instance(instance)
-                    collector.update(found_to_be_unencrypted, changed_committed, model_name=model.__name__)
+                    collector.update(
+                        found_to_be_unencrypted=found,
+                        changed_committed=changed,
+                        model_name=model.__name__,
+                        unencrypted_fields=unencrypted_fields,
+                    )
 
         stats = collector.get_stats()
         self._write_reenrypt_logs(elapsed_time_data, stats)
@@ -111,7 +116,7 @@ class ReencryptionCli:
             f"This shouldn't happen. Instance type not found in any of the models. instance: {instance}"
         )
 
-    def _get_reencrypt_args(self, args: Any) -> tuple[str, bool]:
+    def _get_reencrypt_args(self, args: Any) -> tuple[str, bool, bool]:
         """
         Client id is required for reencryption so we throw an exception
         if it's not provided.
@@ -121,7 +126,7 @@ class ReencryptionCli:
         if client_id is None:
             raise RuntimeError("Client id is required: --client-id <client_id>")
 
-        return client_id, not args.no_dry_run
+        return client_id, not args.no_dry_run, args.only_unencrypted
 
     def _run_validations(self, client_id: str):
         # Validate that we have some encryption config
